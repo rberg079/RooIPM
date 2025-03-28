@@ -13,7 +13,7 @@ library(lubridate)
 density <- read_excel("WPNP_Methods_Results_January2025.xlsx")
 biomass <- read_excel("biomass data April 2009 - Jan 2025_updated Feb2025.xlsx")
 weather <- read_excel("Prom_Weather_2008-2023_updated Jan2025 RB.xlsx")
-wind <- read_csv("POWER_Point_Daily_20080101_20231231_10M.csv", skip = 13)
+wind <- read_csv("POWER_Point_Daily_20080101_20241231_10M.csv", skip = 13)
 
 
 ## Density ---------------------------------------------------------------------
@@ -40,7 +40,29 @@ density <- density %>%
                          paste(Season, NextYr, sep = ""),
                          paste(Season, Year, sep = ""))) %>% 
   filter(Date > "2008-11-30" & Date < "2025-03-01") %>% 
-  select(SeasYr, Dens, DensLCI, DensUCI)
+  # approximate sem using CIs (G. Pigeon's code)
+  mutate(SE = (DensUCI-DensLCI)/(qnorm(0.975)*2),
+         DensSE = SE/sd(Dens, na.rm = T)) %>%
+  select(SeasYr, Dens, DensSE) # DensLCI, DensUCI
+
+# # compare reconstructed CIs to original
+# g1 <- ggplot(env, aes(x = Dens)) +
+#   geom_point(aes(y = Dens)) +
+#   geom_ribbon(aes(ymin = DensLCI, ymax = DensUCI), alpha = 0.3) +
+#   theme_bw(); g1
+# 
+# g2 <- env %>% 
+#   mutate(densSC = sc(Dens),                # scaled & centered dens
+#          newLCI = densSC-1.96*DensSE,      # reconstructed lower CI
+#          newUCI = densSC+1.96*DensSE) %>%  # reconstructed upper CI
+#   ggplot(aes(x = densSC)) +
+#   geom_point(aes(y = densSC)) +
+#   geom_ribbon(aes(ymin = newLCI, ymax = newUCI), alpha = 0.3) +
+#   theme_bw(); g2
+# 
+# library(cowplot)
+# plot_grid(g1 + labs(title = 'original', x = 'density', y = 'density'),
+#           g2 + labs(title = 'scaled & reconstructed CI', x = 'density', y = 'scaled density'))
 
 
 ## Biomass ---------------------------------------------------------------------
@@ -118,10 +140,10 @@ env <- weather %>%
 # Rename some things
 # Replace filled Veg values with NAs before July 2009
 env <- env %>% 
-  rename(Veg = mDailyVeg, VegSD = sdDailyVeg) %>% 
-  select(1:6, Dens, DensLCI, DensUCI, Veg, VegSD, Rain) %>% 
-  mutate(Veg = ifelse(Date < "2009-07-30", NA, Veg),
-         VegSD = ifelse(Date < "2009-07-30", NA, VegSD))
+  rename(Veg = mDailyVeg, VegSE = sdDailyVeg) %>% 
+  select(1:6, Dens, DensSE, Veg, VegSE, Rain) %>% 
+  mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
+         VegSE = ifelse(Date < "2009-04-22", NA, VegSE))
 
 # Prep & join wind data
 wind <- wind %>%
@@ -163,9 +185,9 @@ env <- env %>%
 # Final variable selection
 env <- env %>% 
   select(Date, Year, Month, Day,
-         Dens, DensLCI, DensUCI, Veg, VegSD,
+         Dens, DensSE, Veg, VegSE,
          Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18)
 
 # write csv
-# write_csv(env, "Env_Mar25.csv")
+write_csv(env, "Env_Mar25.csv")
 

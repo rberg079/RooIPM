@@ -60,7 +60,6 @@ df <- df %>%
 #          Weight, Leg, Teeth, Repro, Parturition, PYsex, PYid, SurvLPY, SurvWN, 
 #          PYLastObs, PYFound, Dead, HRDead)
 
-
 # age class
 df <- df %>%
   mutate(Age = as.numeric(Age),
