@@ -4,12 +4,12 @@
 library(readxl)
 library(tidyverse)
 
-# setwd("C:/Users/rberg/OneDrive/Bureau/IPM analyses/Roo IPM")
+# setwd("C:/Code/RooIPM")
 
 ## Load & clean up -------------------------------------------------------------
 
-surv <- read_excel("PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
-env  <- read_csv("Env_Mar25.csv")
+surv <- read_excel("data/PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
+env  <- read_csv("data/Env_Mar25.csv")
 
 # surv <- SURV
 surv <- surv %>% 
@@ -132,7 +132,7 @@ env <- env %>%
 
 # density estimates
 dens <- env %>% 
-  filter(Year < 2024 & !is.na(Dens)) %>% 
+  filter(!is.na(Dens)) %>% 
   distinct(Year, Dens, DensSE) %>% 
   mutate(DensSE = DensSE^2) %>% 
   group_by(Year) %>% 
@@ -143,12 +143,13 @@ dens <- env %>%
 
 # vegetation estimates
 veg <- env %>% 
-  filter(Year < 2024 & !is.na(Veg)) %>% 
+  filter(!is.na(Veg)) %>% 
   select(Date, Year, Veg, VegSE) %>% 
   group_by(Year) %>% 
   mutate(Veg = sum(Veg),
          VegSE = sqrt(sum(VegSE^2)),
-         across(c(Veg, VegSE), ~replace(., Year == 2008, NA))) %>% 
+         across(c(Veg, VegSE), ~replace(., Year == 2008, NA)),
+         across(c(Veg, VegSE), ~replace(., Year == 2024, NA))) %>% 
   ungroup() %>% 
   distinct(Year, Veg, VegSE)
 
@@ -214,7 +215,8 @@ env <- veg %>%
 nind   <- nrow(state)
 ntimes <- ncol(state)
 
-nAge   <- max(ageC, na.rm = T)+1
+ageC   <- c(1,2,2,3,3,3,3,4,4,4, rep(5,60))
+nAge   <- max(ageC, na.rm = T)
 noAge  <- which(is.na(age[,ncol(age)]))
 nNoAge <- length(noAge)
 
@@ -224,13 +226,12 @@ last  <- as.numeric(id$last)
 obs   <- as.matrix(obs) %>% unname()
 state <- as.matrix(state) %>% unname()
 age   <- as.matrix(age)+1 %>% unname()
-ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,60))
 
 veg  <- as.numeric(scale(env$Veg))
 dens <- as.numeric(scale(env$Dens))
 
-vegE  <- as.numeric(ifelse(is.na(vegE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
-densE <- as.numeric(ifelse(is.na(densE), 2, env$DensSE/sd(env$Dens, na.rm = T)))
+vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
+densE <- as.numeric(ifelse(is.na(env$DensSE), 2, env$DensSE/sd(env$Dens, na.rm = T)))
 
 nNoVeg  <- sum(is.na(veg))
 nNoDens <- sum(is.na(dens))
