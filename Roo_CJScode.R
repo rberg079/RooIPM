@@ -6,6 +6,7 @@
 # load packages
 library(tidyverse)
 library(lubridate)
+library(beepr)
 library(here)
 library(boot)
 library(coda)
@@ -226,7 +227,7 @@ chain_output <- parLapply(cl = this_cluster,
                           myconst = myconst,
                           mydata = mydata)
 
-
+beep(sound = 2)
 stopCluster(this_cluster)
 dur = now() - start.t
 dur
