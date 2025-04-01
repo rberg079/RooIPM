@@ -10,10 +10,10 @@ library(lubridate)
 
 ## Load data -------------------------------------------------------------------
 
-density <- read_excel("WPNP_Methods_Results_January2025.xlsx")
-biomass <- read_excel("biomass data April 2009 - Jan 2025_updated Feb2025.xlsx")
-weather <- read_excel("Prom_Weather_2008-2023_updated Jan2025 RB.xlsx")
-wind <- read_csv("POWER_Point_Daily_20080101_20241231_10M.csv", skip = 13)
+density <- read_excel("data/WPNP_Methods_Results_January2025.xlsx")
+biomass <- read_excel("data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx")
+weather <- read_excel("data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx")
+wind <- read_csv("data/POWER_Point_Daily_20080101_20241231_10M.csv", skip = 13)
 
 
 ## Density ---------------------------------------------------------------------

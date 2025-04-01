@@ -8,9 +8,9 @@ library(tidyverse)
 
 ## Load & clean up -------------------------------------------------------------
 
-rs <- read_excel("RSmainRB_Mar25.xlsx")
-obs <- read_excel("PromObs_2008-2019.xlsx")
-env <- read_csv("Env_Mar25.csv")
+rs <- read_excel("data/RSmainRB_Mar25.xlsx")
+obs <- read_excel("data/PromObs_2008-2019.xlsx")
+env <- read_csv("data/Env_Mar25.csv")
 
 df <- rs %>%
   select(ID, Cohort, Age, Acert, Year, Capture, Exclude, Treatment, 
