@@ -3,12 +3,14 @@
 
 library(readxl)
 library(tidyverse)
+library(lubridate)
 
 # setwd("C:/Code/RooIPM")
 
 ## Load & clean up -------------------------------------------------------------
 
 surv <- read_excel("data/PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
+yafs <- read_excel("data/RSmainRB_Mar25.xlsx")
 env  <- read_csv("data/Env_Mar25.csv")
 
 # surv <- SURV
@@ -22,6 +24,45 @@ surv <- surv %>%
     get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))), 1, .x))) %>%
   select(ID, Sex, Dead, in2008, matches("^in20\\d{2}$"), -in2025, matches("^Age\\d{2}")) %>%
   filter(Sex == 2) # females
+
+## YAF surv --------------------------------------------------------------------
+
+yafs <- read_excel("data/RSmainRB_Mar25.xlsx")
+
+yafs <- yafs %>% 
+  filter(Exclude == 0, Repro == 1) %>% 
+  select(ID, Year, Capture, Repro, Parturition, PYid,
+         SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs, PYFound) %>% 
+  mutate(SurvLPY = as.numeric(SurvLPY),
+         SurvWN = as.numeric(SurvWN),
+         Capture = mdy(Capture),
+         Parturition = mdy(Parturition),
+         CohortStart = as.Date(paste(Year-1, "08", "01", sep = "-")),
+         CohortDay = as.numeric(difftime(Parturition, CohortStart, units = "days")) + 1,
+         PYLastObs = case_when(is.na(PYLastObs) ~ NA_Date_,
+                               TRUE ~ as.Date(paste0("01-", PYLastObs),
+                                              format = "%d-%m-%Y") %m+% months(1) - days(1)))
+
+yafs <- yafs %>% 
+  mutate(SurvOct1 = ifelse(SurvNov1 == 1, 1, NA),
+         SurvOct1 = case_when(SurvNov1 == 2 ~ NA,
+                              is.na(SurvOct1) & PYLastObs > as.Date(paste0(Year, "-10-01")) ~ 1,
+                              is.na(SurvOct1) & PYLastObs < as.Date(paste0(Year, "-10-01")) ~ 0,
+                              is.na(SurvOct1) & is.na(PYLastObs) & SurvLPY == 0 ~ 0,
+                              TRUE ~ SurvOct1),
+         SurvOct2 = ifelse(SurvNov2 == 1, 1, NA),
+         SurvOct2 = case_when(SurvNov2 == 2 ~ NA,
+                              is.na(SurvOct2) & PYLastObs > as.Date(paste0(Year+1, "-10-01")) ~ 1,
+                              is.na(SurvOct2) & PYLastObs < as.Date(paste0(Year+1, "-10-01")) ~ 0,
+                              is.na(SurvOct2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
+                              TRUE ~ SurvOct2)
+         ) %>% arrange(SurvNov1, SurvNov2, SurvOct2)
+
+# Now that SurvOct1 & 2 columns exist,
+# limit to ones who made it past Oct1
+# & add survival to Oct2 to CMR data!
+
+
 
 
 ## obs data --------------------------------------------------------------------
@@ -111,6 +152,7 @@ fill_ages <- function(row) {
 }
 
 age <- as.data.frame(t(apply(age, 1, fill_ages)))
+age[age <= 0] <- NA
 # write_csv(age, "ageF.csv")
 
 # add uka & write id csv
@@ -212,6 +254,16 @@ env <- veg %>%
 ## nimble ----------------------------------------------------------------------
 
 # assemble nimble lists
+# remove inds who were only in the dataset 1 year
+noInfo <- id$first == id$last
+# noInfo <- id$last == 1
+which(noInfo)
+
+obs   <- as.matrix(obs[!noInfo,]) %>% unname()
+state <- as.matrix(state[!noInfo,]) %>% unname()
+age   <- as.matrix(age[!noInfo,])+1 %>% unname()
+id    <- id[!noInfo,]
+
 nind   <- nrow(state)
 ntimes <- ncol(state)
 
@@ -222,10 +274,6 @@ nNoAge <- length(noAge)
 
 first <- as.numeric(id$first)
 last  <- as.numeric(id$last)
-
-obs   <- as.matrix(obs) %>% unname()
-state <- as.matrix(state) %>% unname()
-age   <- as.matrix(age)+1 %>% unname()
 
 veg  <- as.numeric(scale(env$Veg))
 dens <- as.numeric(scale(env$Dens))
