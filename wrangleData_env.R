@@ -49,7 +49,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            DensSE = SE/sd(Dens, na.rm = T)) %>%
     select(SeasYr, Dens, DensSE)
   
-  
   ## Sort vegetation data
   biomass <- biomass %>% 
     rename(Veg = "DW Pal in") %>% 
@@ -88,7 +87,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     distinct(Date, mDailyVeg, sdDailyVeg) %>% 
     rename(Veg = "mDailyVeg", VegSE = "sdDailyVeg")
   
-  
   ## Sort weather data
   weather <- weather %>% 
     select(Year, Month, Day, Rain) %>% 
@@ -107,7 +105,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     filter(Date > "2007-07-31" & Date < "2025-03-01") %>%
     select(Date, Year, Month, Day, SeasYr, Rain)
   
-  
   ## Sort wind data
   wind <- wind %>%
     rename(Year = "YEAR", Month = "MO", Day = "DY", Max = "T2M_MAX", Min = "T2M_MIN",
@@ -116,7 +113,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            Wind = -0.863+0.427*Wind,                 # calculate wind at 0.4 m
            Gusts = -0.863+0.427*Gusts) %>%           # calculate wind at 0.4 m
     select(-PRECTOTCORR)
-  
   
   ## Join all environmental data &
   ## calculate Nixon-Smith chill index
@@ -144,17 +140,14 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    select(Date, Year, Month, Day,
-           Dens, DensSE, Veg, VegSE, Rain, Max, Min,
-           Wind, Gusts, Chill, Warn.18, Warns.18)
-  
+    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE)
+             # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   ## Summarise by year,
   ## where year X spans Sept 1 X to Aug 31 X+1
   env <- env %>% 
     filter(Date > "2008-03-31") %>%  # 6 mos before 1st census
-    mutate(Year = ifelse(Month < 10, Year-1, Year)) %>%
-    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE)
+    mutate(Year = ifelse(Month < 10, Year-1, Year))
   
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
@@ -184,7 +177,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     mutate(VegRoo = Veg / Dens,
            VegRooSE = abs(VegRoo)*sqrt((VegSE / Veg)^2+(DensSE / Dens)^2))
   
-  
   ## Return scaled data
   year <- seq(from = 1, to = 17, by = 1)
   
@@ -206,7 +198,6 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
               nNoDens = nNoDens))
   
 }
-
 
 # test <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
 #                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
