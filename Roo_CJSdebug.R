@@ -18,52 +18,42 @@ registerDoParallel(3)
 
 # load data
 source(here("PrepSURV.R"))
+remove(dens, densE, nNoAge, nNoDens, nNoVeg,
+       noAge, noInfo, veg, vegE)
+
+# limit to known-age inds for now!
+uka <- id$uka
+
+id    <- id[!uka,]
+age   <- as.matrix(age[!uka,])
+obs   <- as.matrix(obs[!uka,])
+state <- as.matrix(state[!uka,])
+
+first <- first[!uka]
+last  <- last[!uka]
+nind  <- nrow(state)
+
+mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
+
+myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, 
+                first = first, last = last, W = diag(nAge), DF = nAge)
+
 
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
   ##### 1. Survival ####
   # Survival function
-  for (i in 1:nind){                               
+  for (i in 1:nind){
     for (t in first[i]:(last[i]-1)){
       logit(s[i,t]) <- B.age[ageC[age[i,t]]] +
-        # veg.hat[t]*B.veg[ageC[age[i,t]]] +
-        # dens.hat[t]*B.dens[ageC[age[i,t]]] +
-        # (dens.hat[t]*veg.hat[t])*B.densVeg[ageC[age[i,t]]] +
-        # (veg.hat[t]/dens.hat[t])*B.vegRoo[ageC[age[i,t]]] +
         gamma[t,ageC[age[i,t]]]
     } #t
   } #i
   
-  # Function to estimate missing ages
-  for (i in 1:nNoAge){
-    ageM[i] ~ T(dnegbin(0.25,1.6),3,20)
-    age[noAge[i],first[noAge[i]]] <- round(ageM[i])
-    for (t in (first[noAge[i]]+1):ntimes){
-      age[noAge[i],t] <- age[noAge[i],t-1]+1
-    } #t
-  } #i
-  
-  # Priors for missing values
-  # for(t in 1:ntimes){
-  #   veg.hat[t] ~ dnorm(veg[t], sd = sd.veg[t])
-  #   dens.hat[t] ~ dnorm(dens[t], sd = sd.dens[t])
-  # }
-  # 
-  # for(mt in 1:nNoVeg){
-  #   veg[mt] <- 0
-  # }
-  
-  # for(mt in 1:nNoDens){
-  #   dens[mt] <- 0
-  # }
-  
   # Priors for fixed effects
   for(a in 1:nAge){
     B.age[a] ~ dlogis(0,1)
-    # B.veg[a] ~ dnorm(0,0.001)
-    # B.dens[a] ~ dnorm(0,0.001)
-    # B.densVeg[a] ~ dnorm(0,0.001)
   }
   
   # Variance-Covariance matrix
@@ -78,29 +68,10 @@ myCode = nimbleCode({
       gamma[t,i] <- xi[i] * eps.raw[t,i]
     } #i
   } #t
-
+  
   # Priors for precision matrix
   Tau.raw[1:nAge, 1:nAge] ~ dwish(W[1:nAge,1:nAge], DF)
   Sigma.raw[1:nAge, 1:nAge] <- inverse(Tau.raw[1:nAge,1:nAge])
-  
-  # Uniform covariance matrix
-  # for (a in 1:nAge){
-  #   zero[a] <- 0
-  #   sd.yr[a] ~ dunif(0,5)
-  #   cov.yr[a,a] <- sd.yr[a]*sd.yr[a]
-  # }
-  #
-  # for(a in 1:(nAge-1)){
-  #   for(a2 in (a+1):nAge){
-  #     cor.yr[a,a2] ~ dunif(-1,1)
-  #     cov.yr[a2,a] <- sd.yr[a] * sd.yr[a2] * cor.yr[a,a2]
-  #     cov.yr[a,a2] <- cov.yr[a2,a]
-  #   }
-  # } #i
-  #
-  # for (t in 1:(ntimes-1)) {
-  #   gamma[t,1:nAge]  ~ dmnorm(zero[1:nAge], cov=cov.yr[1:nAge, 1:nAge])
-  # } #t
   
   
   ##### 2. Observation ####
@@ -113,7 +84,7 @@ myCode = nimbleCode({
   
   mu.p <- log(mean.p / (1-mean.p))
   mean.p ~ dunif(0,1)
-  sd.p ~ dunif(0,10)
+  sd.p ~ dunif(0.01,10) # originally (0,10)
   
   
   ##### 3. Likelihood ####
@@ -122,7 +93,7 @@ myCode = nimbleCode({
       # State process
       state[i,t] ~ dbern(mu1[i,t])
       mu1[i,t] <- s[i,t-1] * state[i,t-1]
-  
+      
       # Observation process
       obs[i,t] ~ dbern(mu2[i,t])
       mu2[i,t] <- p[i,t] * state[i,t]
@@ -146,21 +117,21 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   
   age = mydata$age
   nAge = myconst$nAge
-  noAge = myconst$noAge
-  nNoAge = myconst$nNoAge
-
+  # noAge = myconst$noAge
+  # nNoAge = myconst$nNoAge
+  
   first = myconst$first
   last = myconst$last 
-
+  
   # veg = mydata$veg
   # dens = mydata$dens
   # nNoVeg = myconst$nNoVeg
   
   # assign initial values
   myinits <- function(i){
-    l = list(ageM = sample(3:8, size = nNoAge, replace = T),
+    l = list(# ageM = sample(3:8, size = nNoAge, replace = T),
              
-             B.age = rnorm(nAge,0,0.25),
+             B.age = rnorm(nAge,0,0.5), # rnorm(nAge,0,0.25)
              # B.veg = rnorm(nAge,0,0.5),
              # B.dens = rnorm(nAge,0,1),
              # B.densVeg = rnorm(nAge,0,1),
@@ -191,11 +162,8 @@ paraNimble <- function(seed, myCode, myconst, mydata,
                        inits = myinits())
   
   # select parameters to monitor
-  vars = c('year.p', 'mean.p', 'sd.p', 'state', 'ageM',
-           # 'veg.hat', 'sd.veg', 'dens.hat', 'sd.dens',
-           'B.age', # 'B.veg', 'B.dens', 'B.densVeg',
-           'gamma', 'xi', 'Sigma.raw'
-           # 'gamma', 'sd.yr', 'cor.yr'
+  vars = c('year.p', 'mean.p', 'sd.p', 'state', 
+           'B.age', 'gamma', 'xi', 'Sigma.raw'
   )
   
   # select MCMC settings

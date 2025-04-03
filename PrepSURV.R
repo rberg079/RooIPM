@@ -23,7 +23,12 @@ surv <- surv %>%
   mutate(across(in2009:in2023, ~ifelse(is.na(.x) & !is.na(
     get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))), 1, .x))) %>%
   select(ID, Sex, Dead, in2008, matches("^in20\\d{2}$"), -in2025, matches("^Age\\d{2}")) %>%
-  filter(Sex == 2) # females
+  filter(Sex == 2, ID != 1180, ID != 1183) # females
+  # IDs 1180 & 1183 officially made it to Sep 2023
+  # Marco counted that as a survival to Oct 2023
+  # I would not, thus remove from surv &
+  # use data from RS file instead
+
 
 ## YAF surv --------------------------------------------------------------------
 
@@ -204,13 +209,12 @@ yafs <- yafs %>%
   select(-time, -first, -second) %>%
   ungroup()
 
-
 age <- full_join(age, yafs, by = c("ID", "Year"))
 
 age <- age %>% 
   mutate(new_val = case_when(
-    is.na(yafs_val) & age_val == 0 ~ 0,
-    is.na(yafs_val) & age_val == 1 ~ 1,
+    is.na(age_val) & yafs_val == 0 ~ 0,
+    is.na(age_val) & yafs_val == 1 ~ 1,
     TRUE ~ age_val
   )) %>% 
   select(ID, Year, new_val) %>% 
@@ -234,8 +238,10 @@ fill_ages <- function(row) {
   return(row)
 }
 
-age <- as.data.frame(t(apply(age, 1, fill_ages)))
-age[age <= 0] <- NA
+age <- as.data.frame(t(apply(age, 1, fill_ages))) %>%
+  mutate_all(~ replace(., . < 0, NA))
+
+# write csv
 # write_csv(age, "ageF.csv")
 
 # add uka & write id csv
@@ -352,7 +358,7 @@ id    <- id[!noInfo,]
 nind   <- nrow(state)
 ntimes <- ncol(state)
 
-ageC   <- c(1,2,2,3,3,3,3,4,4,4, rep(5,60))
+ageC   <- c(1,2,2,3,3,3,3,4,4,4, rep(5,50))
 nAge   <- max(ageC, na.rm = T)
 noAge  <- which(is.na(age[,ncol(age)]))
 nNoAge <- length(noAge)
