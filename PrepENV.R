@@ -71,12 +71,12 @@ density <- density %>%
 # Create Date, Year & Season variables
 biomass <- biomass %>% 
   rename(Veg = "DW Pal in") %>% 
-  select(ID, Day, Month, Year, Veg) %>% 
+  select(ID, Year, Month, Day, Veg) %>% 
   mutate(Veg = as.numeric(Veg)*4000, # kg/quadrat to g/m^2
          Date = ymd(paste(Year, Month, Day, sep = "-")),
          Year = as.numeric(Year),
          Month = month(Date),
-         Day = as.numeric(Year),
+         Day = day(Date),
          Season = case_when(Month <= 2  ~ "Sum",  # Jan & Feb
                             Month <= 5  ~ "Aut",  # Mar to May
                             Month <= 8  ~ "Win",  # Jun to Aug
