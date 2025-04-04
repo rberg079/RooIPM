@@ -2,9 +2,9 @@
 #'
 #' @param rs.data path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
 #' @param obs.data path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2019.xlsx".
-#' @param prime age range which should be considered prime age for reproductive success. 4 through 9 by default.
+#' @param prime age range which should be considered prime age. prime = c(4:9) by default.
 #'
-#' @returns  a list containing a series of individual and population covariates related to reproductive success.
+#' @returns a list containing a series of individual and population covariates related to reproductive success.
 #' @export
 #'
 #' @examples
@@ -145,7 +145,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   remove(tmp)
   
   ## Return (mostly) scaled data
-  id <- as.numeric(as.factor(rs$ID))
+  id <- as.numeric(rs$ID)
   year <- as.numeric(as.factor(rs$Year))
   
   age <- rs$Age  # unscaled!
