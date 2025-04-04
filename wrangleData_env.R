@@ -1,11 +1,11 @@
 #' Wrangle environmental data
 #'
-#' @param dens.data # path to xlsx file of population density data to use. As of Apr 2025: "data/WPNP_Methods_Results_January2025.xlsx".
-#' @param veg.data # path to xlsx file of vegetation data to use. As of Apr 2025: "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx".
-#' @param wea.data # path to xlsx file of weather data to use. As of Apr 2025: "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx".
-#' @param wind.data # path to csv file of wind data to use. As of Apr 2025: "data/POWER_Point_Daily_20080101_20241231_10M.csv".
+#' @param dens.data path to xlsx file of population density data to use. As of Apr 2025: "data/WPNP_Methods_Results_January2025.xlsx".
+#' @param veg.data path to xlsx file of vegetation data to use. As of Apr 2025: "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx".
+#' @param wea.data path to xlsx file of weather data to use. As of Apr 2025: "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx".
+#' @param wind.data path to csv file of wind data to use. As of Apr 2025: "data/POWER_Point_Daily_20080101_20241231_10M.csv".
 #'
-#' @returns a list containing year, veg, dens, vegE, densE, nNoVeg, & nNoDens
+#' @returns a list containing year, veg, dens, vegE, densE, nNoVeg, & nNoDens.
 #' @export
 #'
 #' @examples

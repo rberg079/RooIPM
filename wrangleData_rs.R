@@ -1,6 +1,15 @@
+#' Wrangle reproductive success data
+#'
+#' @param rs.data path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
+#' @param obs.data path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2019.xlsx".
+#' @param prime age range which should be considered prime age for reproductive success. 4 through 9 by default.
+#'
+#' @returns  a list containing a series of individual and population covariates related to reproductive success.
+#' @export
+#'
+#' @examples
 
-
-wrangleData_env <- function(rs.data, obs.data){
+wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   
   ## Load libraries
   library(readxl)
@@ -27,7 +36,7 @@ wrangleData_env <- function(rs.data, obs.data){
            Mass = ifelse(between(CaptDay, 182, 366), Mass, NA),
            Leg = ifelse(between(CaptDay, 182, 366), Leg, NA),
            # clean up teeth score so it is an integer between 1 & 6
-           Teeth = ifelse(between(CaptDay, 182, 366), Teeth, NA),
+           Teeth = as.numeric(ifelse(between(CaptDay, 182, 366), Teeth, NA)),
            Teeth = case_when(Teeth == 0.2 ~ 0.5, Teeth == 0.3 ~ 0.5,
                              Teeth == 0.8 ~ 1.0, Teeth == 1.2 ~ 1.0,
                              Teeth == 1.8 ~ 2.0, TRUE ~ Teeth),
@@ -49,7 +58,7 @@ wrangleData_env <- function(rs.data, obs.data){
                                  TRUE ~ as.Date(paste0("01-", PYLastObs),
                                                 format = "%d-%m-%Y") %m+% months(1) - days(1)))
   
-  # body condition & mass gain
+  # condition & mass gain
   tmp <- rs %>%
     select(ID, Year, Mass, Leg) %>%
     filter(!is.na(Mass) & !is.na(Leg))
@@ -76,185 +85,101 @@ wrangleData_env <- function(rs.data, obs.data){
                         ifelse(Repro == 0, 0, Eff)))) %>%
     arrange(ID, Year) %>%
     group_by(ID) %>%
-    mutate(PEff = lag(Eff)) %>%
+    mutate(PRS = lag(Eff)) %>%
     ungroup()
   
   ## Sort observation data
+  obs <- obs %>%
+    select(Date, Year, Month, Day, Time, ID, X, Y) %>% 
+    mutate(ttime = format(as.POSIXct(Time), format = "%H:%M")) %>% 
+    select(-Time) %>% 
+    rename(Time = ttime) %>% 
+    mutate(X = as.numeric(X),
+           Y = as.numeric(Y)) %>% 
+    filter(X < 40000, X > 32000,              # remove typos in X
+           !is.na(ID), !is.na(X), !is.na(X),  # remove NAs in ID, X & Y
+           Month >= 7)                        # limit to main field season
   
-  ## CONTINUE HERE!!
+  # limit to IDs seen at least 10x/year
+  # calculate median X coordinate
+  obs <- obs %>%
+    group_by(Year, ID) %>%
+    mutate(DaysObs = n_distinct(Date)) %>%
+    ungroup() %>% 
+    filter(DaysObs >= 10) %>% 
+    group_by(ID, Year) %>%
+    mutate(xMed = median(X, na.rm = T)) %>%
+    ungroup() %>% 
+    distinct(ID, Year, DaysObs, xMed)
+  
+  rs <- left_join(rs, obs)
+  
+  ## Calculate population covariates
+  # mean leg length, condition, mass & mass gain
+  rs <- rs %>%
+    group_by(Year) %>%
+    mutate(mLeg = mean(Leg, na.rm = T),
+           mCond = mean(Cond, na.rm = T),
+           mMass = mean(Mass, na.rm = T),
+           mMGain = mean(mGain, na.rm = T)) %>%
+    ungroup()
+  
+  # proportion in prime-age
+  # ratio of young weaned to monitored females
+  rs <- rs %>% 
+    group_by(Year) %>% 
+    mutate(nFem = n_distinct(ID),                    # number of monitored females
+           nKA = sum(!is.na(Age)),                   # number of females of known age
+           nSA = sum(SurvWN == 1, na.rm = T),        # number of weaned subadults this cohort
+           nPrime = sum(Age %in% prime, na.rm = T),  # number of females of prime age
+           pPrime = nPrime/nKA,                      # proportion of prime aged
+           Ratio = nSA/nFem) %>%                     # ratio of young weaned
+    ungroup()
+  
+  # previous ratio of young weaned
+  tmp <- rs %>%
+    distinct(Year, Ratio) %>%
+    mutate(PRatio = lag(Ratio))
+  
+  rs <- left_join(rs, tmp)
+  remove(tmp)
+  
+  ## Return (mostly) scaled data
+  id <- as.numeric(as.factor(rs$ID))
+  year <- as.numeric(as.factor(rs$Year))
+  
+  age <- rs$Age  # unscaled!
+  teeth <- rs$Teeth  # unscaled!
+  leg <- scale(rs$Leg)
+  mass <- scale(rs$Mass)
+  cond <- scale(rs$Cond)
+  prs <- rs$PRS  # unscaled!
+  xmed <- scale(rs$xMed)
+  
+  mcond <- scale(rs$mCond)
+  pprime <- scale(rs$pPrime)
+  ratio <- scale(rs$Ratio)
+  pratio <- scale(rs$PRatio)
+  
+  return(list(id = id,
+              year = year,
+              prime = prime,
+              age = age,
+              teeth = teeth,
+              leg = leg,
+              mass = mass,
+              cond = cond,
+              prs = prs,
+              xmed = xmed,
+              mcond = mcond,
+              pprime = pprime,
+              ratio = ratio,
+              pratio = pratio))
   
 }
 
-
-
-
-## Observation data ------------------------------------------------------------
-
-# sort date & time
-obs <- obs %>%
-  select(Date, Year, Month, Day, Time, ID, X, Y) %>% 
-  mutate(ttime = format(as.POSIXct(Time), format = "%H:%M")) %>% 
-  select(-Time) %>% 
-  rename(Time = ttime) %>% 
-  mutate(X = as.numeric(X),
-         Y = as.numeric(Y))
-
-obs <- obs %>%
-  filter(X < 40000, X > 32000,              # remove typos in X
-         !is.na(ID), !is.na(X), !is.na(X),  # remove NAs in ID, X & Y
-         Month >= 7)                        # limit to main field season
-
-# limit to IDs seen at least 10x/year
-obs <- obs %>%
-  group_by(Year, ID) %>%
-  mutate(DaysObs = n_distinct(Date)) %>%
-  ungroup() %>% 
-  arrange(ID, Year) %>%
-  filter(DaysObs >= 10)
-
-# calculate xMed
-obs <- obs %>%
-  group_by(ID, Year) %>%
-  mutate(xMed = median(X, na.rm = T)) %>%
-  ungroup()
-
-ggplot(obs, aes(x = X)) + geom_density() + theme_bw()
-ggplot(obs, aes(x = xMed)) + geom_density() + theme_bw()
-
-obs <- obs %>%
-  distinct(ID, Year, DaysObs, xMed)
-
-df <- left_join(df, obs)
-
-
-## Environmental data ----------------------------------------------------------
-
-# individual environment!
-# from 1 month pre-birth to 7 months post-birth
-calculate_Veg <- function(parturition, veg_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m-% months(1) # 1 month before birth
-  end <- parturition %m+% months(7) # 7 months after birth
-  window <- veg_data %>% filter(Date >= start & Date <= end)
-  
-  if(any(is.na(window$Veg))) return(NA)
-  
-  sum(window$Veg, na.rm = T)
-}
-
-calculate_Dens <- function(parturition, dens_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m-% months(1) # 1 month before birth
-  end <- parturition %m+% months(7) # 7 months after birth
-  window <- dens_data %>% filter(Date >= start & Date <= end)
-  
-  if(all(is.na(window$Dens))) return(NA)
-  
-  mean(window$Dens, na.rm = T)
-}
-
-calculate_Win <- function(parturition, win_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m-% months(1) # 1 month before birth
-  end <- parturition %m+% months(7) # 7 months after birth
-  window <- win_data %>% filter(Date >= start & Date <= end)
-  
-  if(all(is.na(window$Warn.18))) return(NA)
-  
-  sum(window$Warn.18, na.rm = T)
-}
-
-df <- df %>%
-  rowwise() %>%
-  mutate(indVeg7 = calculate_Veg(Parturition, env),
-         indDens7 = calculate_Dens(Parturition, env),
-         indWin7 = calculate_Win(Parturition, env)) %>%
-  ungroup()
-
-# from 8 to 21 months post-birth
-calculate_Veg <- function(parturition, veg_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m+% months(8)
-  end <- parturition %m+% months(21)
-  window <- veg_data %>% filter(Date >= start & Date <= end)
-  
-  if(any(is.na(window$Veg))) return(NA)
-  
-  sum(window$Veg, na.rm = T)
-}
-
-calculate_Dens <- function(parturition, dens_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m+% months(8)
-  end <- parturition %m+% months(21)
-  window <- dens_data %>% filter(Date >= start & Date <= end)
-  
-  if(all(is.na(window$Dens))) return(NA)
-  
-  mean(window$Dens, na.rm = T)
-}
-
-calculate_Win <- function(parturition, win_data) {
-  if(is.na(parturition)) return(NA)
-  
-  start <- parturition %m+% months(8)
-  end <- parturition %m+% months(21)
-  window <- win_data %>% filter(Date >= start & Date <= end)
-  
-  if(all(is.na(window$Warn.18))) return(NA)
-  
-  sum(window$Warn.18, na.rm = T)
-}
-
-df <- df %>%
-  rowwise() %>%
-  mutate(indVeg21 = calculate_Veg(Parturition, env),
-         indDens21 = calculate_Dens(Parturition, env),
-         indWin21 = calculate_Win(Parturition, env)) %>%
-  ungroup()
-
-
-## Population data -------------------------------------------------------------
-
-# mean leg length
-# mean body mass
-# mean mass gain
-# mean condition
-df <- df %>%
-  group_by(Year) %>%
-  mutate(mLeg = mean(Leg, na.rm = T),
-         mMass = mean(Mass, na.rm = T),
-         mMGain = mean(mGain, na.rm = T),
-         mCond = mean(Cond, na.rm = T)) %>%
-  ungroup()
-
-# proportion in prime-age
-# ratio of young weaned to monitored females
-prime <- c(4:9)
-
-df <- df %>% 
-  group_by(Year) %>% 
-  mutate(nFem = n_distinct(ID),
-         nka = sum(!is.na(Age)),                   # number of females of known age
-         nSA = sum(SurvWN == 1, na.rm = T),        # number of weaned subadults this cohort
-         nPrime = sum(Age %in% prime, na.rm = T),  # number of females of prime age
-         PropPrime = nPrime/nka,                   # proportion of prime aged
-         Ratio = nSA/nFem) %>%                     # ratio of young weaned
-  ungroup()
-
-# previous ratio of young weaned
-tmp <- df %>%
-  distinct(Year, Ratio) %>%
-  mutate(PRatio = lag(Ratio))
-
-df <- left_join(df, tmp)
-remove(tmp)
-
-# write csv
-# write_csv(df, "RS_Mar25_ind.csv")
+# test <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+#                        obs.data = "data/PromObs_2008-2019.xlsx",
+#                        prime = c(3:12))
+# test
 
