@@ -17,26 +17,41 @@ library(nimble)
 registerDoParallel(3)
 
 # load data
-source(here("PrepSURV.R"))
-remove(dens, densE, nNoAge, nNoDens, nNoVeg,
-       noAge, noInfo, veg, vegE)
+source("wrangleData_env.R")
+source("wrangleData_surv.R")
+
+env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                       veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                       wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                       wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+
+surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
+                         yafs.data = "data/RSmainRB_Mar25.xlsx")
+
+attach(surv)
+mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
+myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, # noAge, nNoAge
+                first = first, last = last, W = diag(nAge), DF = nAge)
+detach(surv)
 
 # limit to known-age inds for now!
-uka <- id$uka
+uka <- surv$uka
 
-id    <- id[!uka,]
-age   <- as.matrix(age[!uka,])
-obs   <- as.matrix(obs[!uka,])
-state <- as.matrix(state[!uka,])
+id    <- surv$id[!uka]
+age   <- as.matrix(surv$age[!uka,])
+obs   <- as.matrix(surv$obs[!uka,])
+state <- as.matrix(surv$state[!uka,])
 
-first <- first[!uka]
-last  <- last[!uka]
+first <- surv$first[!uka]
+last  <- surv$last[!uka]
 nind  <- nrow(state)
+nAge  <- surv$nAge
 
+attach(surv)
 mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
-
-myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, 
+myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, # noAge, nNoAge
                 first = first, last = last, W = diag(nAge), DF = nAge)
+detach(surv)
 
 
 ## Model -----------------------------------------------------------------------

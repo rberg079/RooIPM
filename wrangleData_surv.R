@@ -154,6 +154,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
     rowwise() %>% 
     mutate(first = min(which(c_across(2:18) == 1)),
            last = min(which(c_across(2:18) == 0)),
+           # last = max(which(c_across(2:18) == 1)))
            last = ifelse(HRDead == 1, last-1, last),
            last = ifelse(last == Inf, ncol(obs), last))
   
@@ -222,38 +223,44 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   ## Return (mostly) scaled data
   # remove inds who were only in the dataset 1 year
   noInfo <- id$first == id$last
-  # noInfo <- id$last == 1
+  length(which(noInfo))
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
   age   <- unname(as.matrix(age[!noInfo,])+1)
+  ageC   <- c(1,2,2,3,3,3,3,4,4,4, rep(5,50))
   
   nind   <- nrow(state)
   ntimes <- ncol(state)
   
-  ageC   <- c(1,2,2,3,3,3,3,4,4,4, rep(5,50))
   nAge   <- max(ageC, na.rm = T)
   noAge  <- which(is.na(age[,ncol(age)]))
   nNoAge <- length(noAge)
   
-  first <- as.numeric(id$first)
-  last  <- as.numeric(id$last)
+  first <- as.numeric(id$first[!noInfo])
+  last  <- as.numeric(id$last[!noInfo])
+  uka <- id$uka[!noInfo]
   id <- as.numeric(id$ID[!noInfo])
   
   return(list(obs = obs,
               state = state,
               age = age,
               ageC = ageC,
+              
               nind = nind,
               ntimes = ntimes,
+              
               nAge = nAge,
               noAge = noAge,
               nNoAge = nNoAge,
+              
               first = first,
               last = last,
+              uka = uka,
+              id = id,
+              
               W = diag(nAge),
-              DF = nAge,
-              id = id))
+              DF = nAge))
   
 }
 
