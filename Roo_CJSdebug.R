@@ -17,41 +17,55 @@ library(nimble)
 registerDoParallel(3)
 
 # load data
-source("wrangleData_env.R")
+# source("wrangleData_env.R")
 source("wrangleData_surv.R")
 
-env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                       veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                       wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                       wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+# or load data... temp!
+library(readxl)
+surv <- read_excel("data/PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
+yafs <- read_excel("data/RSmainRB_Mar25.xlsx")
+
+# env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+#                        veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+#                        wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+#                        wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
 surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx")
 
-attach(surv)
-mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
-myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, # noAge, nNoAge
-                first = first, last = last, W = diag(nAge), DF = nAge)
-detach(surv)
+# attach(surv)
+# mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
+# myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, # noAge, nNoAge
+#                 first = first, last = last, W = diag(nAge), DF = nAge)
+# detach(surv)
 
 # limit to known-age inds for now!
-uka <- surv$uka
-
-id    <- surv$id[!uka]
-age   <- as.matrix(surv$age[!uka,])
-obs   <- as.matrix(surv$obs[!uka,])
-state <- as.matrix(surv$state[!uka,])
-
-first <- surv$first[!uka]
-last  <- surv$last[!uka]
-nind  <- nrow(state)
-nAge  <- surv$nAge
-
 attach(surv)
+uka <- uka
+
+id    <- id[!uka]
+obs   <- as.matrix(obs[!uka,])
+state <- as.matrix(state[!uka,])
+age   <- as.matrix(age[!uka,])
+
+nind <- nrow(state)
+ntimes <- ntimes
+nAge <- nAge
+
+first <- first[!uka]
+last  <- last[!uka]
+
 mydata  <- list(obs = obs, state = state, age = age, ageC = ageC)
-myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge, # noAge, nNoAge
-                first = first, last = last, W = diag(nAge), DF = nAge)
+myconst <- list(nind = nind, ntimes = ntimes, nAge = nAge,
+                first = first, last = last,
+                W = diag(nAge), DF = nAge)
 detach(surv)
+
+# checks
+sapply(1:nrow(state), function (i) state[i, first[i]]) %>% table(useNA = 'a') # should all be 1
+sapply(1:nrow(state), function (i) state[i, last[i]]) %>% table(useNA = 'a')  # should be mostly 0s & NAs
+sapply(1:nrow(state), function (i) age[i, first[i]]) %>% table(useNA = 'a')   # should all be >= 1
+table(first >= last, useNA = 'a')                                             # should all be F
 
 
 ## Model -----------------------------------------------------------------------
@@ -146,27 +160,32 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   myinits <- function(i){
     l = list(# ageM = sample(3:8, size = nNoAge, replace = T),
              
-             B.age = rnorm(nAge,0,0.5), # rnorm(nAge,0,0.25)
-             # B.veg = rnorm(nAge,0,0.5),
-             # B.dens = rnorm(nAge,0,1),
-             # B.densVeg = rnorm(nAge,0,1),
+             B.age = rnorm(nAge, 0, 0.5), # rnorm(nAge,0,0.25)
+             # B.veg = rnorm(nAge, 0, 0.5),
+             # B.dens = rnorm(nAge, 0, 1),
+             # B.densVeg = rnorm(nAge, 0, 1),
              
-             # veg.hat = ifelse(is.na(veg),rnorm(length(veg),0,.1),veg),
-             # dens.hat = ifelse(is.na(dens),rnorm(length(dens),0,.1),dens),
+             # veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
+             # dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
              
-             mean.p = runif(1,0.6,1),
-             year.p = rnorm(ntimes,0,0.2),
-             sd.p = rnorm(1,0.2,0.1),
+             mean.p = runif(1, 0.6, 1),
+             year.p = rnorm(ntimes, 0, 0.2),
+             sd.p = runif(1, 0.2, 0.1), # rnorm(1, 0.2, 0.1)
              
-             xi = rnorm(nAge,1,0.1),
-             eps.raw = matrix(rnorm((ntimes-1)*nAge,0,0.1),
+             xi = rnorm(nAge, 1, 0.1),
+             eps.raw = matrix(rnorm((ntimes-1)*nAge, 0, 0.1),
                               ncol = nAge, nrow = (ntimes-1))
              
              # cor.yr = diag(nAge)+0.01,
-             # sd.yr = runif(nAge,0,1)
+             # sd.yr = runif(nAge, 0,1)
     )
-    Tau.raw = diag(nAge) + rnorm(nAge^2,0,0.1)
-    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
+    noise = matrix(rnorm(nAge^2, 0, 0.1), nAge, nAge)
+    Tau.raw = diag(nAge) + (noise + t(noise))/2
+    # l$Tau.raw = inverse(Tau.raw)
+    l$Tau.raw = chol(Tau.raw) %*% t(chol(Tau.raw))
+    
+    # Tau.raw = diag(nAge) + rnorm(nAge^2, 0, 0.1)
+    # l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
     return(l)
   }
   
@@ -185,13 +204,21 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   cModel <- compileNimble(myMod)
   mymcmc <- buildMCMC(cModel, monitors = vars, enableWAIC = T)
   CmyMCMC <- compileNimble(mymcmc, project = myMod)
-  samples <- runMCMC(CmyMCMC,
-                     samplesAsCodaMCMC = T,
-                     niter = n.burn + 1000*n.tin,
-                     nburnin = n.burn,
-                     thin = n.tin,
-                     summary = T,
-                     WAIC = T)
+  # samples <- runMCMC(CmyMCMC,
+  #                    samplesAsCodaMCMC = T,
+  #                    niter = n.burn + 1000*n.tin,
+  #                    nburnin = n.burn,
+  #                    thin = n.tin,
+  #                    summary = T,
+  #                    WAIC = T)
+  
+  samples <- try(runMCMC(CmyMCMC,
+                         samplesAsCodaMCMC = T,
+                         niter = n.burn + 1000*n.tin,
+                         nburnin = n.burn,
+                         thin = n.tin,
+                         summary = T,
+                         WAIC = T))
   
   return(samples)
 }
@@ -199,21 +226,33 @@ paraNimble <- function(seed, myCode, myconst, mydata,
 
 ## Run model -------------------------------------------------------------------
 
-start.t <- Sys.time()
-this_cluster <- makeCluster(3)
-chain_output <- parLapply(X = 1:3,
-                          cl = this_cluster,
-                          fun = paraNimble,
-                          myCode = myCode,
-                          myconst = myconst,
-                          mydata = mydata,
-                          n.burn = 10000,
-                          n.tin = 10)
-
+# unserialized for debugging
+out <- paraNimble(seed = 1,
+                  myCode = myCode,
+                  myconst = myconst,
+                  mydata = mydata,
+                  n.burn = 100,
+                  n.tin = 1)
 beep(sound = 2)
-stopCluster(this_cluster)
 dur = now() - start.t
 dur
+
+# # serialized for proper inference
+# start.t <- Sys.time()
+# this_cluster <- makeCluster(3)
+# chain_output <- parLapply(X = 1:3,
+#                           cl = this_cluster,
+#                           fun = paraNimble,
+#                           myCode = myCode,
+#                           myconst = myconst,
+#                           mydata = mydata,
+#                           n.burn = 10000,
+#                           n.tin = 10)
+# 
+# beep(sound = 2)
+# stopCluster(this_cluster)
+# dur = now() - start.t
+# dur
 
 # reformat output
 codaSamp <- chain_output %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()

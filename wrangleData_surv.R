@@ -21,6 +21,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   # clean up
   surv <- surv %>% 
+    arrange(ID) %>% 
     rename(Dead = "Found dead") %>%
     rename_with(~gsub("(\\d{2})to(\\d{2})", "in20\\2", .), everything()) %>% 
     # split "08to09" columns into "in2008" & "in2009" columns
@@ -29,11 +30,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
     mutate(across(in2009:in2023, ~ifelse(is.na(.x) & !is.na(
       get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))), 1, .x))) %>%
     select(ID, Sex, Dead, in2008, matches("^in20\\d{2}$"), -in2025, matches("^Age\\d{2}")) %>%
-    filter(Sex == 2, ID != 1180, ID != 1183)  # females!
+    filter(Sex == 2, ID != 1180, ID != 1183, ID != 1293)  # females!
   
   ## Sort YAF survival data from RS file
   # figure out survival to Oct 1  ...SHOULD BE SEPT 1? TO THINK ABOUT!
   yafs <- yafs %>% 
+    arrange(PYid, Year) %>% 
     filter(PYsex == 2, Exclude == 0, !is.na(PYid)) %>%  # females
     select(Year, PYid, SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs) %>% 
     rename(ID = "PYid") %>% 
@@ -56,7 +58,16 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
              is.na(SurvOct2) & PYLastObs > as.Date(paste0(Year+1, "-10-01")) ~ 1,
              is.na(SurvOct2) & PYLastObs < as.Date(paste0(Year+1, "-10-01")) ~ 0,
              is.na(SurvOct2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
-             TRUE ~ SurvOct2)) %>% 
+             TRUE ~ SurvOct2))
+  
+  tmp <- yafs %>% 
+    filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
+    select(Year, ID, SurvOct1, SurvOct2)
+  
+  newbies <- tmp$ID[tmp$SurvOct2 == 0]
+  remove(tmp)
+  
+  yafs <- yafs %>% 
     filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
     select(Year, ID, SurvOct1, SurvOct2) %>% 
     pivot_longer(cols = starts_with("SurvOct"), names_to = "Time", values_to = "yafs_val") %>%
@@ -68,7 +79,6 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # pivot surv data to long format
   obs <- surv %>% 
     select(ID, in2008:in2024) %>% 
-    mutate_at(vars(in2008:in2024), ~ifelse(.> 1 | is.na(.), 0, .)) %>% 
     pivot_longer(cols = -ID,
                  names_to = "Year",
                  values_to = "obs_val") %>% 
@@ -78,15 +88,16 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   obs <- full_join(obs, yafs, by = c("ID", "Year"))
   
   obs <- obs %>% 
+    arrange(ID) %>% 
     mutate(new_val = case_when(
       obs_val == 1 | yafs_val == 1 ~ 1,
       obs_val == 0 & (is.na(yafs_val) | yafs_val == 0) ~ 0,
-      TRUE ~ NA_real_
-    )) %>% 
+      TRUE ~ NA_real_)) %>% 
     select(ID, Year, new_val) %>% 
     pivot_wider(names_from = Year,
                 values_from = new_val,
                 names_prefix = "in") %>% 
+    mutate_at(vars(in2008:in2024), ~ifelse(.> 1 | is.na(.), 0, .)) %>% 
     select(in2008:in2024)
   
   # roos observed outside of the study area,
@@ -104,28 +115,13 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
       . == 4 ~ NA,  # unobserved emigrants are unknown
       TRUE ~ .))
   
+  id <- state %>% select(ID, Dead, HRDead)
+  
   # roos missed one year but seen the next were alive
   state <- state %>% 
     mutate(across(in2008:in2023, ~ifelse(. == 0 & !is.na(
       get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))),
       1, .)))
-  
-  # NAs become 0s for roos found dead...
-  state.found <- state %>% 
-    filter(!is.na(Dead))
-  
-  for(i in which(is.na(state.found[,20]))){
-    state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
-  }
-  
-  # ...but remain NAs for vanished roos
-  state.vanished <- state %>% 
-    filter(is.na(Dead)) %>% 
-    mutate_at(vars(in2008:in2024), ~na_if(., 0))
-  
-  # join all roos again
-  state <- bind_rows(state.found, state.vanished)
-  id <- state %>% select(ID, Dead, HRDead)
   
   # add YAF data
   state <- state %>%
@@ -138,23 +134,47 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   state <- full_join(state, yafs, by = c("ID", "Year"))
   
-  # create first & last
   state <- state %>% 
     mutate(new_val = case_when(
-      state_val == 1 | yafs_val == 1 ~ 1,
-      state_val == 0 & (is.na(yafs_val) | yafs_val == 0) ~ 0,
-      TRUE ~ NA_real_
-    )) %>% 
+      yafs_val == 0 ~ 0,
+      yafs_val == 1 ~ 1,
+      is.na(yafs_val) ~ state_val,
+      TRUE ~ NA_real_)) %>% 
     select(ID, Year, new_val) %>% 
     pivot_wider(names_from = Year,
                 values_from = new_val,
-                names_prefix = "in") %>% 
+                names_prefix = "in")
+  
+  # NAs become 0s for roos found dead...
+  state.found <- state %>% 
     left_join(id, by = "ID") %>% 
-    mutate(HRDead = ifelse(is.na(HRDead), 0, HRDead)) %>% 
+    mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+    select(ID, Dead, HRDead, in2008:in2024) %>% 
+    filter(!is.na(Dead))
+  
+  for(i in which(is.na(state.found[,20]))){
+    state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
+  }
+  
+  # ...but remain NAs for vanished roos
+  state.vanished <- state %>% 
+    left_join(id, by = "ID") %>% 
+    mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+    select(ID, Dead, HRDead, in2008:in2024) %>% 
+    filter(is.na(Dead)) %>% 
+    mutate_at(vars(in2008:in2024), ~na_if(., 0))
+  
+  # join all roos again
+  state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
+  id <- state %>% select(ID, Dead, HRDead)
+  
+  # create first & last
+  state <- state %>% 
+    left_join(id) %>% 
+    mutate(HRDead = replace_na(HRDead, 0)) %>% 
     rowwise() %>% 
-    mutate(first = min(which(c_across(2:18) == 1)),
-           last = min(which(c_across(2:18) == 0)),
-           # last = max(which(c_across(2:18) == 1)))
+    mutate(first = min(which(c_across(4:20) == 1)),
+           last = min(which(c_across(4:20) == 0)),
            last = ifelse(HRDead == 1, last-1, last),
            last = ifelse(last == Inf, ncol(obs), last))
   
@@ -192,8 +212,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
     mutate(new_val = case_when(
       is.na(age_val) & yafs_val == 0 ~ 0,
       is.na(age_val) & yafs_val == 1 ~ 1,
-      TRUE ~ age_val
-    )) %>% 
+      TRUE ~ age_val)) %>% 
     select(ID, Year, new_val) %>% 
     pivot_wider(names_from = Year,
                 values_from = new_val,

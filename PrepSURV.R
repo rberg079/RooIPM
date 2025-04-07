@@ -35,8 +35,8 @@ surv <- surv %>%
 # filter moms of PYs with IDs
 # & add day to PYLastObs
 yafs <- yafs %>% 
-  filter(PYsex == 2, # females
-         Exclude == 0, !is.na(PYid)) %>% 
+  arrange(PYid, Year) %>% 
+  filter(PYsex == 2,  Exclude == 0, !is.na(PYid)) %>%  # females
   select(Year, PYid, SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs) %>% 
   rename(ID = "PYid") %>% 
   mutate(SurvLPY = as.numeric(SurvLPY),
@@ -47,7 +47,7 @@ yafs <- yafs %>%
                           format = "%d-%m-%Y") %m+% months(1) - days(1)))
 
 # create SurvOct from SurvNov & PYLastObs
-yafs <- yafs %>% 
+yafs <- yafs %>%
   mutate(SurvOct1 = ifelse(SurvNov1 == 1, 1, NA),
          SurvOct1 = case_when(
            SurvNov1 == 2 ~ NA,
@@ -64,6 +64,13 @@ yafs <- yafs %>%
            TRUE ~ SurvOct2))
 
 # convert SurvOct into long format capture-history
+tmp <- yafs %>% 
+  filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
+  select(Year, ID, SurvOct1, SurvOct2)
+
+newbies <- tmp$ID[tmp$SurvOct2 == 0]
+remove(tmp)
+
 yafs <- yafs %>% 
   filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
   select(Year, ID, SurvOct1, SurvOct2) %>% 
@@ -75,12 +82,9 @@ yafs <- yafs %>%
 
 ## obs data --------------------------------------------------------------------
 
+# pivot_longer & add yafs data
 obs <- surv %>% 
   select(ID, in2008:in2024) %>% 
-  mutate_at(vars(in2008:in2024), ~ifelse(.> 1 | is.na(.), 0, .))
-
-# pivot_longer & add yafs data
-obs <- obs %>% 
   pivot_longer(cols = -ID,
                names_to = "Year",
                values_to = "obs_val") %>% 
@@ -92,12 +96,13 @@ obs <- obs %>%
   mutate(new_val = case_when(
     obs_val == 1 | yafs_val == 1 ~ 1,
     obs_val == 0 & (is.na(yafs_val) | yafs_val == 0) ~ 0,
-    TRUE ~ NA_real_
-  )) %>% 
+    TRUE ~ NA_real_)) %>% 
   select(ID, Year, new_val) %>% 
   pivot_wider(names_from = Year,
               values_from = new_val,
               names_prefix = "in") %>% 
+  mutate_at(vars(in2008:in2024), ~ifelse(.> 1 | is.na(.), 0, .)) %>% 
+  arrange(ID) %>% 
   select(in2008:in2024)
 
 # write csv
@@ -121,29 +126,13 @@ state <- surv %>%
     . == 4 ~ NA,  # unobserved emigrants are unknown
     TRUE ~ .))
 
-# roos that were unobserved one year but observed the next were alive
+id <- state %>% select(ID, Dead, HRDead)
+
+# roos that were missed one year but seen the next were alive
 state <- state %>% 
   mutate(across(in2008:in2023, ~ifelse(. == 0 & !is.na(
     get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))),
     1, .)))
-
-# split into roos found dead vs vanished
-# NAs become 0s for roos found dead, but remain NAs for vanished roos
-state.found <- state %>% 
-  filter(!is.na(Dead))
-
-for(i in which(is.na(state.found[,20]))){
-  state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
-}
-
-state.vanished <- state %>% 
-  filter(is.na(Dead)) %>% 
-  mutate_at(vars(in2008:in2024), ~na_if(., 0))
-
-# join all roos again
-state <- bind_rows(state.found, state.vanished)
-id <- state %>% select(ID, Dead, HRDead)
-remove(state.found, state.vanished, i)
 
 # pivot_longer & add yafs data
 state <- state %>%
@@ -158,18 +147,40 @@ state <- full_join(state, yafs, by = c("ID", "Year"))
 
 state <- state %>% 
   mutate(new_val = case_when(
-    state_val == 1 | yafs_val == 1 ~ 1,
-    state_val == 0 & (is.na(yafs_val) | yafs_val == 0) ~ 0,
-    TRUE ~ NA_real_
-  )) %>% 
+    yafs_val == 0 ~ 0,
+    yafs_val == 1 ~ 1,
+    is.na(yafs_val) ~ state_val,
+    TRUE ~ NA_real_)) %>% 
   select(ID, Year, new_val) %>% 
   pivot_wider(names_from = Year,
               values_from = new_val,
               names_prefix = "in")
 
-state <- state %>% 
+# split into roos found dead vs vanished
+# NAs become 0s for roos found dead, but remain NAs for vanished roos
+state.found <- state %>% 
   left_join(id, by = "ID") %>% 
-  mutate(HRDead = ifelse(is.na(HRDead), 0, HRDead)) %>% 
+  mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+  filter(!is.na(Dead))
+
+for(i in which(is.na(state.found[,20]))){
+  state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
+}
+
+state.vanished <- state %>% 
+  left_join(id, by = "ID") %>% 
+  mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+  filter(is.na(Dead)) %>% 
+  mutate_at(vars(in2008:in2024), ~na_if(., 0))
+
+# join all roos again
+state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
+id <- state %>% select(ID, Dead, HRDead)
+remove(state.found, state.vanished, i)
+
+state <- state %>%
+  left_join(id) %>% 
+  mutate(HRDead = replace_na(HRDead, 0)) %>% 
   rowwise() %>% 
   mutate(first = min(which(c_across(2:18) == 1)),
          last = min(which(c_across(2:18) == 0)),
@@ -215,8 +226,7 @@ age <- age %>%
   mutate(new_val = case_when(
     is.na(age_val) & yafs_val == 0 ~ 0,
     is.na(age_val) & yafs_val == 1 ~ 1,
-    TRUE ~ age_val
-  )) %>% 
+    TRUE ~ age_val)) %>% 
   select(ID, Year, new_val) %>% 
   pivot_wider(names_from = Year,
               values_from = new_val,
