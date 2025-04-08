@@ -20,10 +20,10 @@ registerDoParallel(3)
 # source("wrangleData_env.R")
 source("wrangleData_surv.R")
 
-# or load data... temp!
-library(readxl)
-surv <- read_excel("data/PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
-yafs <- read_excel("data/RSmainRB_Mar25.xlsx")
+# # or load data... temp!
+# library(readxl)
+# surv <- read_excel("data/PromSurvivalOct24.xlsx", sheet = "YEARLY SURV")
+# yafs <- read_excel("data/RSmainRB_Mar25.xlsx")
 
 # env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
 #                        veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
@@ -179,13 +179,8 @@ paraNimble <- function(seed, myCode, myconst, mydata,
              # cor.yr = diag(nAge)+0.01,
              # sd.yr = runif(nAge, 0,1)
     )
-    noise = matrix(rnorm(nAge^2, 0, 0.1), nAge, nAge)
-    Tau.raw = diag(nAge) + (noise + t(noise))/2
-    # l$Tau.raw = inverse(Tau.raw)
-    l$Tau.raw = chol(Tau.raw) %*% t(chol(Tau.raw))
-    
-    # Tau.raw = diag(nAge) + rnorm(nAge^2, 0, 0.1)
-    # l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
+    Tau.raw = diag(nAge) + rnorm(nAge^2, 0, 0.1)
+    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
     return(l)
   }
   
@@ -204,21 +199,13 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   cModel <- compileNimble(myMod)
   mymcmc <- buildMCMC(cModel, monitors = vars, enableWAIC = T)
   CmyMCMC <- compileNimble(mymcmc, project = myMod)
-  # samples <- runMCMC(CmyMCMC,
-  #                    samplesAsCodaMCMC = T,
-  #                    niter = n.burn + 1000*n.tin,
-  #                    nburnin = n.burn,
-  #                    thin = n.tin,
-  #                    summary = T,
-  #                    WAIC = T)
-  
-  samples <- try(runMCMC(CmyMCMC,
-                         samplesAsCodaMCMC = T,
-                         niter = n.burn + 1000*n.tin,
-                         nburnin = n.burn,
-                         thin = n.tin,
-                         summary = T,
-                         WAIC = T))
+  samples <- runMCMC(CmyMCMC,
+                     samplesAsCodaMCMC = T,
+                     niter = n.burn + 1000*n.tin,
+                     nburnin = n.burn,
+                     thin = n.tin,
+                     summary = T,
+                     WAIC = T)
   
   return(samples)
 }
@@ -226,33 +213,33 @@ paraNimble <- function(seed, myCode, myconst, mydata,
 
 ## Run model -------------------------------------------------------------------
 
-# unserialized for debugging
-out <- paraNimble(seed = 1,
-                  myCode = myCode,
-                  myconst = myconst,
-                  mydata = mydata,
-                  n.burn = 100,
-                  n.tin = 1)
-beep(sound = 2)
-dur = now() - start.t
-dur
-
-# # serialized for proper inference
-# start.t <- Sys.time()
-# this_cluster <- makeCluster(3)
-# chain_output <- parLapply(X = 1:3,
-#                           cl = this_cluster,
-#                           fun = paraNimble,
-#                           myCode = myCode,
-#                           myconst = myconst,
-#                           mydata = mydata,
-#                           n.burn = 10000,
-#                           n.tin = 10)
-# 
+# # unserialized for debugging
+# out <- paraNimble(seed = 1,
+#                   myCode = myCode,
+#                   myconst = myconst,
+#                   mydata = mydata,
+#                   n.burn = 100,
+#                   n.tin = 1)
 # beep(sound = 2)
-# stopCluster(this_cluster)
 # dur = now() - start.t
 # dur
+
+# serialized for proper inference
+start.t <- Sys.time()
+this_cluster <- makeCluster(3)
+chain_output <- parLapply(X = 1:3,
+                          cl = this_cluster,
+                          fun = paraNimble,
+                          myCode = myCode,
+                          myconst = myconst,
+                          mydata = mydata,
+                          n.burn = 10000,
+                          n.tin = 10)
+
+beep(sound = 2)
+stopCluster(this_cluster)
+dur = now() - start.t
+dur
 
 # reformat output
 codaSamp <- chain_output %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()
@@ -277,48 +264,48 @@ library(corrplot)
 MCMCsummary(codaSamp, params = c('B.age'), n.eff = TRUE, round = 3) # 'B.veg','B.dens','B.densVeg'
 MCMCsummary(codaSamp, params = c('year.p','mean.p','sd.p'), n.eff = TRUE, round = 3)
 MCMCsummary(codaSamp, params = c('Sigma.raw'), n.eff = TRUE, round = 3)
-MCMCsummary(codaSamp, params = c('ageM'), n.eff = TRUE, round = 3)
+# MCMCsummary(codaSamp, params = c('ageM'), n.eff = TRUE, round = 3)
 
 # assess MCMC convergence
 # ...visually
 par(mar = c(1,1,1,1))
 plot(codaSamp[, paste0('B.age[',1:nAge,']')])
-plot(codaSamp[, paste0('B.veg[',1:nAge,']')])
-plot(codaSamp[, paste0('B.dens[',1:nAge,']')])
-plot(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
+# plot(codaSamp[, paste0('B.veg[',1:nAge,']')])
+# plot(codaSamp[, paste0('B.dens[',1:nAge,']')])
+# plot(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
 
 plot(codaSamp[, paste0('year.p[',1:ntimes,']')])
 plot(codaSamp[, 'mean.p'])
 plot(codaSamp[, 'sd.p'])
 
 plot(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
-plot(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
+# plot(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 # ...formally
 gelman.diag(codaSamp[, paste0('B.age[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.veg[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.dens[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.veg[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.dens[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
 
 gelman.diag(codaSamp[, paste0('year.p[',1:ntimes,']')])
 gelman.diag(codaSamp[, 'mean.p'])
 gelman.diag(codaSamp[, 'sd.p'])
 
 gelman.diag(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
+# gelman.diag(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 # check Neff
 effectiveSize(codaSamp[, paste0('B.age[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.veg[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.dens[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.veg[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.dens[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
 
 effectiveSize(codaSamp[, paste0('year.p[',1:ntimes,']')])
 effectiveSize(codaSamp[, 'mean.p'])
 effectiveSize(codaSamp[, 'sd.p'])
 
 effectiveSize(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
+# effectiveSize(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 
 ## Plots -----------------------------------------------------------------------
