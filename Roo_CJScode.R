@@ -1,4 +1,4 @@
-# 31 March 2025
+# 9 April 2025
 # Run survival model
 
 ## Set up ----------------------------------------------------------------------
@@ -17,7 +17,43 @@ library(nimble)
 registerDoParallel(3)
 
 # load data
-source(here("PrepSURV.R"))
+source("wrangleData_env.R")
+source("wrangleData_surv.R")
+
+env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                       veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                       wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                       wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+
+surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
+                         yafs.data = "data/RSmainRB_Mar25.xlsx")
+
+# create Nimble lists
+mydata  <- list(obs = surv$obs,
+                state = surv$state,
+                age = surv$age,
+                ageC = surv$ageC,
+                dens = env$dens,
+                densE = env$densE,
+                veg = env$veg,
+                vegE = env$vegE)
+
+myconst <- list(nind = surv$nind,
+                ntimes = surv$ntimes,
+                nAge = surv$nAge,
+                noAge = surv$noAge,
+                nNoAge = surv$nNoAge,
+                nNoVeg = env$nNoVeg,
+                first = surv$first,
+                last = surv$last,
+                W = surv$W,
+                DF = surv$DF)
+
+# # checks
+# sapply(1:nrow(state), function (i) state[i, first[i]]) %>% table(useNA = 'a') # should all be 1
+# sapply(1:nrow(state), function (i) state[i, last[i]]) %>% table(useNA = 'a')  # should be mostly 0s & NAs
+# sapply(1:nrow(state), function (i) age[i, first[i]]) %>% table(useNA = 'a')   # should all be >= 1
+# table(first >= last, useNA = 'a')                                             # should all be F
 
 ## Model -----------------------------------------------------------------------
 
@@ -27,42 +63,37 @@ myCode = nimbleCode({
   for (i in 1:nind){                               
     for (t in first[i]:(last[i]-1)){
       logit(s[i,t]) <- B.age[ageC[age[i,t]]] +
-        # veg.hat[t]*B.veg[ageC[age[i,t]]] +
-        # dens.hat[t]*B.dens[ageC[age[i,t]]] +
+        dens.hat[t]*B.dens[ageC[age[i,t]]] +
+        veg.hat[t]*B.veg[ageC[age[i,t]]] +
         # (dens.hat[t]*veg.hat[t])*B.densVeg[ageC[age[i,t]]] +
         # (veg.hat[t]/dens.hat[t])*B.vegRoo[ageC[age[i,t]]] +
         gamma[t,ageC[age[i,t]]]
     } #t
   } #i
   
-  # Function to estimate missing ages
+  for (t in 1:ntimes){
+    dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+    veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
+  }
+  
+  for (mt in 1:nNoVeg){
+    veg[mt] <- dnorm(0,0.001)
+  }
+  
+  # Estimate missing ages
   for (i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25,1.6),3,20)
-    age[noAge[i],first[noAge[i]]] <- round(ageM[i])
+    age[noAge[i],first[noAge[i]]] <- round(ageM[i])+1
     for (t in (first[noAge[i]]+1):ntimes){
       age[noAge[i],t] <- age[noAge[i],t-1]+1
     } #t
   } #i
   
-  # Priors for missing values
-  # for(t in 1:ntimes){
-  #   veg.hat[t] ~ dnorm(veg[t], sd = sd.veg[t])
-  #   dens.hat[t] ~ dnorm(dens[t], sd = sd.dens[t])
-  # }
-  # 
-  # for(mt in 1:nNoVeg){
-  #   veg[mt] <- 0
-  # }
-  
-  # for(mt in 1:nNoDens){
-  #   dens[mt] <- 0
-  # }
-  
   # Priors for fixed effects
   for(a in 1:nAge){
     B.age[a] ~ dlogis(0,1)
-    # B.veg[a] ~ dnorm(0,0.001)
-    # B.dens[a] ~ dnorm(0,0.001)
+    B.dens[a] ~ dnorm(0,0.001)
+    B.veg[a] ~ dnorm(0,0.001)
     # B.densVeg[a] ~ dnorm(0,0.001)
   }
   
@@ -113,7 +144,7 @@ myCode = nimbleCode({
   
   mu.p <- log(mean.p / (1-mean.p))
   mean.p ~ dunif(0,1)
-  sd.p ~ dunif(0,10)
+  sd.p ~ dunif(0,10) # try dunif(0.01,10) if sd.p causes trouble
   
   
   ##### 3. Likelihood ####
@@ -152,32 +183,32 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   first = myconst$first
   last = myconst$last 
 
-  # veg = mydata$veg
-  # dens = mydata$dens
-  # nNoVeg = myconst$nNoVeg
+  veg = mydata$veg
+  dens = mydata$dens
+  nNoVeg = myconst$nNoVeg
   
   # assign initial values
   myinits <- function(i){
     l = list(ageM = sample(3:8, size = nNoAge, replace = T),
              
-             B.age = rnorm(nAge,0,0.25),
-             # B.veg = rnorm(nAge,0,0.5),
-             # B.dens = rnorm(nAge,0,1),
-             # B.densVeg = rnorm(nAge,0,1),
+             B.age = rnorm(nAge, 0, 0.25),
+             B.veg = rnorm(nAge, 0, 0.5),
+             B.dens = rnorm(nAge, 0, 1),
+             # B.densVeg = rnorm(nAge, 0, 1),
              
-             # veg.hat = ifelse(is.na(veg),rnorm(length(veg),0,.1),veg),
-             # dens.hat = ifelse(is.na(dens),rnorm(length(dens),0,.1),dens),
+             veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
+             dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
              
-             mean.p = runif(1,0.6,1),
-             year.p = rnorm(ntimes,0,0.2),
-             sd.p = rnorm(1,0.2,0.1),
+             mean.p = runif(1, 0.6, 1),
+             year.p = rnorm(ntimes, 0, 0.2),
+             sd.p = rnorm(1, 0.2, 0.1),
              
-             xi = rnorm(nAge,1,0.1),
-             eps.raw = matrix(rnorm((ntimes-1)*nAge,0,0.1),
+             xi = rnorm(nAge, 1, 0.1),
+             eps.raw = matrix(rnorm((ntimes-1)*nAge, 0, 0.1),
                               ncol = nAge, nrow = (ntimes-1))
              
              # cor.yr = diag(nAge)+0.01,
-             # sd.yr = runif(nAge,0,1)
+             # sd.yr = runif(nAge, 0,1)
     )
     Tau.raw = diag(nAge) + rnorm(nAge^2,0,0.1)
     l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
@@ -192,8 +223,8 @@ paraNimble <- function(seed, myCode, myconst, mydata,
   
   # select parameters to monitor
   vars = c('year.p', 'mean.p', 'sd.p', 'state', 'ageM',
-           # 'veg.hat', 'sd.veg', 'dens.hat', 'sd.dens',
-           'B.age', # 'B.veg', 'B.dens', 'B.densVeg',
+           'B.age', 'B.dens', 'B.veg', # 'B.densVeg',
+           'dens.hat', 'veg.hat', 'densE', 'vegE',
            'gamma', 'xi', 'Sigma.raw'
            # 'gamma', 'sd.yr', 'cor.yr'
   )
@@ -252,7 +283,7 @@ summary(codaSamp) # cannot handle any NAs
 
 library(MCMCvis)
 library(corrplot)
-MCMCsummary(codaSamp, params = c('B.age'), n.eff = TRUE, round = 3) # 'B.veg','B.dens','B.densVeg'
+MCMCsummary(codaSamp, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 3) # 'B.densVeg'
 MCMCsummary(codaSamp, params = c('year.p','mean.p','sd.p'), n.eff = TRUE, round = 3)
 MCMCsummary(codaSamp, params = c('Sigma.raw'), n.eff = TRUE, round = 3)
 MCMCsummary(codaSamp, params = c('ageM'), n.eff = TRUE, round = 3)
@@ -272,31 +303,31 @@ plot(codaSamp[, 'sd.p'])
 plot(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
 plot(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
-# ...formally
-gelman.diag(codaSamp[, paste0('B.age[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.veg[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.dens[',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
-
-gelman.diag(codaSamp[, paste0('year.p[',1:ntimes,']')])
-gelman.diag(codaSamp[, 'mean.p'])
-gelman.diag(codaSamp[, 'sd.p'])
-
-gelman.diag(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
-gelman.diag(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
-
-# check Neff
-effectiveSize(codaSamp[, paste0('B.age[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.veg[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.dens[',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
-
-effectiveSize(codaSamp[, paste0('year.p[',1:ntimes,']')])
-effectiveSize(codaSamp[, 'mean.p'])
-effectiveSize(codaSamp[, 'sd.p'])
-
-effectiveSize(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
-effectiveSize(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
+# # ...formally
+# gelman.diag(codaSamp[, paste0('B.age[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.veg[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.dens[',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
+# 
+# gelman.diag(codaSamp[, paste0('year.p[',1:ntimes,']')])
+# gelman.diag(codaSamp[, 'mean.p'])
+# gelman.diag(codaSamp[, 'sd.p'])
+# 
+# gelman.diag(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
+# gelman.diag(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
+# 
+# # check Neff
+# effectiveSize(codaSamp[, paste0('B.age[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.veg[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.dens[',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('B.densVeg[',1:nAge,']')])
+# 
+# effectiveSize(codaSamp[, paste0('year.p[',1:ntimes,']')])
+# effectiveSize(codaSamp[, 'mean.p'])
+# effectiveSize(codaSamp[, 'sd.p'])
+# 
+# effectiveSize(codaSamp[, paste0('Sigma.raw[',1:nAge,', ',1:nAge,']')])
+# effectiveSize(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 
 ## Plots -----------------------------------------------------------------------
