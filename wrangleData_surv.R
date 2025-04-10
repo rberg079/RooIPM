@@ -33,11 +33,11 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
     filter(Sex == 2, ID != 1180, ID != 1183)  # females!
   
   ## Sort YAF survival data from RS file
-  # figure out survival to Oct 1  ...SHOULD BE SEPT 1? TO THINK ABOUT!
+  # figure out survival to Sept 1
   yafs <- yafs %>% 
     arrange(PYid, Year) %>% 
     filter(PYsex == 2, Exclude == 0, !is.na(PYid)) %>%  # females
-    select(Year, PYid, SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs) %>% 
+    select(Year, PYid, Repro, SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs) %>% 
     rename(ID = "PYid") %>% 
     mutate(SurvLPY = as.numeric(SurvLPY),
            SurvWN = as.numeric(SurvWN),
@@ -45,33 +45,33 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
              is.na(PYLastObs) ~ NA_Date_,
              TRUE ~ as.Date(paste0("01-", PYLastObs),
                             format = "%d-%m-%Y") %m+% months(1) - days(1)),
-           SurvOct1 = ifelse(SurvNov1 == 1, 1, NA),
-           SurvOct1 = case_when(
+           SurvSep1 = ifelse(SurvNov1 == 1, 1, NA),
+           SurvSep1 = case_when(
              SurvNov1 == 2 ~ NA,
-             is.na(SurvOct1) & PYLastObs > as.Date(paste0(Year, "-10-01")) ~ 1,
-             is.na(SurvOct1) & PYLastObs < as.Date(paste0(Year, "-10-01")) ~ 0,
-             is.na(SurvOct1) & is.na(PYLastObs) & SurvLPY == 0 ~ 0,
-             TRUE ~ SurvOct1),
-           SurvOct2 = ifelse(SurvNov2 == 1, 1, NA),
-           SurvOct2 = case_when(
+             is.na(SurvSep1) & PYLastObs > as.Date(paste0(Year, "-09-01")) ~ 1,
+             is.na(SurvSep1) & PYLastObs < as.Date(paste0(Year, "-09-01")) ~ 0,
+             is.na(SurvSep1) & is.na(PYLastObs) & SurvLPY == 0 ~ 0,
+             TRUE ~ SurvSep1),
+           SurvSep2 = ifelse(SurvNov2 == 1, 1, NA),
+           SurvSep2 = case_when(
              SurvNov2 == 2 ~ NA,
-             is.na(SurvOct2) & PYLastObs > as.Date(paste0(Year+1, "-10-01")) ~ 1,
-             is.na(SurvOct2) & PYLastObs < as.Date(paste0(Year+1, "-10-01")) ~ 0,
-             is.na(SurvOct2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
-             TRUE ~ SurvOct2))
+             is.na(SurvSep2) & PYLastObs > as.Date(paste0(Year+1, "-09-01")) ~ 1,
+             is.na(SurvSep2) & PYLastObs < as.Date(paste0(Year+1, "-09-01")) ~ 0,
+             is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
+             TRUE ~ SurvSep2))
   
   tmp <- yafs %>% 
-    filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
-    select(Year, ID, SurvOct1, SurvOct2)
+    filter(SurvSep1 == 1, !is.na(SurvSep2)) %>% 
+    select(Year, ID, SurvSep1, SurvSep2)
   
-  newbies <- tmp$ID[tmp$SurvOct2 == 0]
+  newbies <- tmp$ID[tmp$SurvSep2 == 0]
   remove(tmp)
   
   yafs <- yafs %>% 
-    filter(SurvOct1 == 1, !is.na(SurvOct2)) %>% 
-    select(Year, ID, SurvOct1, SurvOct2) %>% 
-    pivot_longer(cols = starts_with("SurvOct"), names_to = "Time", values_to = "yafs_val") %>%
-    mutate(Year = ifelse(Time == "SurvOct1", Year, Year + 1)) %>%
+    filter(SurvSep1 == 1, !is.na(SurvSep2)) %>% 
+    select(Year, ID, SurvSep1, SurvSep2) %>% 
+    pivot_longer(cols = starts_with("SurvSep"), names_to = "Time", values_to = "yafs_val") %>%
+    mutate(Year = ifelse(Time == "SurvSep1", Year, Year + 1)) %>%
     complete(ID, Year = seq(from = 2008, to = 2024, by = 1)) %>% 
     select(Year, ID, yafs_val) %>% 
     pivot_wider(names_from = Year,

@@ -1,65 +1,163 @@
 # 8 April 2025
-# Start process model for roo IPM
+# Process model for roo IPM
+# 1 census per year, on Sept 1 ish
 
-# September to March transition (over summer)
-# age increases during this transition
-for (t in 1:ntimes){
-  
-  PY[t] <- pB[t] * sum(sepAD[3:nADs,t])
-  
-  marYAF[t] <- s_sepYAF[t] * sepYAF[t]
+## Set up ----------------------------------------------------------------------
+
+# load packages
+library(tidyverse)
+library(nimble)
+
+# create Nimble lists
+ntimes = 20
+nADs = 18
+
+mydata <- list()
+myconst <- list(ntimes = ntimes,
+                nADs = nADs)
+
+
+## Model -----------------------------------------------------------------------
+
+myCode = nimbleCode({
+  # process model
+  for (t in 1:(ntimes-1)){
+    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:nADs,t])) 
     
-  marSA[t] <- s_sepSA[1,t] * sepSA[1,t]
-  
-  marAD[1:2,t] <- 0
-  
-  marAD[3,t] <- s_sepSA[2,t] * sepSA[2,t]
-  
-  for (a in 4:nADs){
+    SA[1,t+1] ~ dbin(s.YAF[t], YAF[t])
+    SA[2,t+1] ~ dbin(s.SA[1,t], SA[1,t])
     
-    marAD[a,t] <- s_sepAD[a-1,t] * sepAD[a-1,t]
+    AD[1:2,t+1] <- 0
+    AD[3,t+1] ~ dbin(s.SA[2,t], SA[2,t])
     
+    for (a in 4:nADs){
+      AD[a,t+1] ~ dbin(s.AD[a,t], AD[a,t])
+    }
+    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:nADs,t+1])
   }
   
-  marNtot[t] <- marSA[t] + sum(marAD[3:nADs,t])
-
-}
-
-# March to September transition (over winter)
-# year increases during this transition
-for (t in 1:ntimes){
-  
-  sepYAF[t+1] <- s_PY[t] * PY[t]
-  
-  sepSA[1,t+1] <- s_marYAF[t] * marYAF[t]
-  
-  sepSA[2,t+1] <- s_marSA[t] * marSA[t]
-  
-  sepAD[1:2,t+1] <- 0
-  
-  for (a in 3:nADs){
-    
-    sepAD[a,t+1] <- s_marAD[a,t] * marAD[a,t]
-    
+  # priors
+  for(t in 1:(ntimes-1)){
+    b[t] ~ dunif(0, 1)
+    s.PY[t] ~ dunif(0, 1)
+    s.YAF[t] ~ dunif(0, 1)
+    s.SA[1,t] ~ dunif(0, 1)
+    s.SA[2,t] ~ dunif(0, 1)
+    for(a in 4:nADs){
+      s.AD[a,t] ~ dunif(0, 1)
+    }
   }
-  
-  sepNtot[t+1] <- sepSA[t+1] + sum(sepAD[3:nADs,t+1])
-  
+}) # nimbleCode
+
+
+## Assemble --------------------------------------------------------------------
+
+# assign initial values
+# myinits <- list(YAF[1] = 20,
+#                 SA[1:2,1] = 20,
+#                 AD[1:2,1] = 0,
+#                 AD[3:nADs,1] = 10,
+#                 Ntot[1] = YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nADs,1]))
+
+myinits <- list(
+  YAF = c(20, rep(NA, myconst$ntimes - 1)),
+  SA = rbind(c(20, rep(NA, myconst$ntimes - 1)),
+             c(20, rep(NA, myconst$ntimes - 1))),
+  AD = rbind(c(0, rep(NA, myconst$ntimes - 1)),
+             c(0, rep(NA, myconst$ntimes - 1)),
+             matrix(c(10, rep(NA, myconst$ntimes - 1)), 
+                    nrow = myconst$nADs - 2, 
+                    ncol = myconst$ntimes, 
+                    byrow = T)),
+  Ntot = c(20 + 2*20 + (myconst$nADs - 2)*10, rep(NA, myconst$ntimes - 1))
+)
+
+# monitors
+params = c('YAF', 'SA', 'AD', 'Ntot',
+          'b', 's.PY', 's.YAF', 's.SA', 's.AD')
+
+
+## Run model -------------------------------------------------------------------
+
+# MCMC specs
+mySeed  <- 1
+niter   <- 2000
+nburnin <- 1000
+nthin   <- 1
+nchains <- 1
+
+# run
+samples <- nimbleMCMC(code = myCode,
+                      data = mydata,
+                      constants = myconst,
+                      inits = myinits,
+                      monitors = params,
+                      niter = niter,
+                      nburnin = nburnin,
+                      nchains = nchains,
+                      thin = nthin,
+                      samplesAsCodaMCMC = T,
+                      setSeed = mySeed)
+
+
+## Plots -----------------------------------------------------------------------
+
+library(coda)
+library(ggplot2)
+
+# MCMC output
+out.mcmc <- as.mcmc.list(samples)
+
+MCMCsummary(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), n.eff = TRUE, round = 2)
+
+par(mfrow = c(4,1))
+plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
+plot(out.mcmc[, paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')])
+# plot(out.mcmc[, paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')])
+
+# assemble posterior samples
+out.mat <- as.matrix(samples)
+
+# # parameters to include
+# table.params <- c(
+#   paste0('YAF[', 1:ntimes, ']'),
+#   paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']'),
+#   paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']'))
+
+table.params <- list(
+  yaf = c(paste0('YAF[', 1:ntimes, ']')),
+  sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
+  ad  = c(paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')))
+
+# table with posterior summaries
+post.table <- data.frame(Parameter = table.params, Estimate = NA)
+
+for(i in 1:length(table.params)){
+  est <- out.mat[, table.params[i]]
+  post.table$Estimate[i] <- paste0(round(median(est, na.rm = T), digits = 2), ' [',
+                                   round(quantile(est, 0.025, na.rm = T), digits = 2), ', ',
+                                   round(quantile(est, 0.975, na.rm = T), digits = 2), ']')
 }
 
-# initalize Ns for first Sept (t = 1)
-# (will eventually be a parameter)
-sepYAF[1] <- 20
+# plot results
+ntot <- grep("^Ntot\\[", colnames(samples)); ntot
+yaf <- grep("^YAF\\[", colnames(samples)); yaf
+sa <- grep("^SA\\[", colnames(samples)); sa
+ad <- grep("^AD\\[", colnames(samples)); ad
 
-sepSA[1,1] <- 20
+var <- ad
 
-sepSA[2,1] <- 20
+df <- data.frame(
+  Year = 1:length(var),
+  Mean = apply(out.mat[, var, drop = FALSE], 2, mean, na.rm = TRUE),
+  Lower = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
+  Upper = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+)
 
-sepAD[1:2,1] <- 0
-
-sepAD[3:nADs,1] <- 10
-
-sepNtot[1] <- sepSA[1] + sum(sepAD[3:nADs,1])
-
-
+ggplot(df, aes(x = Year, y = Mean)) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "skyblue", alpha = 0.4) +
+  geom_line(color = "blue", size = 1) +
+  ylab("Parameter value") +
+  xlab("Year") +
+  theme_bw()
 

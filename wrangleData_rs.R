@@ -21,9 +21,9 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   
   ## Sort reproductive success data
   rs <- rs %>% 
-    select(ID, Cohort, Age, Acert, Year, Capture, Exclude, Treatment, 
-           Weight, Leg, Teeth, Repro, Parturition, PYsex, PYid, SurvLPY, SurvWN, 
-           PYLastObs, PYFound, Dead, HRDead) %>%                                      # REMOVE WHAT IS UNUSED
+    select(ID, Age, Year, Capture, Exclude, Weight, Leg, Teeth, 
+           Repro, Parturition, PYid, SurvLPY, SurvWN, 
+           PYLastObs, Dead, HRDead) %>% 
     filter(Exclude == 0,  # exclude new females caught for their young
            # remove first born of "twins", often dropped at March capture
            PYid != 308 & PYid != 340 & PYid != 672 & PYid != 885 & PYid != 900 &
