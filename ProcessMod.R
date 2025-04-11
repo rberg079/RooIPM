@@ -9,12 +9,11 @@ library(tidyverse)
 library(nimble)
 
 # create Nimble lists
-ntimes = 20
-nADs = 18
+ntimes <- 20
+nADs   <- 18
 
-mydata <- list()
-myconst <- list(ntimes = ntimes,
-                nADs = nADs)
+mydata  <- list()
+myconst <- list(ntimes = ntimes, nADs = nADs)
 
 
 ## Model -----------------------------------------------------------------------
@@ -43,6 +42,7 @@ myCode = nimbleCode({
     s.YAF[t] ~ dunif(0, 1)
     s.SA[1,t] ~ dunif(0, 1)
     s.SA[2,t] ~ dunif(0, 1)
+    s.AD[3,t] ~ dunif(0, 1)
     for(a in 4:nADs){
       s.AD[a,t] ~ dunif(0, 1)
     }
@@ -52,29 +52,12 @@ myCode = nimbleCode({
 
 ## Assemble --------------------------------------------------------------------
 
-# assign initial values
-# myinits <- list(YAF[1] = 20,
-#                 SA[1:2,1] = 20,
-#                 AD[1:2,1] = 0,
-#                 AD[3:nADs,1] = 10,
-#                 Ntot[1] = YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nADs,1]))
-
-myinits <- list(
-  YAF = c(20, rep(NA, myconst$ntimes - 1)),
-  SA = rbind(c(20, rep(NA, myconst$ntimes - 1)),
-             c(20, rep(NA, myconst$ntimes - 1))),
-  AD = rbind(c(0, rep(NA, myconst$ntimes - 1)),
-             c(0, rep(NA, myconst$ntimes - 1)),
-             matrix(c(10, rep(NA, myconst$ntimes - 1)), 
-                    nrow = myconst$nADs - 2, 
-                    ncol = myconst$ntimes, 
-                    byrow = T)),
-  Ntot = c(20 + 2*20 + (myconst$nADs - 2)*10, rep(NA, myconst$ntimes - 1))
-)
+source("simulateInits.R")
+myinits <- simulateInits(ntimes = ntimes, nADs = nADs)
 
 # monitors
 params = c('YAF', 'SA', 'AD', 'Ntot',
-          'b', 's.PY', 's.YAF', 's.SA', 's.AD')
+           'b', 's.PY', 's.YAF', 's.SA', 's.AD')
 
 
 ## Run model -------------------------------------------------------------------
@@ -104,11 +87,12 @@ samples <- nimbleMCMC(code = myCode,
 
 library(coda)
 library(ggplot2)
+library(MCMCvis)
 
 # MCMC output
 out.mcmc <- as.mcmc.list(samples)
 
-MCMCsummary(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('YAF', 'SA'), n.eff = TRUE, round = 2) # cannot handle NAs
 
 par(mfrow = c(4,1))
 plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
@@ -118,16 +102,16 @@ plot(out.mcmc[, paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times
 # assemble posterior samples
 out.mat <- as.matrix(samples)
 
-# # parameters to include
-# table.params <- c(
-#   paste0('YAF[', 1:ntimes, ']'),
-#   paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']'),
-#   paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']'))
+# parameters to include
+table.params <- c(
+  paste0('YAF[', 1:ntimes, ']'),
+  paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']'),
+  paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']'))
 
-table.params <- list(
-  yaf = c(paste0('YAF[', 1:ntimes, ']')),
-  sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
-  ad  = c(paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')))
+# table.params <- list(
+#   yaf = c(paste0('YAF[', 1:ntimes, ']')),
+#   sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
+#   ad  = c(paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')))
 
 # table with posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
@@ -145,7 +129,7 @@ yaf <- grep("^YAF\\[", colnames(samples)); yaf
 sa <- grep("^SA\\[", colnames(samples)); sa
 ad <- grep("^AD\\[", colnames(samples)); ad
 
-var <- ad
+var <- ntot
 
 df <- data.frame(
   Year = 1:length(var),
