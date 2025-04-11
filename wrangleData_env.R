@@ -12,18 +12,23 @@
 
 wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
   
-  ## Load libraries
+  
+  ## Set up --------------------------------------------------------------------
+  
+  # load libraries
   library(readxl)
   library(tidyverse)
   library(lubridate)
   
-  ## Load data
+  # load data
   density <- read_excel(dens.data)
   biomass <- read_excel(veg.data)
   weather <- read_excel(wea.data)
   wind <- read_csv(wind.data, skip = 13)
   
-  ## Sort population density data
+  
+  ## Density data --------------------------------------------------------------
+  
   density <- density %>%
     rename(Date = "Month / year",
            Dens = "Mean density",
@@ -49,7 +54,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            DensSE = SE/sd(Dens, na.rm = T)) %>%
     select(SeasYr, Dens, DensSE)
   
-  ## Sort vegetation data
+  
+  ## Biomass data --------------------------------------------------------------
+  
   biomass <- biomass %>% 
     rename(Veg = "DW Pal in") %>% 
     select(ID, Day, Month, Year, Veg) %>% 
@@ -87,7 +94,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     distinct(Date, mDailyVeg, sdDailyVeg) %>% 
     rename(Veg = "mDailyVeg", VegSE = "sdDailyVeg")
   
-  ## Sort weather data
+  
+  ## Weather data --------------------------------------------------------------
+  
   weather <- weather %>% 
     select(Year, Month, Day, Rain) %>% 
     mutate(Date = ymd(paste(Year, Month, Day, sep = "-")),
@@ -105,7 +114,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     filter(Date > "2007-07-31" & Date < "2025-03-01") %>%
     select(Date, Year, Month, Day, SeasYr, Rain)
   
-  ## Sort wind data
+  
+  ## Wind data -----------------------------------------------------------------
+  
   wind <- wind %>%
     rename(Year = "YEAR", Month = "MO", Day = "DY", Max = "T2M_MAX", Min = "T2M_MIN",
            Wind = "WS10M", Gusts = "WS10M_MAX") %>%  # wind is in m/s at 10 m
@@ -114,8 +125,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            Gusts = -0.863+0.427*Gusts) %>%           # calculate wind at 0.4 m
     select(-PRECTOTCORR)
   
-  ## Join all environmental data &
-  ## calculate Nixon-Smith chill index
+  
+  ## Join it all ---------------------------------------------------------------
+  
   env <- weather %>% 
     left_join(biomass) %>% 
     left_join(density) %>%
@@ -127,7 +139,7 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
     left_join(wind)
   
-  # Nixon-Smith Chill Index (BOM working paper, 1972)
+  # calculate Nixon-Smith Chill Index (BOM working paper, 1972)
   # C = (11.7 + 3.1(wind^0.5))(40 - T) + 481 + 418(1 - e^-0.04*R)
   env <- env %>% 
     mutate(Chill = ((11.7 + 3.1*(sqrt(Gusts)))*(40 - Min)) +
@@ -143,8 +155,8 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE)
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
-  ## Summarise by year,
-  ## where year X spans Sept 1 X to Aug 31 X+1
+  # summarise by year,
+  # where year X spans Sept 1 X to Aug 31 X+1
   env <- env %>% 
     filter(Date > "2008-03-31") %>%  # 6 mos before 1st census
     mutate(Year = ifelse(Month < 10, Year-1, Year))
@@ -177,7 +189,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     mutate(VegRoo = Veg / Dens,
            VegRooSE = abs(VegRoo)*sqrt((VegSE / Veg)^2+(DensSE / Dens)^2))
   
-  ## Return scaled data
+  
+  ## Return scaled data --------------------------------------------------------
+  
   year <- seq(from = 1, to = 17, by = 1)
   
   veg  <- as.numeric(scale(env$Veg))

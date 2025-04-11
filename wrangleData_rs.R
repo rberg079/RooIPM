@@ -11,15 +11,18 @@
 
 wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   
-  ## Load libraries
+  
+  ## Set up --------------------------------------------------------------------
+  
+  # load libraries
   library(readxl)
   library(tidyverse)
   
-  ## Load data
+  # load data
   rs <- read_excel(rs.data)
   obs <- read_excel(obs.data)
   
-  ## Sort reproductive success data
+  # clean up
   rs <- rs %>% 
     select(ID, Age, Year, Capture, Exclude, Weight, Leg, Teeth, 
            Repro, Parturition, PYid, SurvLPY, SurvWN, 
@@ -42,7 +45,9 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
                              Teeth == 1.8 ~ 2.0, TRUE ~ Teeth),
            Teeth = Teeth*2)
   
-  ## Calculate individual covariates
+  
+  ## Calculate individual covariates -------------------------------------------
+
   # age class & birthdate
   rs <- rs %>% 
     mutate(Age = as.numeric(Age),
@@ -88,7 +93,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
     mutate(PRS = lag(Eff)) %>%
     ungroup()
   
-  ## Sort observation data
+
+  ## Sort observation data -----------------------------------------------------
   obs <- obs %>%
     select(Date, Year, Month, Day, Time, ID, X, Y) %>% 
     mutate(ttime = format(as.POSIXct(Time), format = "%H:%M")) %>% 
@@ -114,7 +120,9 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   
   rs <- left_join(rs, obs)
   
-  ## Calculate population covariates
+  
+  ## Calculate population covariates -------------------------------------------
+  
   # mean leg length, condition, mass & mass gain
   rs <- rs %>%
     group_by(Year) %>%
@@ -144,7 +152,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9)){
   rs <- left_join(rs, tmp)
   remove(tmp)
   
-  ## Return (mostly) scaled data
+  
+  ## Return (mostly) scaled data -----------------------------------------------
   id <- as.numeric(rs$ID)
   year <- as.numeric(as.factor(rs$Year))
   

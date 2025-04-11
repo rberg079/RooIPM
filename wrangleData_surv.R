@@ -11,11 +11,14 @@
 
 wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
-  ## Load libraries
+  
+  ## Set up --------------------------------------------------------------------
+  
+  # load libraries
   library(readxl)
   library(tidyverse)
   
-  ## Load data
+  # load data
   surv <- read_excel(surv.data, sheet = surv.sheet)
   yafs <- read_excel(yafs.data)
   
@@ -32,7 +35,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
     select(ID, Sex, Dead, in2008, matches("^in20\\d{2}$"), -in2025, matches("^Age\\d{2}")) %>%
     filter(Sex == 2, ID != 1180, ID != 1183)  # females!
   
-  ## Sort YAF survival data from RS file
+  
+  ## Sort YAF survival data from RS file ---------------------------------------
+  
   # figure out survival to Sept 1
   yafs <- yafs %>% 
     arrange(PYid, Year) %>% 
@@ -81,7 +86,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   yafs_new <- yafs %>% filter(ID %in% newbies)
   yafs_old <- yafs %>% filter(!(ID %in% newbies))
   
-  ## Create obs matrix
+  
+  ## Create obs matrix ---------------------------------------------------------
+  
   # pivot surv data to long format
   obs <- surv %>% 
     select(ID, in2008:in2024) %>% 
@@ -112,7 +119,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # roos observed outside of the study area,
   # roadkilled or poached treated as unobserved
   
-  ## Create state matrix
+  
+  ## Create state matrix -------------------------------------------------------
+  
   # convert all surv scores to 0 or 1
   state <- surv %>% 
     mutate(HRDead = as.numeric(apply(select(., starts_with("in")) == 2, 1, any)),
@@ -189,7 +198,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   id <- state %>% select(ID, Dead, HRDead, first, last)
   state <- state %>% select(in2008:in2024)
   
-  ## Create age matrix
+  
+  ## Create age matrix ---------------------------------------------------------
+  
   age <- surv %>% 
     select(ID, Age08:Age24) %>% 
     mutate_at(vars(Age08:Age24), ~ifelse(. == "A", NA, .)) %>% 
@@ -225,7 +236,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   id$uka <- as.logical(is.na(age[,ncol(age)]))
   
-  ## Return (mostly) scaled data
+  
+  ## Return (mostly) scaled data -----------------------------------------------
+  
   # remove inds who were only in the dataset 1 year
   noInfo <- id$first == id$last
   length(which(noInfo))
