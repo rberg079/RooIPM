@@ -109,10 +109,10 @@ myCode = nimbleCode({
   for (a in 1:nAgeC){                               
     for (t in 1:(ntimes-1)){
       logit(s[a, t]) <- B.age[a] +
-        B.dens[a]*dens.hat[t] +
-        B.veg[a]*veg.hat[t] +
-        # B.densVeg[a]*(dens.hat[t]*veg.hat[t]) +
-        # B.vegRoo[a]*(veg.hat[t]/dens.hat[t]) +
+        B.dens[a] * dens.hat[t] +
+        B.veg[a] * veg.hat[t] +
+        # B.densVeg[a] * (dens.hat[t] * veg.hat[t]) +
+        # B.vegRoo[a] * (veg.hat[t] / dens.hat[t]) +
         gamma[t, a]
     } # t
   } # a
