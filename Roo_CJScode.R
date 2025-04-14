@@ -60,16 +60,16 @@ myconst <- list(nind = surv$nind,
 myCode = nimbleCode({
   ##### 1. Survival ####
   # Survival function
-  for (i in 1:nind){                               
-    for (t in first[i]:(last[i]-1)){
-      logit(s[i,t]) <- B.age[ageC[age[i,t]]] +
-        dens.hat[t]*B.dens[ageC[age[i,t]]] +
-        veg.hat[t]*B.veg[ageC[age[i,t]]] +
-        # (dens.hat[t]*veg.hat[t])*B.densVeg[ageC[age[i,t]]] +
-        # (veg.hat[t]/dens.hat[t])*B.vegRoo[ageC[age[i,t]]] +
-        gamma[t,ageC[age[i,t]]]
+  for (a in 1:nAge_CJS){                               
+    for (t in 1:(ntimes-1)){
+      logit(s[a,t]) <- B.age[a] +
+        dens.hat[t]*B.dens[a] +
+        veg.hat[t]*B.veg[a] +
+        # (dens.hat[t]*veg.hat[t])*B.densVeg[a] +
+        # (veg.hat[t]/dens.hat[t])*B.vegRoo[a] +
+        gamma[t,a]
     } #t
-  } #i
+  } #a
   
   for (t in 1:ntimes){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
@@ -149,10 +149,10 @@ myCode = nimbleCode({
   
   ##### 3. Likelihood ####
   for (i in 1:nind){
-    for (t in (first[i] + 1):last[i]){
+    for (t in (first[i] + 1):last[i]){ #TODO: Double-check that the first "first[i]" = first year in IPM
       # State process
       state[i,t] ~ dbern(mu1[i,t])
-      mu1[i,t] <- s[i,t-1] * state[i,t-1]
+      mu1[i,t] <- s[ageC[age[i,t]],t-1] * state[i,t-1]
   
       # Observation process
       obs[i,t] ~ dbern(mu2[i,t])
@@ -211,7 +211,7 @@ paraNimble <- function(seed, myCode, myconst, mydata,
              # sd.yr = runif(nAge, 0,1)
     )
     Tau.raw = diag(nAge) + rnorm(nAge^2,0,0.1)
-    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
+    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2) # should be Sigma.raw?
     return(l)
   }
   
