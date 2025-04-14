@@ -367,3 +367,5 @@ ggplot(df, aes(x = Year, y = Mean)) +
   xlab("Year") +
   theme_bw()
 
+# ggsave("IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
+
