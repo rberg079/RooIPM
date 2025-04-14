@@ -83,13 +83,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
                 values_from = yafs_val,
                 names_prefix = "in")
   
-  yafs_new <- yafs %>% filter(ID %in% newbies)
-  yafs_old <- yafs %>% filter(!(ID %in% newbies))
+  yafs_new <- yafs %>% filter(ID %in% newbies) %>% select(ID, in2008:in2024)
+  yafs_old <- yafs %>% filter(!(ID %in% newbies)) %>% select(ID, in2008:in2024)
   
   
   ## Create obs matrix ---------------------------------------------------------
   
-  # pivot surv data to long format
   obs <- surv %>% 
     select(ID, in2008:in2024) %>% 
     mutate_at(vars(in2008:in2024), ~ifelse(.> 1 | is.na(.), 0, .))
@@ -251,7 +250,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   nind   <- nrow(state)
   ntimes <- ncol(state)
   
-  nAge   <- max(ageC, na.rm = T)
+  nAgeC  <- max(ageC, na.rm = T)
   noAge  <- which(is.na(age[,ncol(age)]))
   nNoAge <- length(noAge)
   
@@ -268,7 +267,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
               nind = nind,
               ntimes = ntimes,
               
-              nAge = nAge,
+              nAgeC = nAgeC,
               noAge = noAge,
               nNoAge = nNoAge,
               
@@ -277,8 +276,8 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
               uka = uka,
               id = id,
               
-              W = diag(nAge),
-              DF = nAge))
+              W = diag(nAgeC),
+              DF = nAgeC))
   
 }
 

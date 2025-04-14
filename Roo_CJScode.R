@@ -211,7 +211,7 @@ paraNimble <- function(seed, myCode, myconst, mydata,
              # sd.yr = runif(nAge, 0,1)
     )
     Tau.raw = diag(nAge) + rnorm(nAge^2,0,0.1)
-    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)
+    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2) # should be Sigma.raw?
     return(l)
   }
   
