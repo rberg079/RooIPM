@@ -8,6 +8,10 @@
 library(tidyverse)
 library(nimble)
 
+# Switches/toggles
+testRun <- TRUE
+#testRun <- FALSE
+
 # create Nimble lists
 ntimes <- 20
 nADs   <- 18
@@ -73,8 +77,15 @@ params = c('YAF', 'SA', 'AD', 'Ntot',
 
 # MCMC specs
 mySeed  <- 1
-niter   <- 2000
-nburnin <- 1000
+
+if(!testRun){
+  niter   <- 2000
+  nburnin <- 1000
+}else{
+  niter   <- 10
+  nburnin <- 0
+}
+
 nthin   <- 1
 nchains <- 1
 
