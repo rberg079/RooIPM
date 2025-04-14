@@ -37,15 +37,24 @@ myCode = nimbleCode({
   
   # priors
   for(t in 1:(ntimes-1)){
-    b[t] ~ dunif(0, 1)
-    s.PY[t] ~ dunif(0, 1)
-    s.YAF[t] ~ dunif(0, 1)
-    s.SA[1,t] ~ dunif(0, 1)
-    s.SA[2,t] ~ dunif(0, 1)
-    s.AD[3,t] ~ dunif(0, 1)
-    for(a in 4:nADs){
-      s.AD[a,t] ~ dunif(0, 1)
+    b[t]        ~ dunif(0.5, 1)
+    s.PY[t]     ~ dunif(0.1, 1)
+    s.YAF[t]    ~ dunif(0, 1)
+    s.SA[1,t]   ~ dunif(0.5, 1)
+    s.SA[2,t]   ~ dunif(0.5, 1)
+    
+    for(a in 3:6){ # prime-aged
+      s.AD[a,t] ~ dunif(0.6, 1)
     }
+    
+    for(a in 7:9){ # pre-senescent
+      s.AD[a,t] ~ dunif(0.5, 1)
+    }
+    
+    for(a in 10:nADs){ # senescent
+      s.AD[a,t] ~ dunif(0.1, 1)
+    }
+    
   }
 }) # nimbleCode
 
@@ -92,7 +101,8 @@ library(MCMCvis)
 # MCMC output
 out.mcmc <- as.mcmc.list(samples)
 
-MCMCsummary(out.mcmc, params = c('YAF', 'SA'), n.eff = TRUE, round = 2) # cannot handle NAs
+summary(out.mcmc) # cannot handle NAs
+MCMCsummary(out.mcmc, params = c('YAF', 'SA'), n.eff = TRUE, round = 2)
 
 par(mfrow = c(4,1))
 plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
@@ -140,7 +150,7 @@ df <- data.frame(
 
 ggplot(df, aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "skyblue", alpha = 0.4) +
-  geom_line(color = "blue", size = 1) +
+  geom_line(color = "blue", linewidth = 1) +
   ylab("Parameter value") +
   xlab("Year") +
   theme_bw()
