@@ -8,12 +8,11 @@ library(tidyverse)
 library(lubridate)
 library(beepr)
 library(here)
-library(boot)
 library(coda)
+library(nimble)
 library(foreach)
 library(doParallel)
 library(parallel)
-library(nimble)
 registerDoParallel(3)
 
 # load data

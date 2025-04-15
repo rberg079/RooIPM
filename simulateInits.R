@@ -1,7 +1,7 @@
 #' Simulate initial values for IPM
 #'
 #' @param ntimes integer. Number of time steps in the model. ntimes = 17 by default.
-#' @param nADs integer. Number of adult age classes, or maximum age. nADs = 22 by default.
+#' @param nAge integer. Number of adult age classes, or maximum age. nAge = 22 by default.
 #' @param nAgeC integer. Number of age classes in CJS model. nAge_CJS = 5 by default.
 #'
 #' @returns list containing all initial values needed for IPM.
@@ -9,7 +9,7 @@
 #'
 #' @examples
 
-simulateInits <- function(ntimes = 17, nADs = 22, nAgeC = 5,
+simulateInits <- function(ntimes = 17, nAge = 22, nAgeC = 5,
                           dens, veg, nNoAge){
   
   
@@ -82,11 +82,11 @@ simulateInits <- function(ntimes = 17, nADs = 22, nAgeC = 5,
   }
 
   # Breeding rate
-  b <- runif(ntimes, 0.5, 1) # raw means span 0.58-0.92
+  b <- runif(ntimes-1, 0.5, 1) # raw means span 0.58-0.92
   
   # Survival of PYs
   # to 1st Sept 1 when they become YAFs
-  s.PY <- runif(ntimes, 0.1, 1) # raw means span 0.24-0.95
+  s.PY <- runif(ntimes-1, 0.1, 1) # raw means span 0.24-0.95
   
   # Survival of YAFs
   # to 2nd Sept 1 when they become SA1s
@@ -100,18 +100,18 @@ simulateInits <- function(ntimes = 17, nADs = 22, nAgeC = 5,
   s.SA <- rbind(s[2, 1:(ntimes-1)], s[2, 1:(ntimes-1)])
   
   # Survival of all ADs
-  s.AD <- matrix(0, nrow = nADs, ncol = ntimes-1)  # 0s for AD1 & AD2
+  s.AD <- matrix(0, nrow = nAge, ncol = ntimes-1)
   
   for(a in 3:6){
-    s.AD[a, 1:(ntimes-1)] <- s[3, 1:(ntimes-1)]    # prime-age
+    s.AD[a, 1:(ntimes-1)] <- s[3, 1:(ntimes-1)]
   }
   
   for(a in 7:9){
-    s.AD[a, 1:(ntimes-1)] <- s[4, 1:(ntimes-1)]    # pre-senescent
+    s.AD[a, 1:(ntimes-1)] <- s[4, 1:(ntimes-1)]
   }
   
-  for(a in 10:nADs){
-    s.AD[a, 1:(ntimes-1)] <- s[5, 1:(ntimes-1)]    # senescent
+  for(a in 10:nAge){
+    s.AD[a, 1:(ntimes-1)] <- s[5, 1:(ntimes-1)]
   }
   
   
@@ -133,10 +133,10 @@ simulateInits <- function(ntimes = 17, nADs = 22, nAgeC = 5,
   SA     <- matrix(NA, nrow = 2, ncol = ntimes)
   SA[,1] <- c(6*5, 5*5)
   
-  AD     <- matrix(NA, nrow = nADs, ncol = ntimes)
-  AD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = 8))
+  AD     <- matrix(NA, nrow = nAge, ncol = ntimes)
+  AD[,1] <- c(0, 0, rep(2*5, times = (nAge-2)/2), rep(1*5, times = (nAge-2)/2))
   
-  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nADs,1]),
+  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nAge,1]),
               rep(NA, times = ntimes-1))
   
   
@@ -178,6 +178,6 @@ simulateInits <- function(ntimes = 17, nADs = 22, nAgeC = 5,
   
 }
 
-# test <- simulateInits(ntimes = 40, nADs = 20)
+# test <- simulateInits(ntimes = 40, nAge = 20)
 # test
 

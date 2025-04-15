@@ -11,7 +11,6 @@ library(beepr)
 library(here)
 library(coda)
 library(nimble)
-# library(boot)
 # library(foreach)
 # library(doParallel)
 # library(parallel)
@@ -31,7 +30,7 @@ surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
 
 # create Nimble lists
 ntimes <- 17
-nADs   <- 18
+nAge   <- 22
 nAgeC  <- 5
 
 myData  <- list(obs = surv$obs,
@@ -45,8 +44,8 @@ myData  <- list(obs = surv$obs,
 
 myConst <- list(ntimes = ntimes,       # TODO: get from one of the wrangles?
                 nind = surv$nind,
-                nADs = nADs,           # TODO: get from wrangleData_rs
-                nAgeC = surv$nAgeC,
+                nAge = nAge,           # TODO: get from one of the wrangles?
+                nAgeC = nAgeC,         # TODO: get from one of the wrangles?
                 noAge = surv$noAge,
                 nNoAge = surv$nNoAge,
                 nNoVeg = env$nNoVeg,
@@ -67,7 +66,7 @@ myCode = nimbleCode({
   ## ----------------------------------------
   
   for (t in 1:(ntimes-1)){
-    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:nADs,t])) 
+    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:nAge,t])) 
     
     SA[1,t+1] ~ dbin(s.YAF[t], YAF[t])
     SA[2,t+1] ~ dbin(s.SA[1,t], SA[1,t])
@@ -75,10 +74,10 @@ myCode = nimbleCode({
     AD[1:2,t+1] <- 0
     AD[3,t+1] ~ dbin(s.SA[2,t], SA[2,t])
     
-    for (a in 4:nADs){
+    for (a in 4:nAge){
       AD[a,t+1] ~ dbin(s.AD[a,t], AD[a,t])
     }
-    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:nADs,t+1])
+    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:nAge,t+1])
   }
   
   # priors
@@ -97,7 +96,7 @@ myCode = nimbleCode({
       s.AD[a,t] <- s[4,t]
     }
     
-    for(a in 10:nADs){  # senescent
+    for(a in 10:nAge){  # senescent
       s.AD[a,t] <- s[5,t]
     }
   }
@@ -212,7 +211,7 @@ myCode = nimbleCode({
 ## Assemble --------------------------------------------------------------------
 
 source("simulateInits.R")
-myInits <- simulateInits(ntimes = ntimes, nADs = nADs, nAgeC = nAgeC,
+myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
                          dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
 
 # monitors
@@ -239,7 +238,7 @@ params = c(# CJS model
 #   source("simulateInits.R")
 #   myInits <- simulateInits(ntimes = ntimes,
 #                            nAgeC = nAgeC,
-#                            nADs = nADs)
+#                            nAge = nAge)
 #   
 #   # assemble model
 #   myMod <- nimbleModel(code = myCode,
@@ -326,7 +325,7 @@ for(i in 1:ncol(out.mcmc[[1]])){
 par(mfrow = c(4, 1))
 plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
 plot(out.mcmc[, paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')])
-# plot(out.mcmc[, paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')])
+# plot(out.mcmc[, paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']')])
 
 # assemble posterior samples
 out.mat <- as.matrix(samples)
@@ -335,12 +334,12 @@ out.mat <- as.matrix(samples)
 table.params <- c(
   paste0('YAF[', 1:ntimes, ']'),
   paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']'),
-  paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']'))
+  paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']'))
 
 # table.params <- list(
 #   yaf = c(paste0('YAF[', 1:ntimes, ']')),
 #   sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
-#   ad  = c(paste0('AD[', rep(1:nADs, each = ntimes), ', ', rep(1:ntimes, times = nADs), ']')))
+#   ad  = c(paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']')))
 
 # table with posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
@@ -368,8 +367,8 @@ df <- data.frame(
 )
 
 ggplot(df, aes(x = Year, y = Mean)) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "skyblue", alpha = 0.4) +
-  geom_line(color = "blue", linewidth = 1) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#C398B7", alpha = 0.4) +
+  geom_line(color = "#673C5B", linewidth = 1) +
   ylab("Parameter value") +
   xlab("Year") +
   theme_bw()
