@@ -9,12 +9,12 @@ library(tidyverse)
 library(lubridate)
 library(beepr)
 library(here)
-# library(boot)
 library(coda)
+library(nimble)
+# library(boot)
 # library(foreach)
 # library(doParallel)
 # library(parallel)
-library(nimble)
 # registerDoParallel(3)
 
 # load data
@@ -315,6 +315,13 @@ out.mcmc <- as.mcmc.list(samples)
 
 summary(out.mcmc) # cannot handle NAs
 MCMCsummary(out.mcmc, params = c('YAF', 'SA'), n.eff = TRUE, round = 2)
+
+for(i in 1:ncol(out.mcmc[[1]])){
+  if(any(is.na(out.mcmc[[1]][,i]))){
+    message(paste0(colnames(out.mcmc[[1]])[i]))
+    print(out.mcmc[[1]][1:3,i])
+  }
+}
 
 par(mfrow = c(4, 1))
 plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
