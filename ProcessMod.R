@@ -116,13 +116,15 @@ myCode = nimbleCode({
     } # t
   } # a
   
-  for (t in 1:ntimes){
+  for (t in 1:(ntimes-1)){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (mt in 1:nNoVeg){
-    veg[mt] ~ dnorm(0, 0.001)
+  for (m in 1:nNoVeg){
+    veg[m] <- 0
+    # veg[m] <- vegM[m]
+    # vegM[m] ~ dnorm(0, 1)
   }
   
   # Estimate missing ages
@@ -223,7 +225,7 @@ params = c(# CJS model
            # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
            
            # Process model
-           's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vita rates
+           's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vital rates
            'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
 
 
