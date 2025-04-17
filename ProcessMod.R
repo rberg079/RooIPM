@@ -200,7 +200,7 @@ myCode = nimbleCode({
     for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
       # State process
       state[i, t] ~ dbern(mu1[i, t])
-      mu1[i, t] <- s[ageC[age[i, t]], t-1] * state[i, t-1]
+      mu1[i, t] <- s[ageC[age[i, t-1]], t-1] * state[i, t-1]
       
       # Observation process
       obs[i, t] ~ dbern(mu2[i, t])
@@ -361,9 +361,10 @@ fit <- list(model = myCode, out.mcmc = out.mcmc, waic = waic, dur = dur)
 ## Results ---------------------------------------------------------------------
 
 library(coda)
-library(ggplot2)
 library(MCMCvis)
 library(corrplot)
+library(ggplot2)
+library(scales)
 
 summary(out.mcmc) # cannot handle NAs
 MCMCsummary(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 2)
