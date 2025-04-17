@@ -9,6 +9,7 @@ library(tidyverse)
 library(lubridate)
 library(beepr)
 library(here)
+library(boot)
 library(coda)
 library(nimble)
 library(foreach)
@@ -345,7 +346,7 @@ out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()  # serialize
 
 # remove one or several parameters from output
 out.mcmc <- out.mcmc[, !grepl('ageM', colnames(out.mcmc[[1]]))]
-# forget <- '^ageM\\[|^dens\\.hat\\[|^veg\\.hat\\[|^gamma\\[|^xi\\['
+# forget <- '^ageM\\[|^dens\\.hat\\[|^veg\\.hat\\[' # & wtv else
 # out.mcmc <- out.mcmc[, !grepl(forget, colnames(out.mcmc[[1]]))]
 
 # WAIC value
@@ -362,6 +363,7 @@ fit <- list(model = myCode, out.mcmc = out.mcmc, waic = waic, dur = dur)
 library(coda)
 library(ggplot2)
 library(MCMCvis)
+library(corrplot)
 
 summary(out.mcmc) # cannot handle NAs
 MCMCsummary(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 2)
@@ -392,7 +394,7 @@ MCMCtrace(out.mcmc, params = c('Sigma.raw'), pdf = FALSE)
 
 ## Plots -----------------------------------------------------------------------
 
-# MCMC samples
+# posterior samples
 # out.mat <- as.matrix(samples)                                              # unserialized
 out.mat <- samples %>% map(~as.matrix(.$samples)) %>% do.call(what = rbind)  # serialized
 
@@ -407,7 +409,7 @@ table.params <- c(
 #   sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
 #   ad  = c(paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']')))
 
-# table with posterior summaries
+# table of posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
 
 for(i in 1:length(table.params)){
@@ -437,6 +439,7 @@ df <- data.frame(
   Upper = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 )
 
+# population plot
 ggplot(df, aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#C398B7", alpha = 0.4) +
   geom_line(color = "#673C5B", linewidth = 1) +
@@ -445,4 +448,60 @@ ggplot(df, aes(x = Year, y = Mean)) +
   theme_bw()
 
 # ggsave("IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
+
+
+## Plots CJS -------------------------------------------------------------------
+
+out.dat <- out.mcmc %>% map(as.data.frame) %>% bind_rows()
+
+# check for correlations among fixed effects
+par(mfrow = c(1,1))
+corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
+               map(as.data.frame) %>% bind_rows(), use = 'p'))
+
+# check random effects among demographic rates
+# check variance-correlation matrix, with Sigma.raw on diagonal
+varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
+
+for (i in 1:myConst$nAgeC){
+  varCorrMatrix[i,i,] <- out.dat[, paste0('xi[', i,']')]*
+    sqrt(out.dat[, paste0('Sigma.raw[', i,', ', i,']')])
+}
+
+for (j in 1:(myConst$nAgeC-1)){
+  for (i in (j+1):myConst$nAgeC){
+    varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.raw[', i, ', ', j, ']')])/
+      sqrt(out.dat[, paste0('Sigma.raw[', j, ', ', j, ']')]*
+             out.dat[, paste0('Sigma.raw[', i, ', ', i, ']')])
+  }
+}
+
+round(apply(varCorrMatrix, 1:2, mean, na.rm = T), 2)
+round(apply(varCorrMatrix, 1:2, quantile, prob = 0.025, na.rm = T), 2)
+round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
+
+# calculate survival probabilities
+df <- expand.grid(age = 1:22, year = 1:16)
+s.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
+
+for(i in 1:nrow(df)){
+  s.pred[i, ] <- out.dat[, paste0('B.age[', myData$ageC[df$age[i]], ']')] +
+    out.dat[, paste0('gamma[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
+  df$ageC[i] <- myData$ageC[df$age[i]]
+}
+
+df$s = inv.logit(apply(s.pred, 1, mean))
+df$s.cil = inv.logit(apply(s.pred, 1, quantile, 0.025))
+df$s.ciu = inv.logit(apply(s.pred, 1, quantile, 0.975))
+
+# plot main results
+df %>%
+  mutate(ageC = as.factor(ageC)) %>% 
+  ggplot(aes(x = year, y = s)) +
+  geom_ribbon(aes(ymin = s.cil, ymax = s.ciu, fill = ageC), alpha = 0.2) +
+  geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
+  labs(x = "Year", y = "Survival", fill = "Age class") +
+  # scale_x_continuous(breaks = pretty_breaks()) +
+  scale_y_continuous(breaks = pretty_breaks()) +
+  theme_bw()
 
