@@ -447,7 +447,7 @@ ggplot(df, aes(x = Year, y = Mean)) +
   xlab("Year") +
   theme_bw()
 
-# ggsave("IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
+# ggsave("figures/IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
 
 
 ## Plots CJS -------------------------------------------------------------------
@@ -504,4 +504,6 @@ df %>%
   # scale_x_continuous(breaks = pretty_breaks()) +
   scale_y_continuous(breaks = pretty_breaks()) +
   theme_bw()
+
+# ggsave("figures/IPM_CJS.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
 
