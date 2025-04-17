@@ -267,8 +267,8 @@ codaSamp <- chain_output %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()
 codaSamp <- codaSamp[, !grepl('state', colnames(codaSamp[[1]]))]
 
 # obtain WAIC value
-# waic <- chain_output %>% map_dbl(~.x$WAIC) # no longer works
-waic <- map_dbl(chain_output, ~ .x$WAIC$WAIC)
+waic <- map_dbl(chain_output, ~ .x$WAIC$WAIC)  # unserialized
+# waic <- chain_output %>% map_dbl(~.x$WAIC)   # serialized
 waic
 
 # save output

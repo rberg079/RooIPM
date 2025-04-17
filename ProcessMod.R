@@ -11,10 +11,10 @@ library(beepr)
 library(here)
 library(coda)
 library(nimble)
-# library(foreach)
-# library(doParallel)
-# library(parallel)
-# registerDoParallel(3)
+library(foreach)
+library(doParallel)
+library(parallel)
+registerDoParallel(3)
 
 # load data
 source("wrangleData_env.R")
@@ -55,7 +55,7 @@ myConst <- list(ntimes = ntimes,       # TODO: get from one of the wrangles?
                 DF = surv$DF)
 
 # Switches/toggles
-testRun <- TRUE # or FALSE
+testRun <- FALSE # or FALSE
 
 
 ## Model -----------------------------------------------------------------------
@@ -212,111 +212,166 @@ myCode = nimbleCode({
 
 ## Assemble --------------------------------------------------------------------
 
-source("simulateInits.R")
-myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
-                         dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+# source("simulateInits.R")
+# myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
+#                          dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+# 
+# # monitors
+# params = c(# CJS model
+#            'dens.hat', 'veg.hat', 'ageM',              # latent states
+#            'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
+#            'mean.p', 'year.p', 'sd.p',                 # observation parameters
+#            'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
+#            # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
+#            
+#            # Process model
+#            's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vital rates
+#            'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
 
-# monitors
-params = c(# CJS model
-           'dens.hat', 'veg.hat', 'ageM',              # latent states
-           'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
-           'mean.p', 'year.p', 'sd.p',                 # observation parameters
-           'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
-           # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
-           
-           # Process model
-           's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vital rates
-           'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
 
+# to serialize
+# create Nimble function
+paraNimble <- function(seed, myCode, myConst, myData,
+                       surv = surv, env = env, testRun){
 
-# # to run parallel chains
-# # create Nimble function
-# paraNimble <- function(seed, myCode, myConst, myData,
-#                        n.burn = 1000, n.tin = 1){ # TODO: tweak MCMC params
-#   
-#   library(nimble)
-#   
-#   # assign initial values
-#   source("simulateInits.R")
-#   myInits <- simulateInits(ntimes = ntimes,
-#                            nAgeC = nAgeC,
-#                            nAge = nAge)
-#   
-#   # assemble model
-#   myMod <- nimbleModel(code = myCode,
-#                        data = myData,
-#                        constants = myConst,
-#                        inits = myInits())
-#   
-#   # select parameters to monitor
-#   params = c(# CJS model
-#              'dens.hat', 'veg.hat', 'ageM',              # latent states
-#              'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
-#              'mean.p', 'year.p', 'sd.p',                 # observation parameters
-#              'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
-#              # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
-#              
-#              # Process model
-#              's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vita rates
-#              'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
-#   
-#   # select MCMC settings
-#   cModel <- compileNimble(myMod)
-#   myMCMC <- buildMCMC(cModel, monitors = vars, enableWAIC = T)
-#   cmyMCMC <- compileNimble(myMCMC, project = myMod)
-#   samples <- runMCMC(cmyMCMC,
-#                      samplesAsCodaMCMC = T,
-#                      niter = n.burn + 1000*n.tin,
-#                      nburnin = n.burn,
-#                      thin = n.tin,
-#                      summary = T,
-#                      WAIC = T)
-#   
-#   return(samples)
-# }
+  library(nimble)
+  
+  ntimes = myConst$ntimes
+  nAge = myConst$nAge
+  nAgeC = myConst$nAgeC
+
+  # assign initial values
+  source("simulateInits.R")
+  myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
+                           dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+
+  # assemble model
+  myMod <- nimbleModel(code = myCode,
+                       data = myData,
+                       constants = myConst,
+                       inits = myInits)
+
+  # select parameters to monitor
+  params = c(# CJS model
+             'dens.hat', 'veg.hat', 'ageM',              # latent states
+             'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
+             'mean.p', 'year.p', 'sd.p',                 # observation parameters
+             'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
+             # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
+
+             # Process model
+             's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vita rates
+             'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
+  
+  # MCMC settings
+  mySeed  <- 1
+  nchains <- 3
+  
+  if(testRun){
+    niter   <- 10
+    nburnin <- 0
+    nthin   <- 1
+  }else{
+    niter   <- 10000
+    nburnin <- 2000
+    nthin   <- 1
+  }
+  
+  cModel <- compileNimble(myMod)
+  myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
+  cmyMCMC <- compileNimble(myMCMC, project = myMod)
+  samples <- runMCMC(cmyMCMC,
+                     samplesAsCodaMCMC = T,
+                     niter = niter,
+                     nburnin = nburnin,
+                     thin = nthin,
+                     summary = T,
+                     WAIC = T)
+
+  return(samples)
+}
 
 
 ## Run model -------------------------------------------------------------------
 
-# MCMC specs
-mySeed  <- 1
-nthin   <- 1
-nchains <- 1
+# # MCMC specs
+# mySeed  <- 1
+# nchains <- 1
+# 
+# if(testRun){
+#   niter   <- 10
+#   nburnin <- 0
+#   nthin   <- 1
+# }else{
+#   niter   <- 10000
+#   nburnin <- 2000
+#   nthin   <- 1
+# }
+# 
+# # run
+# # unserialized for debugging
+# samples <- nimbleMCMC(code = myCode,
+#                       data = myData,
+#                       constants = myConst,
+#                       inits = myInits,
+#                       monitors = params,
+#                       niter = niter,
+#                       nburnin = nburnin,
+#                       nchains = nchains,
+#                       thin = nthin,
+#                       samplesAsCodaMCMC = T,
+#                       setSeed = mySeed)
 
-if(testRun){
-  niter   <- 10
-  nburnin <- 0
-}else{
-  niter   <- 10000
-  nburnin <- 2000
-}
+# serialized for proper inference
+start.t <- Sys.time()
+this_cluster <- makeCluster(3)
+samples <- parLapply(X = 1:3,
+                     cl = this_cluster,
+                     fun = paraNimble,
+                     myCode = myCode,
+                     myConst = myConst,
+                     myData = myData,
+                     surv = surv,
+                     env = env,
+                     testRun = testRun)
 
-# run
-samples <- nimbleMCMC(code = myCode,
-                      data = myData,
-                      constants = myConst,
-                      inits = myInits,
-                      monitors = params,
-                      niter = niter,
-                      nburnin = nburnin,
-                      nchains = nchains,
-                      thin = nthin,
-                      samplesAsCodaMCMC = T,
-                      setSeed = mySeed)
+beep(sound = 2)
+stopCluster(this_cluster)
+dur = now() - start.t; dur
+
+# MCMC output
+# out.mcmc <- as.mcmc.list(samples)                                  # unserialized
+out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()  # serialized
+
+# remove one or several parameters from output
+out.mcmc <- out.mcmc[, !grepl('ageM', colnames(out.mcmc[[1]]))]
+# forget <- '^ageM\\[|^dens\\.hat\\[|^veg\\.hat\\[|^gamma\\[|^xi\\['
+# out.mcmc <- out.mcmc[, !grepl(forget, colnames(out.mcmc[[1]]))]
+
+# WAIC value
+# waic <- map_dbl(samples, ~ .$WAIC$WAIC); waic  # unserialized
+waic <- samples %>% map_dbl(~.$WAIC$WAIC); waic  # serialized
+
+# save output
+fit <- list(model = myCode, out.mcmc = out.mcmc, waic = waic, dur = dur)
+# write_rds(fit, 'results/IPM_CJS.rds', compress = 'xz')
 
 
-## Plots -----------------------------------------------------------------------
+## Results ---------------------------------------------------------------------
 
 library(coda)
 library(ggplot2)
 library(MCMCvis)
 
-# MCMC output
-out.mcmc <- as.mcmc.list(samples)
-
 summary(out.mcmc) # cannot handle NAs
-MCMCsummary(out.mcmc, params = c('YAF', 'SA'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('mean.p', 'year.p', 'sd.p'), n.eff = TRUE, round = 2)
 
+MCMCsummary(out.mcmc, params = c('s', 'b', 's.PY'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), n.eff = TRUE, round = 2)
+
+# find parameters generating NAs
 for(i in 1:ncol(out.mcmc[[1]])){
   if(any(is.na(out.mcmc[[1]][,i]))){
     message(paste0(colnames(out.mcmc[[1]])[i]))
@@ -324,13 +379,22 @@ for(i in 1:ncol(out.mcmc[[1]])){
   }
 }
 
-par(mfrow = c(4, 1))
-plot(out.mcmc[, paste0('YAF[', 1:ntimes, ']')])
-plot(out.mcmc[, paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')])
-# plot(out.mcmc[, paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']')])
+# chainplots
+MCMCtrace(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('mean.p', 'year.p', 'sd.p'), pdf = FALSE)
 
-# assemble posterior samples
-out.mat <- as.matrix(samples)
+# MCMCtrace(out.mcmc, params = c('s', 'b', 's.PY'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), pdf = FALSE)
+
+MCMCtrace(out.mcmc, params = c('Sigma.raw'), pdf = FALSE)
+
+
+## Plots -----------------------------------------------------------------------
+
+# MCMC samples
+# out.mat <- as.matrix(samples)                                              # unserialized
+out.mat <- samples %>% map(~as.matrix(.$samples)) %>% do.call(what = rbind)  # serialized
 
 # parameters to include
 table.params <- c(
@@ -354,10 +418,15 @@ for(i in 1:length(table.params)){
 }
 
 # plot results
-ntot <- grep("^Ntot\\[", colnames(samples)); ntot
-yaf <- grep("^YAF\\[", colnames(samples)); yaf
-sa <- grep("^SA\\[", colnames(samples)); sa
-ad <- grep("^AD\\[", colnames(samples)); ad
+# ntot <- grep("^Ntot\\[", colnames(samples)); ntot
+# yaf <- grep("^YAF\\[", colnames(samples)); yaf
+# sa <- grep("^SA\\[", colnames(samples)); sa
+# ad <- grep("^AD\\[", colnames(samples)); ad
+
+ntot <- grep("^Ntot\\[", colnames(out.mcmc[[1]])); ntot
+yaf <- grep("^YAF\\[", colnames(out.mcmc[[1]])); yaf
+sa <- grep("^SA\\[", colnames(out.mcmc[[1]])); sa
+ad <- grep("^AD\\[", colnames(out.mcmc[[1]])); ad
 
 var <- ntot
 
