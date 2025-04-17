@@ -492,8 +492,8 @@ for(i in 1:nrow(df)){
 }
 
 df$s = inv.logit(apply(s.pred, 1, mean))
-df$s.cil = inv.logit(apply(s.pred, 1, quantile, 0.025))
-df$s.ciu = inv.logit(apply(s.pred, 1, quantile, 0.975))
+df$s.lCI = inv.logit(apply(s.pred, 1, quantile, 0.025))
+df$s.uCI = inv.logit(apply(s.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
