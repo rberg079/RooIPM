@@ -274,7 +274,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
     nthin   <- 1
   }else{
     niter   <- 10000
-    nburnin <- 2000
+    nburnin <- 6000
     nthin   <- 1
   }
   
