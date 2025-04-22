@@ -13,8 +13,8 @@ library(boot)
 library(coda)
 library(nimble)
 library(foreach)
-library(doParallel)
 library(parallel)
+library(doParallel)
 registerDoParallel(3)
 
 # load data
