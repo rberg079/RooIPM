@@ -28,74 +28,64 @@ rs <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                      prime = c(4:9), known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
 
 # check that all years are represented
-year <- as.numeric(factor(rs$year)); year
-setequal(1:17, unique(year)) # should be TRUE!
+setequal(1:17, unique(rs$year)) # should be TRUE!
 
 # create Nimble lists
-myData <-  list(y = rs$survS1,
-                id = factor(rs$id),
-                year = year,
+myData <-  list(y = rs$y,
                 age = rs$age,
-                # prs = factor(rs$prs),
                 dens = env$dens,
                 veg = env$veg,
                 win = env$win)
 
-myConst <- list(N = length(id),
-                N.id = max(id),
-                N.year = max(year))
+myConst <- list(N.id = rs$N.id,
+                N.year = rs$N.year,
+                N.age = rs$N.age)
+# TODO: deal with missing environment
 
 
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
   
-  ##### 1. Reproductive success ####
-  
-  for (i in 1:N){
-    ##### Likelihood ####
-    # RS function
-    y[i] ~ dbern(p[i])
-    logit(p[i]) <- int + b.age*age[i] + # b.prs[prs[i]]
-      b.veg*veg[i] + b.dens*dens[i] + b.win*win[i] +
-      b.yr[year[i]] + b.id[id[i]]
-    
-    # missing values
-    dens[i] ~ dnorm(0, 1)
-    veg[i] ~ dnorm(0, 1)
-    win[i] ~ dnorm(0, 1)
-    
-    # prs[i] ~ dcat(p.prs[1:4])
-    
-    ##### Priors ####
-    # priors for fixed effects
-    b.age ~ dnorm(0, 1)
-
-    # b.prs[1] <- 0
-    # b.prs[2] ~ dnorm(0, 1)
-    # b.prs[3] ~ dnorm(0, 1)
-    # b.prs[4] ~ dnorm(0, 1)    
-    # p.prs[1:4] ~ ddirch(rep(0.25, 4))
-    
-    b.dens ~ dnorm(0, 1)
-    b.veg ~ dnorm(0, 1)
-    b.win ~ dnorm(0, 1)
-    
-    int ~ dnorm(0, 1)
-    
-    # priors for random effects
-    for (j in 1:N.id){
-      b.id[j] ~ dnorm(0, sigma[1])
-    }
-    
+  ##### Likelihood ####
+  for (i in 1:N.id){
     for (t in 1:N.year){
-      b.yr[t] ~ dnorm(0, sigma[2])
+      y[i, t] ~ dbern(p[i, t])
+      logit(p[i, t]) <- mu.RS + B.age[age[i, t]] +
+      B.dens * dens[t] + B.veg * veg[t] + B.win * win[t] +
+      B.id[id[i]] + B.year[year[t]]
     }
+  }
+  
+  for (i in 1:N.age){
+    for (t in 1:N.year){
+      y[a, t] ~ dbern(p[a, t])
+      logit(p[a, t]) <- mu.RS + B.age[a] +
+      B.dens * dens[t] + B.veg * veg[t] + B.win * win[t]
+    }
+  }
     
-    # priors for sigma
-    for (k in 1:2){
-      sigma[i] ~ dunif(0, 100)
-    }
+  ##### Priors ####
+  # priors for fixed effects
+  mu.RS  ~ dnorm(0, 1)
+  B.age  ~ dnorm(0, 1)
+  B.dens ~ dnorm(0, 1)
+  B.veg  ~ dnorm(0, 1)
+  B.win  ~ dnorm(0, 1)
+  
+  
+  # priors for random effects
+  for (j in 1:N.id){
+    B.id[j] ~ dnorm(0, sigma[1])
+  }
+  
+  for (t in 1:N.year){
+    B.year[t] ~ dnorm(0, sigma[2])
+  }
+  
+  # priors for sigma
+  for (k in 1:2){
+    sigma[i] ~ dunif(0, 100)
   }
   
 })
@@ -127,7 +117,8 @@ paraNimble <- function(seed, myCode, myConst, myData,
   
   # select parameters to monitor
   params = c(# RS model
-    # TODO!
+             "mu.RS", "B.age", "B.dens", "B.veg", "B.win",
+             "B.id", "B.year", "sigma"
   )
   
   # MCMC settings
@@ -157,99 +148,4 @@ paraNimble <- function(seed, myCode, myConst, myData,
   
   return(samples)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# write model to file
-write(mod, "modFULLsurv21_cond.txt")
-
-# fit model to DATA
-inits <- function() {
-  list(cuts = sort(rnorm(5, 0, 1)))
-}
-
-mod <- jags(model = "modFULLsurv21_cond.txt",
-            data = list(y = y, id = id, year = year,
-                        N = N, N.id = N.id, N.year = N.year, age = age,
-                        leg = leg, teeth = teeth, prs = prs, cond = cond, # mass = mass,
-                        xmed = xmed, veg = veg, dens = dens, win = win, # bday = bday,
-                        veg2 = veg2, dens2 = dens2, win2 = win2,
-                        year.mon = year.mon, firstAge = firstAge
-                        ),
-            param = c(
-              "r", "cuts", "int.tt", "b.age.tt",
-              "mu.cond", "int.cd", "b.age.cd", "b.prs.cd", # "b.leg.cd", 
-              "b.xmed.cd", "b.veg.cd", "b.dens.cd", "b.win.cd", # "b.bday.cd",
-              "p", "int.rs", "b.cond.rs", "b.age.rs", "b.prs.rs", "b.leg.rs", 
-              "b.xmed.rs", "b.veg.rs", "b.dens.rs", "b.win.rs", # "b.bday.rs",
-              "sigma", "pred.cond", "pred.rs"
-              ),
-            n.chains = 3,
-            n.iter = 60000,
-            n.burnin = 40000,
-            parallel = T)
-beep(sound = 2)
-
-# save
-save(file = "Results/modFULLsurv21_cond.Rdata", list = "mod")
-
-# # load
-# load("Results/modFULLsurv21_cond.Rdata")
-
-# summarise model output
-MCMCsummary(mod,
-            params = c(
-              "r", "cuts", "int.tt", "b.age.tt",
-              "int.cd", "b.age.cd", "b.prs.cd", # "mu.cond", "b.leg.cd", 
-              "b.xmed.cd", "b.veg.cd", "b.dens.cd", "b.win.cd", # "b.bday.cd",
-              "int.rs", "b.cond.rs", "b.age.rs", "b.leg.rs", "b.prs.rs", # "p", 
-              "b.xmed.rs", "b.veg.rs", "b.dens.rs", "b.win.rs", # "b.bday.rs",
-              "sigma" # "pred.cond", "pred.rs"
-              ),
-            round = 2)
-
-MCMCtrace(mod, 
-          params = c(
-            "r", "cuts", "int.tt", "b.age.tt",
-            "int.cd", "b.age.cd", "b.prs.cd", # "mu.cond", "b.leg.cd", 
-            "b.xmed.cd", "b.veg.cd", "b.dens.cd", "b.win.cd", # "b.bday.cd",
-            "int.rs", "b.cond.rs", "b.age.rs", "b.leg.rs", "b.prs.rs", # "p", 
-            "b.xmed.rs", "b.veg.rs", "b.dens.rs", "b.win.rs", # "b.bday.rs",
-            "sigma" # "pred.cond", "pred.rs"
-          ),
-          pdf = FALSE)
-
-par(mfrow = c(1,1))
-MCMCplot(mod, 
-         params = c(
-           "r", "cuts", "int.tt", "b.age.tt",
-           "int.cd", "b.age.cd", "b.prs.cd", # "mu.cond", "b.leg.cd", 
-           "b.xmed.cd", "b.veg.cd", "b.dens.cd", "b.win.cd", # "b.bday.cd",
-           "int.rs", "b.cond.rs", "b.age.rs", "b.leg.rs", "b.prs.rs", # "p", 
-           "b.xmed.rs", "b.veg.rs", "b.dens.rs", "b.win.rs", # "b.bday.rs",
-           "sigma" # "pred.cond", "pred.rs"
-         ),
-         ci = c(50, 90))
-
-whiskerplot(mod,
-            parameters = c("b.age.cd", "b.prs.cd", "b.xmed.cd",
-                           "b.veg.cd", "b.dens.cd", "b.win.cd")) # "b.bday.ma"
-
-whiskerplot(mod,
-            parameters = c("b.cond.rs", "b.age.rs", "b.leg.rs", "b.prs.rs", "b.xmed.rs",
-                           "b.veg.rs", "b.dens.rs", "b.win.rs")) # "b.bday.rs"
 

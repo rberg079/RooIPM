@@ -27,6 +27,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # known.age = TRUE
   # cum.surv = TRUE
   # surv.sep1 = TRUE
+  # surv.sep2 = FALSE
   
   # load libraries
   library(readxl)
@@ -112,99 +113,97 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
                                  TRUE ~ as.Date(paste0("01-", PYLastObs),
                                                 format = "%d-%m-%Y") %m+% months(1) - days(1)))
   
-  # condition & mass gain
-  tmp <- rs %>%
-    select(ID, Year, Mass, Leg) %>%
-    filter(!is.na(Mass) & !is.na(Leg))
-  
-  res <- rstandard(lm(log(Mass) ~ log(Leg), data = tmp))
-  tmp <- cbind(tmp, res)
-  
-  rs <- left_join(rs, tmp) %>%
-    rename(Cond = res) %>%
-    group_by(ID) %>%
-    mutate(PCond = lag(Cond),
-           PMass = lag(Mass),
-           mGain = Mass - PMass) %>%
-    ungroup()
-  
-  remove(tmp)
-  
-  # previous reproductive success
-  rs <- rs %>%
-    mutate(Eff = ifelse(SurvWN == 1, 3, NA),
-           Eff = ifelse(SurvLPY == 1 & is.na(Eff), 2, Eff),
-           Eff = ifelse(Repro == 2, NA,
-                        ifelse(Repro == 1 & is.na(Eff), 1,
-                        ifelse(Repro == 0, 0, Eff)))) %>%
-    arrange(ID, Year) %>%
-    group_by(ID) %>%
-    mutate(PRS = lag(Eff)) %>%
-    ungroup()
-  
-
-  ## Sort observation data -----------------------------------------------------
-  obs <- obs %>%
-    select(Date, Year, Month, Day, Time, ID, X, Y) %>% 
-    mutate(ttime = format(as.POSIXct(Time), format = "%H:%M")) %>% 
-    select(-Time) %>% 
-    rename(Time = ttime) %>% 
-    mutate(X = as.numeric(X),
-           Y = as.numeric(Y)) %>% 
-    filter(X < 40000, X > 32000,              # remove typos in X
-           !is.na(ID), !is.na(X), !is.na(X),  # remove NAs in ID, X & Y
-           Month >= 7)                        # limit to main field season
-  
-  # limit to IDs seen at least 10x/year
-  # calculate median X coordinate
-  obs <- obs %>%
-    group_by(Year, ID) %>%
-    mutate(DaysObs = n_distinct(Date)) %>%
-    ungroup() %>% 
-    filter(DaysObs >= 10) %>% 
-    group_by(ID, Year) %>%
-    mutate(xMed = median(X, na.rm = T)) %>%
-    ungroup() %>% 
-    distinct(ID, Year, DaysObs, xMed)
-  
-  rs <- left_join(rs, obs)
-  
-  
-  ## Calculate population covariates -------------------------------------------
-  
-  # mean leg length, condition, mass & mass gain
-  rs <- rs %>%
-    group_by(Year) %>%
-    mutate(mLeg = mean(Leg, na.rm = T),
-           mCond = mean(Cond, na.rm = T),
-           mMass = mean(Mass, na.rm = T),
-           mMGain = mean(mGain, na.rm = T)) %>%
-    ungroup()
-  
-  # proportion in prime-age
-  # ratio of young weaned to monitored females
-  rs <- rs %>% 
-    group_by(Year) %>% 
-    mutate(nFem = n_distinct(ID),                    # number of monitored females
-           nKA = sum(!is.na(Age)),                   # number of females of known age
-           nSA = sum(SurvWN == 1, na.rm = T),        # number of weaned subadults this cohort
-           nPrime = sum(Age %in% prime, na.rm = T),  # number of females of prime age
-           pPrime = nPrime/nKA,                      # proportion of prime aged
-           Ratio = nSA/nFem) %>%                     # ratio of young weaned
-    ungroup()
-  
-  # previous ratio of young weaned
-  tmp <- rs %>%
-    distinct(Year, Ratio) %>%
-    mutate(PRatio = lag(Ratio))
-  
-  rs <- left_join(rs, tmp)
-  remove(tmp)
+  # # condition & mass gain
+  # tmp <- rs %>%
+  #   select(ID, Year, Mass, Leg) %>%
+  #   filter(!is.na(Mass) & !is.na(Leg))
+  # 
+  # res <- rstandard(lm(log(Mass) ~ log(Leg), data = tmp))
+  # tmp <- cbind(tmp, res)
+  # 
+  # rs <- left_join(rs, tmp) %>%
+  #   rename(Cond = res) %>%
+  #   group_by(ID) %>%
+  #   mutate(PCond = lag(Cond),
+  #          PMass = lag(Mass),
+  #          mGain = Mass - PMass) %>%
+  #   ungroup()
+  # 
+  # remove(tmp)
+  # 
+  # # previous reproductive success
+  # rs <- rs %>%
+  #   mutate(Eff = ifelse(SurvWN == 1, 3, NA),
+  #          Eff = ifelse(SurvLPY == 1 & is.na(Eff), 2, Eff),
+  #          Eff = ifelse(Repro == 2, NA,
+  #                       ifelse(Repro == 1 & is.na(Eff), 1,
+  #                       ifelse(Repro == 0, 0, Eff)))) %>%
+  #   arrange(ID, Year) %>%
+  #   group_by(ID) %>%
+  #   mutate(PRS = lag(Eff)) %>%
+  #   ungroup()
+  # 
+  # 
+  # ## Sort observation data -----------------------------------------------------
+  # obs <- obs %>%
+  #   select(Date, Year, Month, Day, Time, ID, X, Y) %>% 
+  #   mutate(ttime = format(as.POSIXct(Time), format = "%H:%M")) %>% 
+  #   select(-Time) %>% 
+  #   rename(Time = ttime) %>% 
+  #   mutate(X = as.numeric(X),
+  #          Y = as.numeric(Y)) %>% 
+  #   filter(X < 40000, X > 32000,              # remove typos in X
+  #          !is.na(ID), !is.na(X), !is.na(X),  # remove NAs in ID, X & Y
+  #          Month >= 7)                        # limit to main field season
+  # 
+  # # limit to IDs seen at least 10x/year
+  # # calculate median X coordinate
+  # obs <- obs %>%
+  #   group_by(Year, ID) %>%
+  #   mutate(DaysObs = n_distinct(Date)) %>%
+  #   ungroup() %>% 
+  #   filter(DaysObs >= 10) %>% 
+  #   group_by(ID, Year) %>%
+  #   mutate(xMed = median(X, na.rm = T)) %>%
+  #   ungroup() %>% 
+  #   distinct(ID, Year, DaysObs, xMed)
+  # 
+  # rs <- left_join(rs, obs)
+  # 
+  # 
+  # ## Calculate population covariates -------------------------------------------
+  # 
+  # # mean leg length, condition, mass & mass gain
+  # rs <- rs %>%
+  #   group_by(Year) %>%
+  #   mutate(mLeg = mean(Leg, na.rm = T),
+  #          mCond = mean(Cond, na.rm = T),
+  #          mMass = mean(Mass, na.rm = T),
+  #          mMGain = mean(mGain, na.rm = T)) %>%
+  #   ungroup()
+  # 
+  # # proportion in prime-age
+  # # ratio of young weaned to monitored females
+  # rs <- rs %>% 
+  #   group_by(Year) %>% 
+  #   mutate(nFem = n_distinct(ID),                    # number of monitored females
+  #          nKA = sum(!is.na(Age)),                   # number of females of known age
+  #          nSA = sum(SurvWN == 1, na.rm = T),        # number of weaned subadults this cohort
+  #          nPrime = sum(Age %in% prime, na.rm = T),  # number of females of prime age
+  #          pPrime = nPrime/nKA,                      # proportion of prime aged
+  #          Ratio = nSA/nFem) %>%                     # ratio of young weaned
+  #   ungroup()
+  # 
+  # # previous ratio of young weaned
+  # tmp <- rs %>%
+  #   distinct(Year, Ratio) %>%
+  #   mutate(PRatio = lag(Ratio))
+  # 
+  # rs <- left_join(rs, tmp)
+  # remove(tmp)
   
   
   ## Go through toggles --------------------------------------------------------
-  
-  rs <- rs %>% arrange(Year, ID)
   
   # if cum.surv is TRUE
   # we want to represent cumulative survival
@@ -244,52 +243,94 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   }
   
   
+  ## Sort into matrices --------------------------------------------------------
+  
+  rs <- cbind(rs, id = match(rs$ID, sort(unique(rs$ID))))
+  N.id <- length(unique(rs$id))
+  
+  rs <- cbind(rs, year = as.integer(as.factor(rs$Year)))
+  N.year <- length(unique(rs$year))
+  
+  y <- matrix(NA, N.id, N.year)
+  age <- matrix(NA, N.id, N.year)
+  
+  # create y & age matrices
+  # surv.sep toggles determine what y should be
+  for (row in 1:nrow(rs)){
+    i <- rs$id[row]
+    t <- rs$year[row]
+    age[i, t] <- rs$Age[row]
+    
+    if(surv.sep1) y[i, t] <- rs$SurvSep1[row]
+    if(surv.sep2) y[i, t] <- rs$SurvSep2[row]
+  }
+  
+  # fill in some NAs in age matrix
+  fill_ages <- function(row) {
+    if(all(is.na(row))) return(row)  # if all NAs, return as is
+    first <- which(!is.na(row))[1]   # first non-NA value
+    # fill forward from first known age
+    row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
+    # fill backward if needed
+    if(first > 1) row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
+    return(row)
+  }
+  
+  age <- t(apply(age, 1, fill_ages))
+  age[age < 3] <- NA
+  
+  
   ## Return (mostly) scaled data -----------------------------------------------
   
-  id <- as.numeric(rs$ID)
-  year <- as.numeric(as.factor(rs$Year))
+  id   <- sort(unique(rs$id))
+  year <- sort(unique(rs$year))
   
-  age <- rs$Age             # unscaled!
+  age  <- age+1
+  ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
+  
+  # age <- rs$Age           # unscaled!
   # teeth <- rs$Teeth       # unscaled!
   # leg <- scale(rs$Leg)
   # mass <- scale(rs$Mass)
   # cond <- scale(rs$Cond)
-  prs <- rs$PRS             # unscaled!
+  # prs <- rs$PRS           # unscaled!
   # xmed <- scale(rs$xMed)
   
-  surv7 <- rs$SurvLPY
-  surv21 <- rs$SurvWN
-  survS1 <- rs$SurvSep1
-  survS2 <- rs$SurvSep2
+  # surv7 <- rs$SurvLPY
+  # surv21 <- rs$SurvWN
+  # survS1 <- rs$SurvSep1
+  # survS2 <- rs$SurvSep2
   
   # mcond <- scale(rs$mCond)
-  pprime <- scale(rs$pPrime)
-  ratio <- scale(rs$Ratio)
-  pratio <- scale(rs$PRatio)
+  # pprime <- scale(rs$pPrime)
+  # ratio <- scale(rs$Ratio)
+  # pratio <- scale(rs$PRatio)
   
-  return(list(id = id,
+  return(list(N.id = N.id,
+              N.year = N.year,
+              N.age = 20,
+              N.ageC = 5,
+              id = id,
               year = year,
-              prime = prime,
-              age = age,
+              y = y,
+              age = age
               # teeth = teeth,
               # leg = leg,
               # mass = mass,
               # cond = cond,
-              prs = prs,
+              # prs = prs,
               # xmed = xmed,
-              surv7 = surv7,
-              surv21 = surv21,
-              survS1 = survS1,
-              survS2 = survS2,
-              # mcond = mcond,
-              pprime = pprime,
-              ratio = ratio,
-              pratio = pratio))
+              # surv7 = surv7,
+              # surv21 = surv21,
+              # survS1 = survS1,
+              # survS2 = survS2
+              ))
   
 }
 
 # test <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 #                        obs.data = "data/PromObs_2008-2019.xlsx",
-#                        prime = c(3:12), known.age = TRUE, cum.surv = TRUE)
+#                        prime = c(3:12), known.age = TRUE, cum.surv = TRUE,
+#                        surv.sep1 = TRUE, surv.sep2 = FALSE)
 # test
 
