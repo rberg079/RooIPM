@@ -152,7 +152,7 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE)
+    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE, Warns.18)
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -183,9 +183,19 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
     ungroup() %>% 
     distinct(Year, Veg, VegSE)
   
+  win <- env %>% 
+    filter(Year > 2007) %>% 
+    select(Year, Warns.18) %>% 
+    group_by(Year) %>% 
+    mutate(Win = sum(Warns.18),
+           Win = ifelse(Year == 2024, NA, Win)) %>% 
+    ungroup() %>% 
+    distinct(Year, Win)
+  
   # join & calculate vegetation per capita
-  env <- veg %>% 
-    left_join(dens) %>% 
+  env <- dens %>% 
+    left_join(veg) %>% 
+    left_join(win) %>% 
     mutate(VegRoo = Veg / Dens,
            VegRooSE = abs(VegRoo)*sqrt((VegSE / Veg)^2+(DensSE / Dens)^2))
   
@@ -194,20 +204,23 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
   
   year <- seq(from = 1, to = 17, by = 1)
   
-  veg  <- as.numeric(scale(env$Veg))
   dens <- as.numeric(scale(env$Dens))
+  veg  <- as.numeric(scale(env$Veg))
   
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
   densE <- as.numeric(ifelse(is.na(env$DensSE), 2, env$DensSE/sd(env$Dens, na.rm = T)))
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
+  
+  win <- as.numeric(scale(env$Win))
   
   nNoVeg  <- sum(is.na(veg))
   nNoDens <- sum(is.na(dens))
   
   return(list(year = year,
-              veg = veg,
               dens = dens,
-              vegE = vegE,
+              veg = veg,
               densE = densE,
+              vegE = vegE,
+              win = win,
               nNoVeg = nNoVeg,
               nNoDens = nNoDens))
   
