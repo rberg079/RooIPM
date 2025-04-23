@@ -23,70 +23,112 @@ env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
                        wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                        wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
-rs <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                     obs.data = "data/PromObs_2008-2019.xlsx",
-                     prime = c(4:9), known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+dat <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                      obs.data = "data/PromObs_2008-2019.xlsx",
+                      known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
 
 # check that all years are represented
-setequal(1:17, unique(rs$year)) # should be TRUE!
+setequal(1:17, unique(dat$year))  # should be TRUE
 
 # create Nimble lists
-myData <-  list(y = rs$y,
-                age = rs$age,
+myData <-  list(rs   = dat$survS1,
+                id   = dat$id,
+                year = dat$year,
+                age  = dat$age-2,  # SO THAT AGE STARTS AT 1
                 dens = env$dens,
-                veg = env$veg,
-                win = env$win)
+                veg  = env$veg,
+                win  = env$win)
 
-myConst <- list(N.id = rs$N.id,
-                N.year = rs$N.year,
-                N.age = rs$N.age)
+myConst <- list(N      = dat$N,
+                N.id   = dat$N.id,
+                N.year = dat$N.year,
+                N.age  = dat$N.age,
+                N.ageC = dat$N.ageC)
 # TODO: deal with missing environment
+
+# Switches/toggles
+testRun <- TRUE # or FALSE
+
+
+## Parameters ------------------------------------------------------------------
+
+# N = number of observations, or reproductive events
+# N.id = number of unique kangaroos in the dataset
+# N.year = number of years in the dataset
+# N.age = number of ages in the analysis (3 through 19 years old, so 17 ages)
+# N.ageC = number of age classes in the analysis (not used so far in RS analysis)
 
 
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
   
-  ##### Likelihood ####
-  for (i in 1:N.id){
-    for (t in 1:N.year){
-      y[i, t] ~ dbern(p[i, t])
-      logit(p[i, t]) <- mu.RS + B.age[age[i, t]] +
-      B.dens * dens[t] + B.veg * veg[t] + B.win * win[t] +
-      B.id[id[i]] + B.year[year[t]]
-    }
+  # #### First attempt ####
+  # # likelihood
+  # for (x in 1:N){
+  #   rs[x] ~ dbern(rsI[id[x], year[x]])
+  # }
+  # 
+  # # constraints
+  # for (i in 1:N.id){
+  #   for (t in 1:N.year){
+  #     logit(rsI[i, t]) <- logit(Mu.rsI[age[i, t]]) +
+  #       # Beta.dens * dens[t] +
+  #       # Beta.veg * veg[t] +
+  #       # Beta.win * win[t] +
+  #       EpsilonI.rsI[i] +
+  #       EpsilonT.rsI[t]
+  #   }
+  # }
+  
+  #### Second attempt ####
+  for (i in 1:N){
+    # likelihood
+    rs[i] ~ dbern(rsI[id[i], year[i]])
+
+    # constraints
+    logit(rsI[id[i], year[i]]) <- logit(Mu.rsI[age[i]]) +
+      EpsilonI.rsI[id[i]] +
+      EpsilonT.rsI[year[i]]
   }
   
-  for (i in 1:N.age){
+  # use parameters estimated from individual data above
+  # to predict age-specific reproductive success (rsA) here!
+  for (a in 1:N.age){
     for (t in 1:N.year){
-      y[a, t] ~ dbern(p[a, t])
-      logit(p[a, t]) <- mu.RS + B.age[a] +
-      B.dens * dens[t] + B.veg * veg[t] + B.win * win[t]
+      logit(rsA[a, t]) <- logit(Mu.rsA[a]) +  # rsA becomes s.PY in the population model!
+        # Beta.dens * dens[t] +
+        # Beta.veg * veg[t] +
+        # Beta.win * win[t] +
+        EpsilonT.rsA[t]
     }
   }
     
   ##### Priors ####
   # priors for fixed effects
-  mu.RS  ~ dnorm(0, 1)
-  B.age  ~ dnorm(0, 1)
-  B.dens ~ dnorm(0, 1)
-  B.veg  ~ dnorm(0, 1)
-  B.win  ~ dnorm(0, 1)
+  for (a in 1:N.age){
+    Mu.rsI[a] ~ dunif(0, 1)
+    Mu.rsA[a] ~ dunif(0, 1)
+  }
   
+  # Beta.dens ~ dunif(-2, 2)  # could be dunif(-5, 5) if need be
+  # Beta.veg  ~ dunif(-2, 2)  # could be dunif(-5, 5) if need be
+  # Beta.win  ~ dunif(-2, 2)  # could be dunif(-5, 5) if need be
   
   # priors for random effects
-  for (j in 1:N.id){
-    B.id[j] ~ dnorm(0, sigma[1])
+  for (i in 1:N.id){
+    EpsilonI.rsI[i] ~ dnorm(0, SigmaI.rsI)
   }
   
   for (t in 1:N.year){
-    B.year[t] ~ dnorm(0, sigma[2])
+    EpsilonT.rsI[t] ~ dnorm(0, SigmaT.rsI)
+    EpsilonT.rsA[t] ~ dnorm(0, SigmaT.rsA)
   }
   
   # priors for sigma
-  for (k in 1:2){
-    sigma[i] ~ dunif(0, 100)
-  }
+  SigmaI.rsI ~ dunif(0, 100)
+  SigmaT.rsI ~ dunif(0, 100)
+  SigmaT.rsA ~ dunif(0, 100)
   
 })
 
@@ -103,6 +145,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
   N = myConst$N
   N.id = myConst$N.id
   N.year = myConst$N.year
+  N.age = myConst$N.age
   
   # assign initial values
   # TODO: UPDATE SIMULATE INITS FUNCTION!
@@ -117,12 +160,14 @@ paraNimble <- function(seed, myCode, myConst, myData,
   
   # select parameters to monitor
   params = c(# RS model
-             "mu.RS", "B.age", "B.dens", "B.veg", "B.win",
-             "B.id", "B.year", "sigma"
+             "Mu.rsI", # "Mu.rsA"
+             # "Beta.dens", "Beta.veg", "Beta.win",
+             "EpsilonI.rsI", "EpsilonT.rsI",
+             "SigmaI.rsI", "SigmaT.rsI"
   )
   
   # MCMC settings
-  mySeed  <- 1
+  mySeed  <- 1:3
   nchains <- 3
   
   if(testRun){
@@ -139,13 +184,32 @@ paraNimble <- function(seed, myCode, myConst, myData,
   myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
   cmyMCMC <- compileNimble(myMCMC, project = myMod)
   samples <- runMCMC(cmyMCMC,
-                     samplesAsCodaMCMC = T,
                      niter = niter,
                      nburnin = nburnin,
                      thin = nthin,
+                     setSeed = mySeed,
+                     samplesAsCodaMCMC = T,
                      summary = T,
                      WAIC = T)
   
   return(samples)
 }
+
+
+## Run model -------------------------------------------------------------------
+
+# serialized
+start.t <- Sys.time()
+this_cluster <- makeCluster(3)
+samples <- parLapply(X = 1:3,
+                     cl = this_cluster,
+                     fun = paraNimble,
+                     myCode = myCode,
+                     myConst = myConst,
+                     myData = myData,
+                     testRun = testRun)
+
+beep(sound = 2)
+stopCluster(this_cluster)
+dur = now() - start.t; dur
 

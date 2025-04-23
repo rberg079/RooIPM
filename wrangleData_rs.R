@@ -23,11 +23,9 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # # for testing purposes
   # rs.data = "data/RSmainRB_Mar25.xlsx"
   # obs.data = "data/PromObs_2008-2019.xlsx"
-  # prime = c(4:9)
   # known.age = TRUE
   # cum.surv = TRUE
   # surv.sep1 = TRUE
-  # surv.sep2 = FALSE
   
   # load libraries
   library(readxl)
@@ -35,7 +33,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   # load data
   rs <- read_excel(rs.data)
-  obs <- read_excel(obs.data)
+  # obs <- read_excel(obs.data)
   
   # clean up
   rs <- rs %>% 
@@ -91,6 +89,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
              is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
              TRUE ~ SurvSep2))
   
+  # limit to females of known age or not
   if(known.age){
     rs <- rs[!is.na(rs$Age),]
   }
@@ -243,52 +242,21 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   }
   
   
-  ## Sort into matrices --------------------------------------------------------
-  
-  rs <- cbind(rs, id = match(rs$ID, sort(unique(rs$ID))))
-  N.id <- length(unique(rs$id))
-  
-  rs <- cbind(rs, year = as.integer(as.factor(rs$Year)))
-  N.year <- length(unique(rs$year))
-  
-  y <- matrix(NA, N.id, N.year)
-  age <- matrix(NA, N.id, N.year)
-  
-  # create y & age matrices
-  # surv.sep toggles determine what y should be
-  for (row in 1:nrow(rs)){
-    i <- rs$id[row]
-    t <- rs$year[row]
-    age[i, t] <- rs$Age[row]
-    
-    if(surv.sep1) y[i, t] <- rs$SurvSep1[row]
-    if(surv.sep2) y[i, t] <- rs$SurvSep2[row]
-  }
-  
-  # fill in some NAs in age matrix
-  fill_ages <- function(row) {
-    if(all(is.na(row))) return(row)  # if all NAs, return as is
-    first <- which(!is.na(row))[1]   # first non-NA value
-    # fill forward from first known age
-    row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
-    # fill backward if needed
-    if(first > 1) row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
-    return(row)
-  }
-  
-  age <- t(apply(age, 1, fill_ages))
-  age[age < 3] <- NA
-  
-  
   ## Return (mostly) scaled data -----------------------------------------------
   
-  id   <- sort(unique(rs$id))
-  year <- sort(unique(rs$year))
+  id   <- as.integer(rs$ID)
+  id   <- match(id, sort(unique(id)))
+  year <- as.integer(factor(rs$Year))
   
-  age  <- age+1
+  age  <- as.integer(rs$Age)
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  # age <- rs$Age           # unscaled!
+  N      <- length(id)
+  N.id   <- length(unique(id))
+  N.year <- length(unique(year))
+  N.age  <- length(unique(age))
+  N.ageC <- length(unique(ageC))
+  
   # teeth <- rs$Teeth       # unscaled!
   # leg <- scale(rs$Leg)
   # mass <- scale(rs$Mass)
@@ -296,34 +264,39 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # prs <- rs$PRS           # unscaled!
   # xmed <- scale(rs$xMed)
   
-  # surv7 <- rs$SurvLPY
-  # surv21 <- rs$SurvWN
-  # survS1 <- rs$SurvSep1
-  # survS2 <- rs$SurvSep2
+  surv7 <- rs$SurvLPY
+  surv21 <- rs$SurvWN
+  survS1 <- rs$SurvSep1
+  survS2 <- rs$SurvSep2
   
   # mcond <- scale(rs$mCond)
   # pprime <- scale(rs$pPrime)
   # ratio <- scale(rs$Ratio)
   # pratio <- scale(rs$PRatio)
   
-  return(list(N.id = N.id,
+  return(list(N = N,
+              N.id = N.id,
               N.year = N.year,
-              N.age = 20,
-              N.ageC = 5,
+              N.age = N.age,
+              N.ageC = N.ageC,
               id = id,
               year = year,
-              y = y,
-              age = age
+              age = age,
+              ageC = ageC,
               # teeth = teeth,
               # leg = leg,
               # mass = mass,
               # cond = cond,
               # prs = prs,
               # xmed = xmed,
-              # surv7 = surv7,
-              # surv21 = surv21,
-              # survS1 = survS1,
-              # survS2 = survS2
+              surv7 = surv7,
+              surv21 = surv21,
+              survS1 = survS1,
+              survS2 = survS2
+              # mcond = mcond,
+              # pprime = pprime,
+              # ratio = ratio,
+              # pratio = pratio
               ))
   
 }

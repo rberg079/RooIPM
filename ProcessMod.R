@@ -184,14 +184,14 @@ myCode = nimbleCode({
   
   ## 2. Observation
   for (t in 1:N.year){
-    for(i in 1:N.id){
-      logit(p[i, t]) <- mu.p + year.p[t]
+    for(i in 1:N.id){  #TODO: BY AGE CLASS NOT I
+      logit(p[i, t]) <- logit(Mu.p) + year.p[t]  #... OR JUST BY YEAR
     }
     year.p[t] ~ dnorm(0, sd = sd.p)
   }
   
-  mu.p <- log(mean.p / (1-mean.p))
-  mean.p ~ dunif(0, 1)
+  mu.p <- log(mean.p / (1-mean.p))  # this is logit transformation, not necessary if using logit(Mu.p)
+  mean.p ~ dunif(0, 1)  # this becomes prior for logit(Mu.p)
   sd.p ~ dunif(0, 10) # try dunif(0.01, 10) if sd.p causes trouble
   
   
@@ -204,7 +204,7 @@ myCode = nimbleCode({
       
       # Observation process
       obs[i, t] ~ dbern(mu2[i, t])
-      mu2[i, t] <- p[i, t] * state[i, t]
+      mu2[i, t] <- p[i, t] * state[i, t]  #...& THEN REMOVE I DIMENSION HERE
     } # t
   } # i
   
@@ -265,7 +265,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
              'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
   
   # MCMC settings
-  mySeed  <- 1
+  mySeed  <- 1:3
   nchains <- 3
   
   if(testRun){
@@ -282,10 +282,11 @@ paraNimble <- function(seed, myCode, myConst, myData,
   myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
   cmyMCMC <- compileNimble(myMCMC, project = myMod)
   samples <- runMCMC(cmyMCMC,
-                     samplesAsCodaMCMC = T,
                      niter = niter,
                      nburnin = nburnin,
                      thin = nthin,
+                     setSeed = mySeed,
+                     samplesAsCodaMCMC = T,
                      summary = T,
                      WAIC = T)
 
