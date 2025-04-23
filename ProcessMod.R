@@ -30,9 +30,9 @@ surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx")
 
 # create Nimble lists
-ntimes <- 17
-nAge   <- 22
-nAgeC  <- 5
+N.year <- 17
+N.age  <- 22
+N.ageC <- 5
 
 myData  <- list(obs = surv$obs,
                 state = surv$state,
@@ -43,13 +43,13 @@ myData  <- list(obs = surv$obs,
                 veg = env$veg,
                 vegE = env$vegE)
 
-myConst <- list(ntimes = ntimes,       # TODO: get from one of the wrangles?
-                nind = surv$nind,
-                nAge = nAge,           # TODO: get from one of the wrangles?
-                nAgeC = nAgeC,         # TODO: get from one of the wrangles?
+myConst <- list(N.year = N.year,       # TODO: get from one of the wrangles?
+                N.id = surv$N.id,
+                N.age = N.age,           # TODO: get from one of the wrangles?
+                N.ageC = N.ageC,         # TODO: get from one of the wrangles?
                 noAge = surv$noAge,
-                nNoAge = surv$nNoAge,
-                nNoVeg = env$nNoVeg,
+                N.noAge = surv$N.noAge,
+                N.noVeg = env$N.noVeg,
                 first = surv$first,
                 last = surv$last,
                 W = surv$W,
@@ -66,8 +66,8 @@ myCode = nimbleCode({
   ## PROCESS MODEL
   ## ----------------------------------------
   
-  for (t in 1:(ntimes-1)){
-    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:nAge,t])) 
+  for (t in 1:(N.year-1)){
+    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:N.age,t])) 
     
     SA[1,t+1] ~ dbin(s.YAF[t], YAF[t])
     SA[2,t+1] ~ dbin(s.SA[1,t], SA[1,t])
@@ -75,14 +75,14 @@ myCode = nimbleCode({
     AD[1:2,t+1] <- 0
     AD[3,t+1] ~ dbin(s.SA[2,t], SA[2,t])
     
-    for (a in 4:nAge){
+    for (a in 4:N.age){
       AD[a,t+1] ~ dbin(s.AD[a,t], AD[a,t])
     }
-    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:nAge,t+1])
+    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:N.age,t+1])
   }
   
   # priors
-  for(t in 1:(ntimes-1)){
+  for(t in 1:(N.year-1)){
     b[t]        ~ dunif(0.5, 1)
     s.PY[t]     ~ dunif(0.1, 1)
     s.YAF[t]    <- s[1,t]
@@ -97,7 +97,7 @@ myCode = nimbleCode({
       s.AD[a,t] <- s[4,t]
     }
     
-    for(a in 10:nAge){  # senescent
+    for(a in 10:N.age){  # senescent
       s.AD[a,t] <- s[5,t]
     }
   }
@@ -106,8 +106,8 @@ myCode = nimbleCode({
   ## ----------------------------------------
   
   ## 1. Survival function
-  for (a in 1:nAgeC){                               
-    for (t in 1:(ntimes-1)){
+  for (a in 1:N.ageC){                               
+    for (t in 1:(N.year-1)){
       logit(s[a, t]) <- B.age[a] +
         B.dens[a] * dens.hat[t] +
         B.veg[a] * veg.hat[t] +
@@ -117,28 +117,28 @@ myCode = nimbleCode({
     } # t
   } # a
   
-  for (t in 1:(ntimes-1)){
+  for (t in 1:(N.year-1)){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (m in 1:nNoVeg){
+  for (m in 1:N.noVeg){
     veg[m] <- 0
     # veg[m] <- vegM[m]
     # vegM[m] ~ dnorm(0, 1)
   }
   
   # Estimate missing ages
-  for (i in 1:nNoAge){
+  for (i in 1:N.noAge){
     ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for (t in (first[noAge[i]]+1):ntimes){
+    for (t in (first[noAge[i]]+1):N.year){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
     } # t
   } # i
   
   # Priors for fixed effects
-  for(a in 1:nAgeC){
+  for(a in 1:N.ageC){
     B.age[a] ~ dlogis(0, 1)
     B.dens[a] ~ dnorm(0, 0.001)
     B.veg[a] ~ dnorm(0, 0.001)
@@ -146,45 +146,45 @@ myCode = nimbleCode({
   }
   
   # Variance-Covariance matrix
-  for (i in 1:nAgeC){
+  for (i in 1:N.ageC){
     zero[i] <- 0
     xi[i] ~ dunif(0, 2)
   } # i
   
-  for (t in 1:(ntimes-1)){
-    eps.raw[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.raw[1:nAgeC,1:nAgeC])
-    for (i in 1:nAgeC){
+  for (t in 1:(N.year-1)){
+    eps.raw[t, 1:N.ageC]  ~ dmnorm(zero[1:N.ageC], Tau.raw[1:N.ageC,1:N.ageC])
+    for (i in 1:N.ageC){
       gamma[t, i] <- xi[i] * eps.raw[t,i]
     } # i
   } # t
   
   # Priors for precision matrix
-  Tau.raw[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
-  Sigma.raw[1:nAgeC, 1:nAgeC] <- inverse(Tau.raw[1:nAgeC, 1:nAgeC])
+  Tau.raw[1:N.ageC, 1:N.ageC] ~ dwish(W[1:N.ageC, 1:N.ageC], DF)
+  Sigma.raw[1:N.ageC, 1:N.ageC] <- inverse(Tau.raw[1:N.ageC, 1:N.ageC])
   
   # Uniform covariance matrix
-  # for (a in 1:nAgeC){
+  # for (a in 1:N.ageC){
   #   zero[a] <- 0
   #   sd.yr[a] ~ dunif(0, 5)
   #   cov.yr[a, a] <- sd.yr[a]*sd.yr[a]
   # }
   #
-  # for(a in 1:(nAgeC-1)){
-  #   for(a2 in (a+1):nAgeC){
+  # for(a in 1:(N.ageC-1)){
+  #   for(a2 in (a+1):N.ageC){
   #     cor.yr[a, a2] ~ dunif(-1, 1)
   #     cov.yr[a2, a] <- sd.yr[a] * sd.yr[a2] * cor.yr[a, a2]
   #     cov.yr[a, a2] <- cov.yr[a2, a]
   #   }
   # } #i
   #
-  # for (t in 1:(ntimes-1)) {
-  #   gamma[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], cov = cov.yr[1:nAgeC, 1:nAgeC])
+  # for (t in 1:(N.year-1)) {
+  #   gamma[t, 1:N.ageC]  ~ dmnorm(zero[1:N.ageC], cov = cov.yr[1:N.ageC, 1:N.ageC])
   # } #t
   
   
   ## 2. Observation
-  for (t in 1:ntimes){
-    for(i in 1:nind){
+  for (t in 1:N.year){
+    for(i in 1:N.id){
       logit(p[i, t]) <- mu.p + year.p[t]
     }
     year.p[t] ~ dnorm(0, sd = sd.p)
@@ -196,7 +196,7 @@ myCode = nimbleCode({
   
   
   ### 3. Likelihood
-  for (i in 1:nind){
+  for (i in 1:N.id){
     for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
       # State process
       state[i, t] ~ dbern(mu1[i, t])
@@ -214,8 +214,8 @@ myCode = nimbleCode({
 ## Assemble --------------------------------------------------------------------
 
 # source("simulateInits.R")
-# myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
-#                          dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+# myInits <- simulateInits(N.year = N.year, N.age = N.age, N.ageC = N.ageC,
+#                          dens = env$dens, veg = env$veg, N.noAge = surv$N.noAge)
 # 
 # # monitors
 # params = c(# CJS model
@@ -237,14 +237,14 @@ paraNimble <- function(seed, myCode, myConst, myData,
 
   library(nimble)
   
-  ntimes = myConst$ntimes
-  nAge = myConst$nAge
-  nAgeC = myConst$nAgeC
+  N.year = myConst$N.year
+  N.age  = myConst$N.age
+  N.ageC = myConst$N.ageC
 
   # assign initial values
   source("simulateInits.R")
-  myInits <- simulateInits(ntimes = ntimes, nAge = nAge, nAgeC = nAgeC,
-                           dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+  myInits <- simulateInits(N.year = N.year, N.age = N.age, N.ageC = N.ageC,
+                           dens = env$dens, veg = env$veg, N.noAge = surv$N.noAge)
 
   # assemble model
   myMod <- nimbleModel(code = myCode,
@@ -401,14 +401,14 @@ out.mat <- samples %>% map(~as.matrix(.$samples)) %>% do.call(what = rbind)  # s
 
 # parameters to include
 table.params <- c(
-  paste0('YAF[', 1:ntimes, ']'),
-  paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']'),
-  paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']'))
+  paste0('YAF[', 1:N.year, ']'),
+  paste0('SA[', rep(1:2, each = N.year), ', ', rep(1:N.year, times = 2), ']'),
+  paste0('AD[', rep(1:N.age, each = N.year), ', ', rep(1:N.year, times = N.age), ']'))
 
 # table.params <- list(
-#   yaf = c(paste0('YAF[', 1:ntimes, ']')),
-#   sa  = c(paste0('SA[', rep(1:2, each = ntimes), ', ', rep(1:ntimes, times = 2), ']')),
-#   ad  = c(paste0('AD[', rep(1:nAge, each = ntimes), ', ', rep(1:ntimes, times = nAge), ']')))
+#   yaf = c(paste0('YAF[', 1:N.year, ']')),
+#   sa  = c(paste0('SA[', rep(1:2, each = N.year), ', ', rep(1:N.year, times = 2), ']')),
+#   ad  = c(paste0('AD[', rep(1:N.age, each = N.year), ', ', rep(1:N.year, times = N.age), ']')))
 
 # table of posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
@@ -462,15 +462,15 @@ corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
 
 # check random effects among demographic rates
 # check variance-correlation matrix, with Sigma.raw on diagonal
-varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
+varCorrMatrix <- array(NA, dim = c(myConst$N.ageC, myConst$N.ageC, nrow(out.dat)))
 
-for (i in 1:myConst$nAgeC){
+for (i in 1:myConst$N.ageC){
   varCorrMatrix[i,i,] <- out.dat[, paste0('xi[', i,']')]*
     sqrt(out.dat[, paste0('Sigma.raw[', i,', ', i,']')])
 }
 
-for (j in 1:(myConst$nAgeC-1)){
-  for (i in (j+1):myConst$nAgeC){
+for (j in 1:(myConst$N.ageC-1)){
+  for (i in (j+1):myConst$N.ageC){
     varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.raw[', i, ', ', j, ']')])/
       sqrt(out.dat[, paste0('Sigma.raw[', j, ', ', j, ']')]*
              out.dat[, paste0('Sigma.raw[', i, ', ', i, ']')])

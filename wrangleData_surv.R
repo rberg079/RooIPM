@@ -247,12 +247,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   age   <- unname(as.matrix(age[!noInfo,])+1)
   ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  nind   <- nrow(state)
-  ntimes <- ncol(state)
+  N.id   <- nrow(state)
+  N.year <- ncol(state)
   
-  nAgeC  <- max(ageC, na.rm = T)
-  noAge  <- which(is.na(age[,ncol(age)]))
-  nNoAge <- length(noAge)
+  N.ageC  <- max(ageC, na.rm = T)
+  noAge   <- which(is.na(age[,ncol(age)]))
+  N.noAge <- length(noAge)
   
   first <- as.numeric(id$first[!noInfo])
   last  <- as.numeric(id$last[!noInfo])
@@ -264,12 +264,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
               age = age,
               ageC = ageC,
               
-              nind = nind,
-              ntimes = ntimes,
+              N.id = N.id,
+              N.year = N.year,
               
-              nAgeC = nAgeC,
+              N.ageC = N.ageC,
               noAge = noAge,
-              nNoAge = nNoAge,
+              N.noAge = N.noAge,
               
               first = first,
               last = last,
