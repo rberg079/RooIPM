@@ -9,7 +9,7 @@
 #'
 #' @examples
 
-wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
+wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   
   ## Set up --------------------------------------------------------------------

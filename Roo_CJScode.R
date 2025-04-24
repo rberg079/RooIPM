@@ -18,14 +18,14 @@ registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
-enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
 source("wrangleData_sv.R")
-svData <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
-                           yafs.data = "data/RSmainRB_Mar25.xlsx")
+svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+                         yafs.data = "data/RSmainRB_Mar25.xlsx")
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -62,11 +62,11 @@ myCode = nimbleCode({
   for (i in 1:nID.sv){
     for (t in (first[i] + 1):last[i]){
       # state process
-      state[i, t] ~ dbern(MuS[i, t])
-      MuS[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
+      state[i, t] ~ dbern(Mu.sp[i, t])
+      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
       # observation process
-      obs[i, t] ~ dbern(MuO[i, t])
-      MuO[i, t] <- ob[i, t] * state[i, t]
+      obs[i, t] ~ dbern(Mu.op[i, t])
+      Mu.op[i, t] <- ob[i, t] * state[i, t]
     }
   }
   
@@ -105,7 +105,7 @@ myCode = nimbleCode({
   # observation function
   for (t in 1:nYear){
     for(i in 1:nID.sv){
-      logit(ob[i, t]) <- logit(MuO) + Epsilon.ob[t]
+      logit(ob[i, t]) <- logit(Mu.op) + Epsilon.ob[t]
     }
     Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
   }
@@ -138,7 +138,7 @@ myCode = nimbleCode({
   Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   # observation
-  MuO ~ dunif(0.2, 1)
+  Mu.op ~ dunif(0.2, 1)
   Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
   
 })
@@ -180,7 +180,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
              veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
              dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
              
-             MuO = runif(1, 0.2, 0.8),
+             Mu.op = runif(1, 0.2, 0.8),
              Epsilon.ob = rnorm(nYear, 0, 0.2),
              Sigma.ob = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
              
@@ -188,8 +188,13 @@ paraNimble <- function(seed, myCode, myConst, myData,
              Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1),
                                  ncol = nAgeC, nrow = (nYear-1))
     )
-    Tau.sv = diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
-    l$Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
+    # Tau.sv = diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
+    # l$Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
+    # return(l)
+    
+    library(MASS)
+    prec = diag(nAgeC)
+    l$Tau.sv = rwish(DF = nAgeC + 1, S = solve(prec))
     return(l)
   }
   

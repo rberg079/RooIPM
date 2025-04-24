@@ -24,10 +24,10 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   
   # for testing purposes
   source("wrangleData_en.R")
-  enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                            veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                            wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                            wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+  enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
   
   source("wrangleData_rs.R")
   rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
@@ -35,8 +35,8 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
                            known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
   
   source("wrangleData_sv.R")
-  svData <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
-                             yafs.data = "data/RSmainRB_Mar25.xlsx")
+  svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+                           yafs.data = "data/RSmainRB_Mar25.xlsx")
   
   n <- rsData$n
   nID.sv <- svData$nID

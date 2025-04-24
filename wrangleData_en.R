@@ -10,7 +10,7 @@
 #'
 #' @examples
 
-wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
+wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   
   ## Set up --------------------------------------------------------------------
