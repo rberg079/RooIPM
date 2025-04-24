@@ -41,7 +41,7 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # figure out survival to Sept 1
   yafs <- yafs %>% 
     arrange(PYid, Year) %>% 
-    filter(PYsex == 2, Exclude == 0, !is.na(PYid)) %>%  # females
+    filter(PYsex == 2, Exclude == 0, !is.na(PYid)) %>% # females
     select(Year, PYid, Repro, SurvLPY, SurvWN, SurvNov1, SurvNov2, PYLastObs) %>% 
     rename(ID = "PYid") %>% 
     mutate(SurvLPY = as.numeric(SurvLPY),
@@ -127,9 +127,9 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
            HRDead = replace_na(HRDead, 0)) %>% 
     select(ID, Dead, HRDead, in2008:in2024) %>% 
     mutate_at(vars(in2008:in2024), ~case_when(
-      . == 2 ~ 0,   # roadkills are dead
-      . == 3 ~ 1,   # observed emigrants are alive
-      . == 4 ~ NA,  # unobserved emigrants are unknown
+      . == 2 ~ 0,  # roadkills are dead
+      . == 3 ~ 1,  # observed emigrants are alive
+      . == 4 ~ NA, # unobserved emigrants are unknown
       TRUE ~ .))
   
   id <- state %>% select(ID, Dead, HRDead)
@@ -217,8 +217,8 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   # fill in some NAs
   fill_ages <- function(row) {
-    if(all(is.na(row))) return(row)  # if all NAs, return as is
-    first <- which(!is.na(row))[1]   # first non-NA value
+    if(all(is.na(row))) return(row) # if all NAs, return as is
+    first <- which(!is.na(row))[1]  # first non-NA value
     
     # fill forward from first known age
     row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
@@ -247,12 +247,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   age   <- unname(as.matrix(age[!noInfo,])+1)
   ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  N.id   <- nrow(state)
-  N.year <- ncol(state)
+  nID   <- nrow(state)
+  nYear <- ncol(state)
   
-  N.ageC  <- max(ageC, na.rm = T)
+  nAgeC  <- max(ageC, na.rm = T)
   noAge   <- which(is.na(age[,ncol(age)]))
-  N.noAge <- length(noAge)
+  nNoAge <- length(noAge)
   
   first <- as.numeric(id$first[!noInfo])
   last  <- as.numeric(id$last[!noInfo])
@@ -264,12 +264,12 @@ wrangleData_surv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
               age = age,
               ageC = ageC,
               
-              N.id = N.id,
-              N.year = N.year,
+              nID.sv = nID,
+              nYear = nYear,
               
-              N.ageC = N.ageC,
+              nAgeC = nAgeC,
               noAge = noAge,
-              N.noAge = N.noAge,
+              nNoAge = nNoAge,
               
               first = first,
               last = last,

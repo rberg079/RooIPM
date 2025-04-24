@@ -17,15 +17,15 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
                            known.age = FALSE, cum.surv = TRUE,
                            surv.sep1 = FALSE, surv.sep2 = FALSE){
   
-  
-  ## Set up --------------------------------------------------------------------
-  
   # # for testing purposes
   # rs.data = "data/RSmainRB_Mar25.xlsx"
   # obs.data = "data/PromObs_2008-2019.xlsx"
   # known.age = TRUE
   # cum.surv = TRUE
   # surv.sep1 = TRUE
+  
+  
+  ## Set up --------------------------------------------------------------------
   
   # load libraries
   library(readxl)
@@ -41,8 +41,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
            Repro, Parturition, PYid, SurvLPY, SurvWN, SurvNov1, SurvNov2,
            PYLastObs, Dead, HRDead) %>% 
     mutate(Age = as.numeric(Age)) %>% 
-    filter(Age <= 20 | is.na(Age),  # exclude 21 & 22 year-olds
-           Exclude == 0,  # exclude new females caught for their young
+    filter(Age <= 20 | is.na(Age), # exclude 21 & 22 year-olds
+           Exclude == 0, # exclude new females caught for their young
            # remove first born of "twins", often dropped at March capture
            PYid != 308 & PYid != 340 & PYid != 672 & PYid != 885 & PYid != 900 &
            PYid != 891 & PYid != 912 & PYid != 1023 & PYid != 1106 | is.na(PYid)) %>% 
@@ -100,11 +100,11 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # age class & birthdate
   rs <- rs %>% 
     mutate(Age = as.numeric(Age),
-           AgeC = case_when(Age == 0 ~ 1,              # yaf
-                            between(Age, 1, 2) ~ 2,    # subadult
-                            between(Age, 3, 6) ~ 3,    # prime-age
-                            between(Age, 7, 9) ~ 4,    # pre-senescent
-                            Age > 10 ~ 5, TRUE ~ NA),  # senescent
+           AgeC = case_when(Age == 0 ~ 1,             # yaf
+                            between(Age, 1, 2) ~ 2,   # subadult
+                            between(Age, 3, 6) ~ 3,   # prime-age
+                            between(Age, 7, 9) ~ 4,   # pre-senescent
+                            Age > 10 ~ 5, TRUE ~ NA), # senescent
            Parturition = mdy(Parturition),
            CohortStart = as.Date(paste(Year-1, "08", "01", sep = "-")),
            CohortDay = as.numeric(difftime(Parturition, CohortStart, units = "days")) + 1,
@@ -151,9 +151,9 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   #   rename(Time = ttime) %>% 
   #   mutate(X = as.numeric(X),
   #          Y = as.numeric(Y)) %>% 
-  #   filter(X < 40000, X > 32000,              # remove typos in X
-  #          !is.na(ID), !is.na(X), !is.na(X),  # remove NAs in ID, X & Y
-  #          Month >= 7)                        # limit to main field season
+  #   filter(X < 40000, X > 32000,             # remove typos in X
+  #          !is.na(ID), !is.na(X), !is.na(X), # remove NAs in ID, X & Y
+  #          Month >= 7)                       # limit to main field season
   # 
   # # limit to IDs seen at least 10x/year
   # # calculate median X coordinate
@@ -185,12 +185,12 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # # ratio of young weaned to monitored females
   # rs <- rs %>% 
   #   group_by(Year) %>% 
-  #   mutate(nFem = n_distinct(ID),                    # number of monitored females
-  #          nKA = sum(!is.na(Age)),                   # number of females of known age
-  #          nSA = sum(SurvWN == 1, na.rm = T),        # number of weaned subadults this cohort
-  #          nPrime = sum(Age %in% prime, na.rm = T),  # number of females of prime age
-  #          pPrime = nPrime/nKA,                      # proportion of prime aged
-  #          Ratio = nSA/nFem) %>%                     # ratio of young weaned
+  #   mutate(nFem = n_distinct(ID),                   # number of monitored females
+  #          nKA = sum(!is.na(Age)),                  # number of females of known age
+  #          nSA = sum(SurvWN == 1, na.rm = T),       # number of weaned subadults this cohort
+  #          nPrime = sum(Age %in% prime, na.rm = T), # number of females of prime age
+  #          pPrime = nPrime/nKA,                     # proportion of prime aged
+  #          Ratio = nSA/nFem) %>%                    # ratio of young weaned
   #   ungroup()
   # 
   # # previous ratio of young weaned
@@ -252,16 +252,16 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
   N      <- length(id)
-  N.id   <- length(unique(id))
-  N.year <- length(unique(year))
-  N.age  <- length(unique(age))
-  N.ageC <- length(unique(ageC))
+  nID   <- length(unique(id))
+  nYear <- length(unique(year))
+  nAge  <- length(unique(age))
+  nAgeC <- length(unique(ageC))
   
-  # teeth <- rs$Teeth       # unscaled!
+  # teeth <- rs$Teeth      # unscaled!
   # leg <- scale(rs$Leg)
   # mass <- scale(rs$Mass)
   # cond <- scale(rs$Cond)
-  # prs <- rs$PRS           # unscaled!
+  # prs <- rs$PRS          # unscaled!
   # xmed <- scale(rs$xMed)
   
   surv7 <- rs$SurvLPY
@@ -275,10 +275,10 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # pratio <- scale(rs$PRatio)
   
   return(list(N = N,
-              N.id = N.id,
-              N.year = N.year,
-              N.age = N.age,
-              N.ageC = N.ageC,
+              nID.rs = nID,
+              nYear = nYear,
+              nAge = nAge,
+              nAgeC = nAgeC,
               id = id,
               year = year,
               age = age,

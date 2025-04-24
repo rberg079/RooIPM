@@ -1,127 +1,199 @@
 #' Simulate initial values for IPM
 #'
+#' @param N
+#' @param N.id 
 #' @param N.year integer. Number of time steps in the model. N.year = 17 by default.
 #' @param N.age integer. Number of adult age classes, or maximum age. N.age = 22 by default.
 #' @param N.ageC integer. Number of age classes in CJS model. N.ageC = 5 by default.
 #' @param dens vector. Where the density data is stored.
 #' @param veg vector. Where the vegetation data is stored.
+#' @param win 
 #' @param N.noAge integer. Number of individuals of unknown age in the analysis.
+#' @param N.noDens 
+#' @param N.noVeg 
+#' @param N.noWin 
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
 #'
 #' @examples
 
-simulateInits <- function(N.year = 17, N.age = 22, N.ageC = 5,
-                          dens, veg, N.noAge){
+simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, win,
+                          N.noAge, N.noDens = 0, N.noVeg = 0, N.noWin = 0){
+  
+  # for testing purposes
+  source("wrangleData_env.R")
+  env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+  
+  source("wrangleData_rs.R")
+  dat <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                        obs.data = "data/PromObs_2008-2019.xlsx",
+                        known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+  
+  source("wrangleData_surv.R")
+  surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
+                           yafs.data = "data/RSmainRB_Mar25.xlsx")
+  
+  N <- dat$N
+  N.id <- dat$N.id
+  N.age <- dat$N.age
+  dens <- env$dens
+  veg <- env$veg
+  win <- env$win
+  N.noAge <- surv$N.noAge
+  N.noDens <- env$N.noDens
+  N.noVeg <- env$N.noVeg
+  N.noWin <- env$N.noWin
   
   
   ## Simulate latent states for input data -------------------------------------
   
-  # True environmental conditions (CJS)
+  ## Survival model
+  # true environment
   dens.hat <- ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens)
-  veg.hat <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
+  veg.hat  <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
   
-  # Unobserved ages (CJS)
+  # unobserved ages
   ageM <- sample(3:8, size = N.noAge, replace = T)
   
-  # CJS latent states (mu1, mu2)
-  # TODO: simulate these!!
+  # latent states
+  Mu.sp <- runif(1, 0, 1)
+  Mu.op <- runif(1, 0, 1)
   
   
-  ## Simulate vital rate hyperparameters ---------------------------------------
+  ## Simulate vital rate covariate effects -------------------------------------
   
-  # Covariate effects on survival (CJS)
-  B.age <- rnorm(N.ageC, 0, 0.25)
-  B.veg <- rnorm(N.ageC, 0, 0.5)
-  B.dens <- rnorm(N.ageC, 0, 1)
-  # B.densVeg <- rnorm(N.ageC, 0, 1)
+  ## Survival model
+  BetaA.sv <- rnorm(N.ageC, 0, 1)
+  BetaD.sv <- rnorm(N.ageC, 0, 1)
+  BetaV.sv <- rnorm(N.ageC, 0, 1)
+  # BetaDV.sv <- rnorm(N.ageC, 0, 1)
+  
+  ## Reproductive success model
+  # BetaD.rs <- rnorm(1, 0, 1)
+  # BetaV.rs <- rnorm(1, 0, 1)
+  # BetaW.rs <- rnorm(1, 0, 1)
   
   
   ## Simulate vital rate random effects ----------------------------------------
   
-  # Correlated age-year random effects on survival (CJS)
+  ## Survival model
   # variance-covariance matrix
-  zero <- rep(0, N.ageC)
-  xi <- rnorm(N.ageC, 1, 0.1)
+  zero  <- rep(0, N.ageC)
+  Xi.sv <- rnorm(N.ageC, 1, 0.1)
   
-  eps.raw <- matrix(rnorm((N.year-1)*N.ageC, 0, 0.1),
+  Epsilon.sv <- matrix(rnorm((N.year-1)*N.ageC, 0, 0.1),
                     ncol = N.ageC, nrow = (N.year-1))
   
-  gamma <- matrix(NA, ncol = N.ageC, nrow = N.year-1)
+  Gamma.sv <- matrix(NA, ncol = N.ageC, nrow = N.year-1)
   
   for (t in 1:(N.year-1)){
     for (a in 1:N.ageC){
-      gamma[t,a] <- xi[a] * eps.raw[t,a]
-    } # a
-  } # t
+      Gamma.sv[t,a] <- Xi.sv[a] * Epsilon.sv[t,a]
+    }
+  }
   
-  Tau.raw = diag(N.ageC) + rnorm(N.ageC^2, 0, 0.1)
-  Tau.raw = matrix(Tau.raw, nrow = N.ageC)
-  Tau.raw = (Tau.raw + t(Tau.raw)) / 2
+  Tau.sv <- diag(N.ageC) + rnorm(N.ageC^2, 0, 0.1)
+  Tau.sv <- matrix(Tau.sv, nrow = N.ageC)
+  Tau.sv <- (Tau.sv + t(Tau.sv)) / 2
   
-  # # uniform covariance matrix
-  # zero <- rep(0, N.ageC)
-  # sd.yr <- runif(N.ageC, 0, 1)
-  # cor.yr <- diag(N.ageC) + 0.01
-  # TODO: how to initialize gamma here?
+  ## Reproductive success model
+  EpsilonI.rsI <- rnorm(N.id, 0, 1)
+  EpsilonT.rsI <- rnorm(N.year, 0, 1)
+  EpsilonT.rsA <- rnorm(N.year, 0, 1)
+  
+  SigmaI.rsI <- runif(1, 0, 10)
+  SigmaT.rsI <- runif(1, 0, 10)
+  SigmaT.rsA <- runif(1, 0, 10)
 
   
   ## Simulate yearly vital rates -----------------------------------------------
   
-  # Age class-specific survival rates (CJS)
-  s <- matrix(NA, nrow = N.ageC, ncol = N.year-1)
+  ## Survival model
+  # age-class-specific survival
+  sv <- matrix(NA, nrow = N.ageC, ncol = N.year-1)
   
   for(a in 1:N.ageC){
     for(t in 1:(N.year-1)){
-      s[a, t] <- plogis(
-        B.age[a] +
-        # B.dens[a] * dens.hat[t] +
-        # B.veg[a] * veg.hat[t] +
-        # B.densVeg[a] * (dens.hat[t] * veg.hat[t]) +
-        # B.vegRoo[a] * (veg.hat[t] / dens.hat[t]) +
-        gamma[t, a])
+      sv[a, t] <- plogis(
+        BetaA.sv[a] +
+        # BetaD.sv[a] * dens.hat[t] +
+        # BetaV.sv[a] * veg.hat[t] +
+        # BetaDV.sv[a] * (dens.hat[t] * veg.hat[t]) +
+        # BetaVR.sv[a] * (veg.hat[t] / dens.hat[t]) +
+        Gamma.sv[t, a])
     }
   }
 
-  # Breeding rate
+  ## Reproductive success model
+  # age-specific reproductive success
+  # rsI <- numeric(N)
+  # for (i in 1:N) {
+  #   rsI[i] <- plogis(
+  #     qlogis(Mu.rsI[age[i]]) +
+  #       # BetaD.rs * dens[t] +
+  #       # BetaV.rs * veg[t] +
+  #       # BetaW.rs * win[t] +
+  #       EpsilonI.rsI[id[i]] +
+  #       EpsilonT.rsI[year[i]]
+  #   )
+  # }
+  # 
+  # rsA <- numeric(N.age * N.year)
+  # for (a in 1:N.age) {
+  #   for (t in 1:N.year) {
+  #     idx <- (a - 1) * N.year + t
+  #     rsA[idx] <- plogis(
+  #       qlogis(Mu.rsA[a]) +
+  #         # BetaD.rs * dens[t] +
+  #         # BetaV.rs * veg[t] +
+  #         # BetaW.rs * win[t] +
+  #         EpsilonT.rsA[t]
+  #       )
+  #   }
+  # }
+  
+  Mu.rsI <- runif(N.age, 0, 1)
+  Mu.rsA <- runif(N.age, 0, 1)
+  
+  ## Population model
+  # breeding rate
   b <- runif(N.year-1, 0.5, 1) # raw means span 0.58-0.92
   
-  # Survival of PYs
+  # survival of PYs
   # to 1st Sept 1 when they become YAFs
   s.PY <- runif(N.year-1, 0.1, 1) # raw means span 0.24-0.95
   
   # Survival of YAFs
   # to 2nd Sept 1 when they become SA1s
-  # 1st age class considered in our published CJS model
-  # s.YAF <- runif(N.year, 0, 1) # raw means span 0.01-0.88
-  s.YAF <- s[1, 1:(N.year-1)]
+  s.YAF <- sv[1, 1:(N.year-1)] # raw means span 0.01-0.88
   
   # Survival of SA1s to SA2 & SA2 to AD3
   # 2nd age class in our published CJS model
-  # s.SA <- matrix(runif(2 * (N.year), 0.5, 1), nrow = 2)
-  s.SA <- rbind(s[2, 1:(N.year-1)], s[2, 1:(N.year-1)])
+  s.SA <- rbind(sv[2, 1:(N.year-1)], sv[2, 1:(N.year-1)])
   
   # Survival of all ADs
   s.AD <- matrix(0, nrow = N.age, ncol = N.year-1)
   
   for(a in 3:6){
-    s.AD[a, 1:(N.year-1)] <- s[3, 1:(N.year-1)]
+    s.AD[a, 1:(N.year-1)] <- sv[3, 1:(N.year-1)]
   }
   
   for(a in 7:9){
-    s.AD[a, 1:(N.year-1)] <- s[4, 1:(N.year-1)]
+    s.AD[a, 1:(N.year-1)] <- sv[4, 1:(N.year-1)]
   }
   
   for(a in 10:N.age){
-    s.AD[a, 1:(N.year-1)] <- s[5, 1:(N.year-1)]
+    s.AD[a, 1:(N.year-1)] <- sv[5, 1:(N.year-1)]
   }
   
   
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
-  mean.p <- runif(1, 0.6, 1)
   year.p <- rnorm(N.year, 0, 0.2)
   sd.p <- rnorm(1, 0.2, 0.1)
   
@@ -145,28 +217,24 @@ simulateInits <- function(N.year = 17, N.age = 22, N.ageC = 5,
   
   ## Assemble myinits list -----------------------------------------------------
   
+  # TODO: UPDATE
   return(list(dens.hat = dens.hat,
               veg.hat = veg.hat,
               ageM = ageM,
               
-              B.age = B.age,
-              B.dens = B.dens,
-              B.veg = B.veg,
+              BetaA.sv = BetaA.sv,
+              BetaD.sv = BetaD.sv,
+              BetaV.sv = BetaV.sv,
               
-              mean.p = mean.p,
               year.p = year.p,
               sd.p = sd.p,
               
-              xi = xi,
-              eps.raw = eps.raw,
-              gamma = gamma,
-              Tau.raw = Tau.raw,
-              Sigma.raw = Sigma.raw,
+              Xi.sv = Xi.sv,
+              Epsilon.sv = Epsilon.sv,
+              Gamma.sv = Gamma.sv,
+              Tau.sv = Tau.sv,
               
-              # cor.yr = cor.yr,
-              # sd.yr = sd.yr,
-              
-              s = s,
+              sv = sv,
               b = b,
               s.PY = s.PY,
               s.YAF = s.YAF,

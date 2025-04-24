@@ -38,12 +38,12 @@ myData  <- list(obs = surv$obs,
                 veg = env$veg,
                 vegE = env$vegE)
 
-myConst <- list(N.id = surv$N.id,
-                N.year = surv$N.year,
-                N.age = surv$N.age,
+myConst <- list(nID.sv = surv$nID.sv,
+                nYear = surv$nYear,
+                nAgeC = surv$nAgeC,
                 noAge = surv$noAge,
-                N.noAge = surv$N.noAge,
-                N.noVeg = env$N.noVeg,
+                nNoAge = surv$nNoAge,
+                nNoVeg = env$nNoVeg,
                 first = surv$first,
                 last = surv$last,
                 W = surv$W,
@@ -60,83 +60,64 @@ myConst <- list(N.id = surv$N.id,
 myCode = nimbleCode({
   ##### 1. Survival ####
   # Survival function
-  for (i in 1:N.id){                               
+  for (i in 1:nID.sv){                               
     for (t in first[i]:(last[i]-1)){
-      logit(s[i, t]) <- B.age[ageC[age[i, t]]] +
-        B.dens[ageC[age[i, t]]] * dens.hat[t] +
-        B.veg[ageC[age[i, t]]] * veg.hat[t] +
-        # B.densVeg[ageC[age[i, t]]] * (dens.hat[t] * veg.hat[t]) +
-        # B.vegRoo[ageC[age[i, t]]] * (veg.hat[t] / dens.hat[t]) +
-        gamma[t, ageC[age[i,t]]]
+      logit(sv[i, t]) <- BetaA.sv[ageC[age[i, t]]] +
+        BetaD.sv[ageC[age[i, t]]] * dens.hat[t] +
+        BetaV.sv[ageC[age[i, t]]] * veg.hat[t] +
+        # BetaDV.sv[ageC[age[i, t]]] * (dens.hat[t] * veg.hat[t]) +
+        # BetaVR.sv[ageC[age[i, t]]] * (veg.hat[t] / dens.hat[t]) +
+        Gamma.sv[t, ageC[age[i,t]]]
     } # t
   } # i
   
-  for (t in 1:N.year){
+  for (t in 1:nYear){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (mt in 1:N.noVeg){
-    veg[mt] ~ dnorm(0,0.001)
+  for (mt in 1:nNoVeg){
+    veg[mt] ~ dnorm(0, 0.001)
   }
   
   # Estimate missing ages
-  for (i in 1:N.noAge){
+  for (i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25, 1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for (t in (first[noAge[i]]+1):N.year){
+    for (t in (first[noAge[i]]+1):nYear){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
     } # t
   } # i
   
   # Priors for fixed effects
-  for(a in 1:N.age){
-    B.age[a] ~ dlogis(0, 1)
-    B.dens[a] ~ dnorm(0, 0.001)
-    B.veg[a] ~ dnorm(0, 0.001)
-    # B.densVeg[a] ~ dnorm(0, 0.001)
+  for(a in 1:nAgeC){
+    BetaA.sv[a] ~ dlogis(0, 1) # TODO: think about this?
+    BetaD.sv[a] ~ dnorm(0, 0.001)
+    BetaV.sv[a] ~ dnorm(0, 0.001)
+    # BetaDV.sv[a] ~ dnorm(0, 0.001)
   }
   
   # Variance-Covariance matrix
-  for (i in 1:N.age){
+  for (i in 1:nAgeC){
     zero[i] <- 0
-    xi[i] ~ dunif(0, 2)
+    Xi.sv[i] ~ dunif(0, 2)
   } # i
   
-  for (t in 1:(N.year-1)){
-    eps.raw[t, 1:N.age]  ~ dmnorm(zero[1:N.age], Tau.raw[1:N.age, 1:N.age])
-    for (i in 1:N.age){
-      gamma[t, i] <- xi[i] * eps.raw[t,i]
+  for (t in 1:(nYear-1)){
+    Epsilon.sv[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
+    for (i in 1:nAgeC){
+      Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
     } # i
   } # t
   
   # Priors for precision matrix
-  Tau.raw[1:N.age, 1:N.age] ~ dwish(W[1:N.age, 1:N.age], DF)
-  Sigma.raw[1:N.age, 1:N.age] <- inverse(Tau.raw[1:N.age, 1:N.age])
-  
-  # Uniform covariance matrix
-  # for (a in 1:N.age){
-  #   zero[a] <- 0
-  #   sd.yr[a] ~ dunif(0, 5)
-  #   cov.yr[a, a] <- sd.yr[a] * sd.yr[a]
-  # }
-  #
-  # for(a in 1:(N.age-1)){
-  #   for(a2 in (a+1):N.age){
-  #     cor.yr[a, a2] ~ dunif(-1, 1)
-  #     cov.yr[a2, a] <- sd.yr[a] * sd.yr[a2] * cor.yr[a, a2]
-  #     cov.yr[a, a2] <- cov.yr[a2, a]
-  #   }
-  # } # i
-  #
-  # for (t in 1:(N.year-1)) {
-  #   gamma[t, 1:N.age]  ~ dmnorm(zero[1:N.age], cov = cov.yr[1:N.age, 1:N.age])
-  # } # t
+  Tau.sv[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
+  Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   
   ##### 2. Observation ####
-  for (t in 1:N.year){
-    for(i in 1:N.id){
+  for (t in 1:nYear){
+    for(i in 1:nID.sv){
       logit(p[i, t]) <- mu.p + year.p[t]
     }
     year.p[t] ~ dnorm(0, sd = sd.p)
@@ -148,17 +129,17 @@ myCode = nimbleCode({
   
   
   ##### 3. Likelihood ####
-  for (i in 1:N.id){
+  for (i in 1:nID.sv){
     for (t in (first[i] + 1):last[i]){
       # State process
       state[i, t] ~ dbern(mu1[i, t])
-      mu1[i, t] <- s[i, t-1] * state[i, t-1]
+      mu1[i, t] <- sv[i, t-1] * state[i, t-1]
       
       # Observation process
       obs[i, t] ~ dbern(mu2[i, t])
       mu2[i, t] <- p[i, t] * state[i, t]
-    } #t
-  } #i
+    } # t
+  } # i
   
 })
 
@@ -172,46 +153,43 @@ paraNimble <- function(seed, myCode, myConst, myData,
   library(nimble)
   library(coda)
   
-  N.id = myConst$N.id
-  N.year = myConst$N.year
+  nID.sv = myConst$nID.sv
+  nYear = myConst$nYear
   
   age = myData$age
-  N.age = myConst$N.age
+  nAgeC = myConst$nAgeC
   noAge = myConst$noAge
-  N.noAge = myConst$N.noAge
+  nNoAge = myConst$nNoAge
   
   first = myConst$first
   last = myConst$last 
   
   veg = myData$veg
   dens = myData$dens
-  N.noVeg = myConst$N.noVeg
+  nNoVeg = myConst$nNoVeg
   
   # assign initial values
   myInits <- function(i){
-    l = list(ageM = sample(3:8, size = N.noAge, replace = T),
+    l = list(ageM = sample(3:8, size = nNoAge, replace = T),
              
-             B.age = rnorm(N.age, 0, 0.25),
-             B.veg = rnorm(N.age, 0, 0.5),
-             B.dens = rnorm(N.age, 0, 1),
-             # B.densVeg = rnorm(N.age, 0, 1),
+             BetaA.sv = rnorm(nAgeC, 0, 1),
+             BetaV.sv = rnorm(nAgeC, 0, 1),
+             BetaD.sv = rnorm(nAgeC, 0, 1),
+             # BetaDV.sv = rnorm(nAgeC, 0, 1),
              
              veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
              dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
              
              mean.p = runif(1, 0.6, 1),
-             year.p = rnorm(N.year, 0, 0.2),
+             year.p = rnorm(nYear, 0, 0.2),
              sd.p = rnorm(1, 0.2, 0.1),
              
-             xi = rnorm(N.age, 1, 0.1),
-             eps.raw = matrix(rnorm((N.year-1)*N.age, 0, 0.1),
-                              ncol = N.age, nrow = (N.year-1))
-             
-             # cor.yr = diag(N.age) + 0.01,
-             # sd.yr = runif(N.age, 0,1)
+             Xi.sv = rnorm(nAgeC, 1, 0.1),
+             Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1),
+                              ncol = nAgeC, nrow = (nYear-1))
     )
-    Tau.raw = diag(N.age) + rnorm(N.age^2, 0, 0.1)
-    l$Tau.raw = inverse((Tau.raw + t(Tau.raw))/2)  # may be a typo?
+    Tau.sv = diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
+    l$Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
     return(l)
   }
   
@@ -223,10 +201,9 @@ paraNimble <- function(seed, myCode, myConst, myData,
   
   # select parameters to monitor
   vars = c('year.p', 'mean.p', 'sd.p', 'state', 'ageM',
-           'B.age', 'B.dens', 'B.veg', # 'B.densVeg',
+           'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
            'dens.hat', 'veg.hat', 'densE', 'vegE',
-           'gamma', 'xi', 'Sigma.raw'
-           # 'gamma', 'sd.yr', 'cor.yr'
+           'Gamma.sv', 'Xi.sv', 'Sigma.sv'
   )
   
   # select MCMC settings
@@ -249,7 +226,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
 
 start.t <- Sys.time()
 this_cluster <- makeCluster(3)
-chain_output <- parLapply(X = 1:3,
+samples <- parLapply(X = 1:3,
                           cl = this_cluster,
                           fun = paraNimble,
                           myCode = myCode,
@@ -264,12 +241,11 @@ dur = now() - start.t
 dur
 
 # reformat output
-codaSamp <- chain_output %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()
+codaSamp <- samples %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()
 codaSamp <- codaSamp[, !grepl('state', colnames(codaSamp[[1]]))]
 
 # obtain WAIC value
-waic <- map_dbl(chain_output, ~ .x$WAIC$WAIC)  # unserialized
-# waic <- chain_output %>% map_dbl(~.x$WAIC)   # serialized
+waic <- samples %>% map_dbl(~.x$WAIC)  # serialized
 waic
 
 # save output
@@ -283,50 +259,50 @@ summary(codaSamp) # cannot handle any NAs
 
 library(MCMCvis)
 library(corrplot)
-MCMCsummary(codaSamp, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 3) # 'B.densVeg'
+MCMCsummary(codaSamp, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 3)
 MCMCsummary(codaSamp, params = c('year.p','mean.p','sd.p'), n.eff = TRUE, round = 3)
-MCMCsummary(codaSamp, params = c('Sigma.raw'), n.eff = TRUE, round = 3)
+MCMCsummary(codaSamp, params = c('Sigma.sv'), n.eff = TRUE, round = 3)
 MCMCsummary(codaSamp, params = c('ageM'), n.eff = TRUE, round = 3)
 
 # assess MCMC convergence
 # ...visually
 par(mar = c(1,1,1,1))
-plot(codaSamp[, paste0('B.age[',1:N.age,']')])
-plot(codaSamp[, paste0('B.veg[',1:N.age,']')])
-plot(codaSamp[, paste0('B.dens[',1:N.age,']')])
-plot(codaSamp[, paste0('B.densVeg[',1:N.age,']')])
+plot(codaSamp[, paste0('BetaA.sv[',1:nAgeC,']')])
+plot(codaSamp[, paste0('BetaV.sv[',1:nAgeC,']')])
+plot(codaSamp[, paste0('BetaD.sv[',1:nAgeC,']')])
+plot(codaSamp[, paste0('BetaDV.sv[',1:nAgeC,']')])
 
-plot(codaSamp[, paste0('year.p[',1:N.year,']')])
+plot(codaSamp[, paste0('year.p[',1:nYear,']')])
 plot(codaSamp[, 'mean.p'])
 plot(codaSamp[, 'sd.p'])
 
-plot(codaSamp[, paste0('Sigma.raw[',1:N.age,', ',1:N.age,']')])
+plot(codaSamp[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 plot(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 # # ...formally
-# gelman.diag(codaSamp[, paste0('B.age[',1:N.age,']')])
-# gelman.diag(codaSamp[, paste0('B.veg[',1:N.age,']')])
-# gelman.diag(codaSamp[, paste0('B.dens[',1:N.age,']')])
-# gelman.diag(codaSamp[, paste0('B.densVeg[',1:N.age,']')])
+# gelman.diag(codaSamp[, paste0('BetaA.sv[',1:nAgeC,']')])
+# gelman.diag(codaSamp[, paste0('BetaV.sv[',1:nAgeC,']')])
+# gelman.diag(codaSamp[, paste0('BetaD.sv[',1:nAgeC,']')])
+# gelman.diag(codaSamp[, paste0('BetaDV.sv[',1:nAgeC,']')])
 # 
-# gelman.diag(codaSamp[, paste0('year.p[',1:N.year,']')])
+# gelman.diag(codaSamp[, paste0('year.p[',1:nYear,']')])
 # gelman.diag(codaSamp[, 'mean.p'])
 # gelman.diag(codaSamp[, 'sd.p'])
 # 
-# gelman.diag(codaSamp[, paste0('Sigma.raw[',1:N.age,', ',1:N.age,']')])
+# gelman.diag(codaSamp[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 # gelman.diag(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 # 
 # # check Neff
-# effectiveSize(codaSamp[, paste0('B.age[',1:N.age,']')])
-# effectiveSize(codaSamp[, paste0('B.veg[',1:N.age,']')])
-# effectiveSize(codaSamp[, paste0('B.dens[',1:N.age,']')])
-# effectiveSize(codaSamp[, paste0('B.densVeg[',1:N.age,']')])
+# effectiveSize(codaSamp[, paste0('BetaA.sv[',1:nAgeC,']')])
+# effectiveSize(codaSamp[, paste0('BetaV.sv[',1:nAgeC,']')])
+# effectiveSize(codaSamp[, paste0('BetaD.sv[',1:nAgeC,']')])
+# effectiveSize(codaSamp[, paste0('BetaDV.sv[',1:nAgeC,']')])
 # 
-# effectiveSize(codaSamp[, paste0('year.p[',1:N.year,']')])
+# effectiveSize(codaSamp[, paste0('year.p[',1:nYear,']')])
 # effectiveSize(codaSamp[, 'mean.p'])
 # effectiveSize(codaSamp[, 'sd.p'])
 # 
-# effectiveSize(codaSamp[, paste0('Sigma.raw[',1:N.age,', ',1:N.age,']')])
+# effectiveSize(codaSamp[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 # effectiveSize(codaSamp[, paste0('ageM[',1:nb.noAge,']')])
 
 
@@ -342,19 +318,19 @@ corrplot(cor(codaSamp[, grepl('B.', colnames(codaSamp[[1]]))] %>%
              , use = 'p'))
 
 # check random effects among demographic rates
-# check variance-correlation matrix, with Sigma.raw on diagonal
-varCorrMatrix <- array(NA, dim = c(myconst$N.age, myconst$N.age, nrow(betaz)))
+# check variance-correlation matrix, with Sigma.sv on diagonal
+varCorrMatrix <- array(NA, dim = c(myconst$nAgeC, myconst$nAgeC, nrow(betaz)))
 
-for (i in 1:myconst$N.age){
-  varCorrMatrix[i,i,] <- betaz[, paste0('xi[', i,']')]*
-    sqrt(betaz[, paste0('Sigma.raw[', i,', ', i,']')])
+for (i in 1:myconst$nAgeC){
+  varCorrMatrix[i,i,] <- betaz[, paste0('Xi.sv[', i,']')]*
+    sqrt(betaz[, paste0('Sigma.sv[', i,', ', i,']')])
 }
 
-for (j in 1:(myconst$N.age-1)){
-  for (i in (j+1):myconst$N.age){
-    varCorrMatrix[j,i,] <- (betaz[, paste0('Sigma.raw[',i,', ',j,']')])/
-      sqrt(betaz[, paste0('Sigma.raw[', j,', ', j,']')]*
-             betaz[, paste0('Sigma.raw[', i,', ', i,']')])
+for (j in 1:(myconst$nAgeC-1)){
+  for (i in (j+1):myconst$nAgeC){
+    varCorrMatrix[j,i,] <- (betaz[, paste0('Sigma.sv[',i,', ',j,']')])/
+      sqrt(betaz[, paste0('Sigma.sv[', j,', ', j,']')]*
+             betaz[, paste0('Sigma.sv[', i,', ', i,']')])
   }
 }
 
@@ -364,24 +340,24 @@ round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
 
 # calculate survival probabilities
 df = expand.grid(age = 1:22, year = 1:16)
-s.pred = matrix(NA, nrow = nrow(df), ncol = nrow(betaz))
+sv.pred = matrix(NA, nrow = nrow(df), ncol = nrow(betaz))
 
 for(i in 1:nrow(df)){
-  s.pred[i,] <- betaz[, paste0('B.age[', mydata$ageC[df$age[i]], ']')] +
-    betaz[,paste0('gamma[', df$year[i], ', ', mydata$ageC[df$age[i]], ']')]
+  sv.pred[i,] <- betaz[, paste0('BetaA.sv[', mydata$ageC[df$age[i]], ']')] +
+    betaz[,paste0('Gamma.sv[', df$year[i], ', ', mydata$ageC[df$age[i]], ']')]
   df$ageC[i] <- mydata$ageC[df$age[i]]
 }
 
-df$s = inv.logit(apply(s.pred, 1, mean))
-df$s.cil = inv.logit(apply(s.pred, 1, quantile, 0.025))
-df$s.cih = inv.logit(apply(s.pred, 1, quantile, 0.975))
+df$sv = inv.logit(apply(sv.pred, 1, mean))
+df$sv.cil = inv.logit(apply(sv.pred, 1, quantile, 0.025))
+df$sv.cih = inv.logit(apply(sv.pred, 1, quantile, 0.975))
 
 # plot main results
 df <- df %>% mutate(ageC = as.factor(ageC))
 
 library(ggplot2)
 library(scales)
-plot <- ggplot(df, aes(x = year, y = s)) +
+plot <- ggplot(df, aes(x = year, y = sv)) +
   geom_path(aes(colour = ageC)) +
   labs(x = "Year", y = "Survival", colour = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +

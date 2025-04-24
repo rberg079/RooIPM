@@ -30,9 +30,9 @@ surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx")
 
 # create Nimble lists
-N.year <- 17
-N.age  <- 22
-N.ageC <- 5
+nYear <- 17
+nAge  <- 22
+nAgeC <- 5
 
 myData  <- list(obs = surv$obs,
                 state = surv$state,
@@ -43,13 +43,13 @@ myData  <- list(obs = surv$obs,
                 veg = env$veg,
                 vegE = env$vegE)
 
-myConst <- list(N.year = N.year,       # TODO: get from one of the wrangles?
-                N.id = surv$N.id,
-                N.age = N.age,           # TODO: get from one of the wrangles?
-                N.ageC = N.ageC,         # TODO: get from one of the wrangles?
+myConst <- list(nYear = nYear,       # TODO: get from one of the wrangles?
+                nID = surv$nID,
+                nAge = nAge,           # TODO: get from one of the wrangles?
+                nAgeC = nAgeC,         # TODO: get from one of the wrangles?
                 noAge = surv$noAge,
-                N.noAge = surv$N.noAge,
-                N.noVeg = env$N.noVeg,
+                NnoAge = surv$NnoAge,
+                NnoVeg = env$NnoVeg,
                 first = surv$first,
                 last = surv$last,
                 W = surv$W,
@@ -59,6 +59,35 @@ myConst <- list(N.year = N.year,       # TODO: get from one of the wrangles?
 testRun <- FALSE # or FALSE
 
 
+## Parameters ------------------------------------------------------------------
+
+# N = number of observations, or reproductive events
+# nID = number of unique kangaroos in the dataset
+# nYear = number of years in the dataset
+# nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
+# nAgeC = number of age classes in the analysis (not used so far in RS analysis)
+
+# BetaA.sv = covariate effect of age (A) on survival (sv) (was B.age)
+# BetaD.sv = covariate effect of density (D) on survival (sv) (was B.dens)
+# BetaV.sv = covariate effect of vegetation (V) on survival (sv) (was B.veg)
+# BetaDV.sv = covariate effect of interacting density & vegetation (DV) on survival (sv) (was B.densVeg)
+# BetaVR.sv = covariate effect of vegetation per capita, or kangaroo (VR) on survival (sv) (was B.vegRoo)
+
+# Xi.sv
+# Epsilon.sv
+# Gamma.sv
+# Tau.sv
+# Sigma.sv
+
+# Mu.ob = (was mu.p)
+# EpsilonT.ob = (was year.p)
+# SigmaT.ob = (was sd.p)
+
+# Mu.sp = mean of state process (was mu1)
+# Mu.op = mean of observation process (was mu2)
+
+
+
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
@@ -66,8 +95,8 @@ myCode = nimbleCode({
   ## PROCESS MODEL
   ## ----------------------------------------
   
-  for (t in 1:(N.year-1)){
-    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:N.age,t])) 
+  for (t in 1:(nYear-1)){
+    YAF[t+1] ~ dbin(b[t] * s.PY[t], sum(AD[3:nAge,t])) 
     
     SA[1,t+1] ~ dbin(s.YAF[t], YAF[t])
     SA[2,t+1] ~ dbin(s.SA[1,t], SA[1,t])
@@ -75,29 +104,29 @@ myCode = nimbleCode({
     AD[1:2,t+1] <- 0
     AD[3,t+1] ~ dbin(s.SA[2,t], SA[2,t])
     
-    for (a in 4:N.age){
+    for (a in 4:nAge){
       AD[a,t+1] ~ dbin(s.AD[a,t], AD[a,t])
     }
-    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:N.age,t+1])
+    Ntot[t+1] <- YAF[t+1] + sum(SA[1:2,t+1]) + sum(AD[3:nAge,t+1])
   }
   
   # priors
-  for(t in 1:(N.year-1)){
+  for(t in 1:(nYear-1)){
     b[t]        ~ dunif(0.5, 1)
     s.PY[t]     ~ dunif(0.1, 1)
     s.YAF[t]    <- s[1,t]
     s.SA[1,t]   <- s[2,t]
     s.SA[2,t]   <- s[2,t]
     
-    for(a in 3:6){  # prime-aged
+    for(a in 3:6){ # prime-aged
       s.AD[a,t] <- s[3,t]
     }
     
-    for(a in 7:9){  # pre-senescent
+    for(a in 7:9){ # pre-senescent
       s.AD[a,t] <- s[4,t]
     }
     
-    for(a in 10:N.age){  # senescent
+    for(a in 10:nAge){ # senescent
       s.AD[a,t] <- s[5,t]
     }
   }
@@ -106,105 +135,83 @@ myCode = nimbleCode({
   ## ----------------------------------------
   
   ## 1. Survival function
-  for (a in 1:N.ageC){                               
-    for (t in 1:(N.year-1)){
-      logit(s[a, t]) <- B.age[a] +
-        B.dens[a] * dens.hat[t] +
-        B.veg[a] * veg.hat[t] +
-        # B.densVeg[a] * (dens.hat[t] * veg.hat[t]) +
-        # B.vegRoo[a] * (veg.hat[t] / dens.hat[t]) +
-        gamma[t, a]
+  for (a in 1:nAgeC){                               
+    for (t in 1:(nYear-1)){
+      logit(sv[a, t]) <- BetaA.sv[a] +
+        BetaD.sv[a] * dens.hat[t] +
+        BetaV.sv[a] * veg.hat[t] +
+        # BetaDV.sv[a] * (dens.hat[t] * veg.hat[t]) +
+        # BetaVR.sv[a] * (veg.hat[t] / dens.hat[t]) +
+        Gamma.sv[t, a]
     } # t
   } # a
   
-  for (t in 1:(N.year-1)){
+  for (t in 1:(nYear-1)){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (m in 1:N.noVeg){
+  for (m in 1:nNoVeg){
     veg[m] <- 0
     # veg[m] <- vegM[m]
-    # vegM[m] ~ dnorm(0, 1)
+    # vegM[m] ~ dnorm(0, sd = 2)
   }
   
   # Estimate missing ages
-  for (i in 1:N.noAge){
+  for (i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for (t in (first[noAge[i]]+1):N.year){
+    for (t in (first[noAge[i]]+1):nYear){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
     } # t
   } # i
   
   # Priors for fixed effects
-  for(a in 1:N.ageC){
-    B.age[a] ~ dlogis(0, 1)
-    B.dens[a] ~ dnorm(0, 0.001)
-    B.veg[a] ~ dnorm(0, 0.001)
-    # B.densVeg[a] ~ dnorm(0, 0.001)
+  for(a in 1:nAgeC){
+    BetaA.sv[a] ~ dlogis(0, 1) # TODO: think about this?
+    BetaD.sv[a] ~ dnorm(0, sd = 2)
+    BetaV.sv[a] ~ dnorm(0, sd = 2)
+    # BetaDV.sv[a] ~ dnorm(0, sd = 2)
   }
   
   # Variance-Covariance matrix
-  for (i in 1:N.ageC){
+  for (i in 1:nAgeC){
     zero[i] <- 0
-    xi[i] ~ dunif(0, 2)
+    Xi.sv[i] ~ dunif(0, 2)
   } # i
   
-  for (t in 1:(N.year-1)){
-    eps.raw[t, 1:N.ageC]  ~ dmnorm(zero[1:N.ageC], Tau.raw[1:N.ageC,1:N.ageC])
-    for (i in 1:N.ageC){
-      gamma[t, i] <- xi[i] * eps.raw[t,i]
+  for (t in 1:(nYear-1)){
+    Epsilon.sv[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC,1:nAgeC])
+    for (i in 1:nAgeC){
+      Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
     } # i
   } # t
   
   # Priors for precision matrix
-  Tau.raw[1:N.ageC, 1:N.ageC] ~ dwish(W[1:N.ageC, 1:N.ageC], DF)
-  Sigma.raw[1:N.ageC, 1:N.ageC] <- inverse(Tau.raw[1:N.ageC, 1:N.ageC])
-  
-  # Uniform covariance matrix
-  # for (a in 1:N.ageC){
-  #   zero[a] <- 0
-  #   sd.yr[a] ~ dunif(0, 5)
-  #   cov.yr[a, a] <- sd.yr[a]*sd.yr[a]
-  # }
-  #
-  # for(a in 1:(N.ageC-1)){
-  #   for(a2 in (a+1):N.ageC){
-  #     cor.yr[a, a2] ~ dunif(-1, 1)
-  #     cov.yr[a2, a] <- sd.yr[a] * sd.yr[a2] * cor.yr[a, a2]
-  #     cov.yr[a, a2] <- cov.yr[a2, a]
-  #   }
-  # } #i
-  #
-  # for (t in 1:(N.year-1)) {
-  #   gamma[t, 1:N.ageC]  ~ dmnorm(zero[1:N.ageC], cov = cov.yr[1:N.ageC, 1:N.ageC])
-  # } #t
+  Tau.sv[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
+  Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   
   ## 2. Observation
-  for (t in 1:N.year){
-    for(i in 1:N.id){  #TODO: BY AGE CLASS NOT I
-      logit(p[i, t]) <- logit(Mu.p) + year.p[t]  #... OR JUST BY YEAR
-    }
-    year.p[t] ~ dnorm(0, sd = sd.p)
+  for (t in 1:nYear){
+    logit(ob[t]) <- logit(Mu.ob) + EpsilonT.ob[t]
+    EpsilonT.ob[t] ~ dnorm(0, sd = SigmaT.ob)
   }
   
-  mu.p <- log(mean.p / (1-mean.p))  # this is logit transformation, not necessary if using logit(Mu.p)
-  mean.p ~ dunif(0, 1)  # this becomes prior for logit(Mu.p)
-  sd.p ~ dunif(0, 10) # try dunif(0.01, 10) if sd.p causes trouble
+  Mu.ob ~ dunif(0, 1)
+  SigmaT.ob ~ dunif(0, 10) # or dunif(0.01, 10)
   
   
-  ### 3. Likelihood
-  for (i in 1:N.id){
+  ## 3. Likelihood
+  for (i in 1:nID){
     for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
       # State process
-      state[i, t] ~ dbern(mu1[i, t])
-      mu1[i, t] <- s[ageC[age[i, t-1]], t-1] * state[i, t-1]
+      state[i, t] ~ dbern(Mu.sp[i, t])
+      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
       
       # Observation process
-      obs[i, t] ~ dbern(mu2[i, t])
-      mu2[i, t] <- p[i, t] * state[i, t]  #...& THEN REMOVE I DIMENSION HERE
+      obs[i, t] ~ dbern(Mu.op[t])
+      Mu.op[t] <- ob[t] * state[i, t]
     } # t
   } # i
   
@@ -214,16 +221,15 @@ myCode = nimbleCode({
 ## Assemble --------------------------------------------------------------------
 
 # source("simulateInits.R")
-# myInits <- simulateInits(N.year = N.year, N.age = N.age, N.ageC = N.ageC,
-#                          dens = env$dens, veg = env$veg, N.noAge = surv$N.noAge)
+# myInits <- simulateInits(nYear = nYear, nAge = nAge, nAgeC = nAgeC,
+#                          dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
 # 
 # # monitors
 # params = c(# CJS model
 #            'dens.hat', 'veg.hat', 'ageM',              # latent states
-#            'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
-#            'mean.p', 'year.p', 'sd.p',                 # observation parameters
-#            'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
-#            # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
+#            'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',  # covariate effects
+#            'EpsilonT.ob', 'SigmaT.ob',                 # observation parameters
+#            'Gamma.sv', 'Xi.sv', 'Sigma.sv',                 # random effects
 #            
 #            # Process model
 #            's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vital rates
@@ -237,14 +243,14 @@ paraNimble <- function(seed, myCode, myConst, myData,
 
   library(nimble)
   
-  N.year = myConst$N.year
-  N.age  = myConst$N.age
-  N.ageC = myConst$N.ageC
+  nYear = myConst$nYear
+  nAge  = myConst$nAge
+  nAgeC = myConst$nAgeC
 
   # assign initial values
   source("simulateInits.R")
-  myInits <- simulateInits(N.year = N.year, N.age = N.age, N.ageC = N.ageC,
-                           dens = env$dens, veg = env$veg, N.noAge = surv$N.noAge)
+  myInits <- simulateInits(nYear = nYear, nAge = nAge, nAgeC = nAgeC,
+                           dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
 
   # assemble model
   myMod <- nimbleModel(code = myCode,
@@ -254,15 +260,14 @@ paraNimble <- function(seed, myCode, myConst, myData,
 
   # select parameters to monitor
   params = c(# CJS model
-             'dens.hat', 'veg.hat', 'ageM',              # latent states
-             'B.age', 'B.dens', 'B.veg', # 'B.densVeg',  # covariate effects
-             'mean.p', 'year.p', 'sd.p',                 # observation parameters
-             'gamma', 'xi', 'Sigma.raw',                 # correlated random effects
-             # 'gamma', 'sd.yr', 'cor.yr'                # uniform random effects
+             'dens.hat', 'veg.hat', # 'ageM',           # latent states
+             'BetaA.sv', 'BetaD.sv', 'BetaV.sv',        # covariate effects
+             'EpsilonT.ob', 'SigmaT.ob',                # observation parameters
+             'Gamma.sv', 'Xi.sv', 'Sigma.sv',           # random effects
 
              # Process model
-             's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vita rates
-             'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
+             's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD', # yearly vita rates
+             'YAF', 'SA', 'AD', 'Ntot')                 # population sizes
   
   # MCMC settings
   mySeed  <- 1:3
@@ -342,17 +347,17 @@ stopCluster(this_cluster)
 dur = now() - start.t; dur
 
 # MCMC output
-# out.mcmc <- as.mcmc.list(samples)                                  # unserialized
-out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()  # serialized
+# out.mcmc <- as.mcmc.list(samples)                                 # unserialized
+out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list() # serialized
 
 # remove one or several parameters from output
-out.mcmc <- out.mcmc[, !grepl('ageM', colnames(out.mcmc[[1]]))]
+# out.mcmc <- out.mcmc[, !grepl('ageM', colnames(out.mcmc[[1]]))]
 # forget <- '^ageM\\[|^dens\\.hat\\[|^veg\\.hat\\[' # & wtv else
 # out.mcmc <- out.mcmc[, !grepl(forget, colnames(out.mcmc[[1]]))]
 
 # WAIC value
-# waic <- map_dbl(samples, ~ .$WAIC$WAIC); waic  # unserialized
-waic <- samples %>% map_dbl(~.$WAIC$WAIC); waic  # serialized
+# waic <- map_dbl(samples, ~ .$WAIC$WAIC); waic # unserialized
+waic <- samples %>% map_dbl(~.$WAIC$WAIC); waic # serialized
 
 # save output
 fit <- list(model = myCode, out.mcmc = out.mcmc, waic = waic, dur = dur)
@@ -368,10 +373,10 @@ library(ggplot2)
 library(scales)
 
 summary(out.mcmc) # cannot handle NAs
-MCMCsummary(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('mean.p', 'year.p', 'sd.p'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('EpsilonT.ob', 'SigmaT.ob'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('s', 'b', 's.PY'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('sv', 'b', 's.PY'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), n.eff = TRUE, round = 2)
 
@@ -384,14 +389,14 @@ for(i in 1:ncol(out.mcmc[[1]])){
 }
 
 # chainplots
-MCMCtrace(out.mcmc, params = c('B.age', 'B.dens', 'B.veg'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('mean.p', 'year.p', 'sd.p'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('EpsilonT.ob', 'SigmaT.ob'), pdf = FALSE)
 
-# MCMCtrace(out.mcmc, params = c('s', 'b', 's.PY'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('sv', 'b', 's.PY'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('YAF', 'SA', 'AD', 'Ntot'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('Sigma.raw'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Sigma.sv'), pdf = FALSE)
 
 
 ## Plots -----------------------------------------------------------------------
@@ -402,14 +407,14 @@ out.mat <- samples %>% map(~as.matrix(.$samples)) %>% do.call(what = rbind)  # s
 
 # parameters to include
 table.params <- c(
-  paste0('YAF[', 1:N.year, ']'),
-  paste0('SA[', rep(1:2, each = N.year), ', ', rep(1:N.year, times = 2), ']'),
-  paste0('AD[', rep(1:N.age, each = N.year), ', ', rep(1:N.year, times = N.age), ']'))
+  paste0('YAF[', 1:nYear, ']'),
+  paste0('SA[', rep(1:2, each = nYear), ', ', rep(1:nYear, times = 2), ']'),
+  paste0('AD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'))
 
 # table.params <- list(
-#   yaf = c(paste0('YAF[', 1:N.year, ']')),
-#   sa  = c(paste0('SA[', rep(1:2, each = N.year), ', ', rep(1:N.year, times = 2), ']')),
-#   ad  = c(paste0('AD[', rep(1:N.age, each = N.year), ', ', rep(1:N.year, times = N.age), ']')))
+#   yaf = c(paste0('YAF[', 1:nYear, ']')),
+#   sa  = c(paste0('SA[', rep(1:2, each = nYear), ', ', rep(1:nYear, times = 2), ']')),
+#   ad  = c(paste0('AD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']')))
 
 # table of posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
@@ -462,19 +467,19 @@ corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
                map(as.data.frame) %>% bind_rows(), use = 'p'))
 
 # check random effects among demographic rates
-# check variance-correlation matrix, with Sigma.raw on diagonal
-varCorrMatrix <- array(NA, dim = c(myConst$N.ageC, myConst$N.ageC, nrow(out.dat)))
+# check variance-correlation matrix, with Sigma.sv on diagonal
+varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
 
-for (i in 1:myConst$N.ageC){
-  varCorrMatrix[i,i,] <- out.dat[, paste0('xi[', i,']')]*
-    sqrt(out.dat[, paste0('Sigma.raw[', i,', ', i,']')])
+for (i in 1:myConst$nAgeC){
+  varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.sv[', i,']')]*
+    sqrt(out.dat[, paste0('Sigma.sv[', i,', ', i,']')])
 }
 
-for (j in 1:(myConst$N.ageC-1)){
-  for (i in (j+1):myConst$N.ageC){
-    varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.raw[', i, ', ', j, ']')])/
-      sqrt(out.dat[, paste0('Sigma.raw[', j, ', ', j, ']')]*
-             out.dat[, paste0('Sigma.raw[', i, ', ', i, ']')])
+for (j in 1:(myConst$nAgeC-1)){
+  for (i in (j+1):myConst$nAgeC){
+    varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.sv[', i, ', ', j, ']')])/
+      sqrt(out.dat[, paste0('Sigma.sv[', j, ', ', j, ']')]*
+             out.dat[, paste0('Sigma.sv[', i, ', ', i, ']')])
   }
 }
 
@@ -484,23 +489,23 @@ round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
 
 # calculate survival probabilities
 df <- expand.grid(age = 1:22, year = 1:16)
-s.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
+sv.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){
-  s.pred[i, ] <- out.dat[, paste0('B.age[', myData$ageC[df$age[i]], ']')] +
-    out.dat[, paste0('gamma[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
+  sv.pred[i, ] <- out.dat[, paste0('BetaA.sv[', myData$ageC[df$age[i]], ']')] +
+    out.dat[, paste0('Gamma.sv[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
   df$ageC[i] <- myData$ageC[df$age[i]]
 }
 
-df$s = inv.logit(apply(s.pred, 1, mean))
-df$s.lCI = inv.logit(apply(s.pred, 1, quantile, 0.025))
-df$s.uCI = inv.logit(apply(s.pred, 1, quantile, 0.975))
+df$sv = inv.logit(apply(sv.pred, 1, mean))
+df$sv.lCI = inv.logit(apply(sv.pred, 1, quantile, 0.025))
+df$sv.uCI = inv.logit(apply(sv.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
   mutate(ageC = as.factor(ageC)) %>% 
-  ggplot(aes(x = year, y = s)) +
-  geom_ribbon(aes(ymin = s.cil, ymax = s.ciu, fill = ageC), alpha = 0.2) +
+  ggplot(aes(x = year, y = sv)) +
+  geom_ribbon(aes(ymin = sv.cil, ymax = sv.ciu, fill = ageC), alpha = 0.2) +
   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
   labs(x = "Year", y = "Survival", fill = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +

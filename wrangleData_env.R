@@ -212,8 +212,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
   
   win <- as.numeric(scale(env$Win))
   
-  nNoVeg  <- sum(is.na(veg))
   nNoDens <- sum(is.na(dens))
+  nNoVeg  <- sum(is.na(veg))
+  nNoWin  <- sum(is.na(win))
   
   return(list(year = year,
               dens = dens,
@@ -221,8 +222,9 @@ wrangleData_env <- function(dens.data, veg.data, wea.data, wind.data){
               densE = densE,
               vegE = vegE,
               win = win,
+              nNoDens = nNoDens,
               nNoVeg = nNoVeg,
-              nNoDens = nNoDens))
+              nNoWin = nNoWin))
   
 }
 
