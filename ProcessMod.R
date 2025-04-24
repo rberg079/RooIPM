@@ -19,41 +19,45 @@ registerDoParallel(3)
 
 # load data
 source("wrangleData_env.R")
+enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+
+source("wrangleData_rs.R")
+rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                         obs.data = "data/PromObs_2008-2019.xlsx",
+                         known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+
 source("wrangleData_surv.R")
-
-env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                       veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                       wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                       wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
-
-surv <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
-                         yafs.data = "data/RSmainRB_Mar25.xlsx")
+svData <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
+                           yafs.data = "data/RSmainRB_Mar25.xlsx")
 
 # create Nimble lists
 nYear <- 17
 nAge  <- 22
 nAgeC <- 5
 
-myData  <- list(obs = surv$obs,
-                state = surv$state,
-                age = surv$age,
-                ageC = surv$ageC,
-                dens = env$dens,
-                densE = env$densE,
-                veg = env$veg,
-                vegE = env$vegE)
+myData  <- list(obs = svData$obs,
+                state = svData$state,
+                age = svData$age,
+                ageC = svData$ageC,
+                dens = enData$dens,
+                densE = enData$densE,
+                veg = enData$veg,
+                vegE = enData$vegE)
 
 myConst <- list(nYear = nYear,       # TODO: get from one of the wrangles?
-                nID = surv$nID,
+                nID = svData$nID,
                 nAge = nAge,           # TODO: get from one of the wrangles?
                 nAgeC = nAgeC,         # TODO: get from one of the wrangles?
-                noAge = surv$noAge,
-                NnoAge = surv$NnoAge,
-                NnoVeg = env$NnoVeg,
-                first = surv$first,
-                last = surv$last,
-                W = surv$W,
-                DF = surv$DF)
+                noAge = svData$noAge,
+                NnoAge = svData$NnoAge,
+                NnoVeg = enData$NnoVeg,
+                first = svData$first,
+                last = svData$last,
+                W = svData$W,
+                DF = svData$DF)
 
 # Switches/toggles
 testRun <- FALSE # or FALSE
@@ -222,7 +226,7 @@ myCode = nimbleCode({
 
 # source("simulateInits.R")
 # myInits <- simulateInits(nYear = nYear, nAge = nAge, nAgeC = nAgeC,
-#                          dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+#                          dens = enData$dens, veg = enData$veg, nNoAge = svData$nNoAge)
 # 
 # # monitors
 # params = c(# CJS model
@@ -239,7 +243,7 @@ myCode = nimbleCode({
 # to serialize
 # create Nimble function
 paraNimble <- function(seed, myCode, myConst, myData,
-                       surv = surv, env = env, testRun){
+                       svData = svData, enData = enData, testRun){
 
   library(nimble)
   
@@ -250,7 +254,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
   # assign initial values
   source("simulateInits.R")
   myInits <- simulateInits(nYear = nYear, nAge = nAge, nAgeC = nAgeC,
-                           dens = env$dens, veg = env$veg, nNoAge = surv$nNoAge)
+                           dens = enData$dens, veg = enData$veg, nNoAge = svData$nNoAge)
 
   # assemble model
   myMod <- nimbleModel(code = myCode,
@@ -338,8 +342,8 @@ samples <- parLapply(X = 1:3,
                      myCode = myCode,
                      myConst = myConst,
                      myData = myData,
-                     surv = surv,
-                     env = env,
+                     svData = svData,
+                     enData = enData,
                      testRun = testRun)
 
 beep(sound = 2)

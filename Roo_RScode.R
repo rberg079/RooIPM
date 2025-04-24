@@ -18,32 +18,32 @@ registerDoParallel(3)
 source("wrangleData_env.R")
 source("wrangleData_rs.R")
 
-env <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                       veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                       wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                       wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
-dat <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                      obs.data = "data/PromObs_2008-2019.xlsx",
-                      known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                         obs.data = "data/PromObs_2008-2019.xlsx",
+                         known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
 
 # check that all years are represented
-setequal(1:17, unique(dat$year)) # should be TRUE
+setequal(1:17, unique(rsData$year)) # should be TRUE
 
 # create Nimble lists
-myData <-  list(rs   = dat$survS1,
-                id   = dat$id,
-                year = dat$year,
-                age  = dat$age-2, # SO THAT AGE STARTS AT 1
-                dens = env$dens,
-                veg  = env$veg,
-                win  = env$win)
+myData <-  list(rs   = rsData$survS1,
+                id   = rsData$id,
+                year = rsData$year,
+                age  = rsData$age-2, # SO THAT AGE STARTS AT 1
+                dens = enData$dens,
+                veg  = enData$veg,
+                win  = enData$win)
 
-myConst <- list(N      = dat$N,
-                nID.rs = dat$nID.rs,
-                nYear  = dat$nYear,
-                nAge   = dat$nAge,
-                nAgeC  = dat$nAgeC)
+myConst <- list(N      = rsData$N,
+                nID.rs = rsData$nID.rs,
+                nYear  = rsData$nYear,
+                nAge   = rsData$nAge,
+                nAgeC  = rsData$nAgeC)
 # TODO: deal with missing environment
 
 # Switches/toggles
@@ -138,7 +138,7 @@ myCode = nimbleCode({
 # to serialize
 # create Nimble function
 paraNimble <- function(seed, myCode, myConst, myData,
-                       rs = rs, env = env, testRun){
+                       rs = rs, enData = enData, testRun){
   
   library(nimble)
   
