@@ -15,14 +15,13 @@ library(doParallel)
 registerDoParallel(3)
 
 # load data
-source("wrangleData_env.R")
-source("wrangleData_rs.R")
-
+source("wrangleData_en.R")
 enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
+source("wrangleData_rs.R")
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
@@ -39,7 +38,7 @@ myData <-  list(rs   = rsData$survS1,
                 veg  = enData$veg,
                 win  = enData$win)
 
-myConst <- list(N      = rsData$N,
+myConst <- list(n      = rsData$n,
                 nID.rs = rsData$nID.rs,
                 nYear  = rsData$nYear,
                 nAge   = rsData$nAge,
@@ -52,7 +51,7 @@ testRun <- TRUE # or FALSE
 
 ## Parameters ------------------------------------------------------------------
 
-# N = number of observations, or reproductive events
+# n = number of observations, or reproductive events
 # nID.rs = number of unique kangaroos in the dataset
 # nYear = number of years in the dataset
 # nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
@@ -65,7 +64,7 @@ myCode = nimbleCode({
   
   #### First attempt ####
   # likelihood
-  for (x in 1:N){
+  for (x in 1:n){
     rs[x] ~ dbern(rsI[id[x], year[x]])
   }
 
@@ -82,7 +81,7 @@ myCode = nimbleCode({
   }
   
   # #### Second attempt ####
-  # for (i in 1:N){
+  # for (i in 1:n){
   #   # likelihood
   #   rs[i] ~ dbern(rsI[id[i], year[i]])
   # 
@@ -142,7 +141,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
   
   library(nimble)
   
-  N = myConst$N
+  n = myConst$n
   nID.rs = myConst$nID.rs
   nYear = myConst$nYear
   nAge = myConst$nAge

@@ -1,28 +1,29 @@
 #' Simulate initial values for IPM
 #'
-#' @param N
-#' @param N.id 
-#' @param N.year integer. Number of time steps in the model. N.year = 17 by default.
-#' @param N.age integer. Number of adult age classes, or maximum age. N.age = 22 by default.
-#' @param N.ageC integer. Number of age classes in CJS model. N.ageC = 5 by default.
+#' @param N 
+#' @param nID.sv 
+#' @param nID.rs 
+#' @param nYear integer. Number of time steps in the model. N.year = 17 by default.
+#' @param nAge integer. Number of adult age classes, or maximum age. N.age = 22 by default.
+#' @param nAgeC integer. Number of age classes in CJS model. N.ageC = 5 by default.
 #' @param dens vector. Where the density data is stored.
 #' @param veg vector. Where the vegetation data is stored.
-#' @param win 
-#' @param N.noAge integer. Number of individuals of unknown age in the analysis.
-#' @param N.noDens 
-#' @param N.noVeg 
-#' @param N.noWin 
+#' @param win vector. Where the winter severity data is stored.
+#' @param nNoAge integer. Number of individuals of unknown age in the analysis.
+#' @param nNoDens 
+#' @param nNoVeg 
+#' @param nNoWin 
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
 #'
 #' @examples
 
-simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, win,
-                          N.noAge, N.noDens = 0, N.noVeg = 0, N.noWin = 0){
+simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, veg, win,
+                          nNoAge, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # for testing purposes
-  source("wrangleData_env.R")
+  source("wrangleData_en.R")
   enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
                             veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                             wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
@@ -33,20 +34,21 @@ simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, wi
                            obs.data = "data/PromObs_2008-2019.xlsx",
                            known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
   
-  source("wrangleData_surv.R")
+  source("wrangleData_sv.R")
   svData <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
                              yafs.data = "data/RSmainRB_Mar25.xlsx")
   
-  N <- rs.dat$N
-  N.id <- rs.dat$N.id
-  N.age <- rs.dat$N.age
-  dens <- en.dat$dens
-  veg <- en.dat$veg
-  win <- en.dat$win
-  N.noAge <- surv$N.noAge
-  N.noDens <- en.dat$N.noDens
-  N.noVeg <- en.dat$N.noVeg
-  N.noWin <- en.dat$N.noWin
+  n <- rsData$n
+  nID.sv <- svData$nID
+  nID.rs <- rsData$nID
+  nAge <- rsData$nAge
+  dens <- enData$dens
+  veg <- enData$veg
+  win <- enData$win
+  nNoAge <- svData$nNoAge
+  nNoDens <- enData$N.noDens
+  nNoVeg <- enData$nNoVeg
+  nNoWin <- enData$nNoVeg
   
   
   ## Simulate latent states for input data -------------------------------------
@@ -60,8 +62,8 @@ simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, wi
   ageM <- sample(3:8, size = N.noAge, replace = T)
   
   # latent states
-  Mu.sp <- runif(1, 0, 1)
-  Mu.op <- runif(1, 0, 1)
+  Mu.sp <- runif(nID.sv * nYear, 0, 1)
+  Mu.op <- runif(nYear, 0, 1)
   
   
   ## Simulate vital rate covariate effects -------------------------------------
@@ -101,7 +103,7 @@ simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, wi
   Tau.sv <- (Tau.sv + t(Tau.sv)) / 2
   
   ## Reproductive success model
-  EpsilonI.rsI <- rnorm(N.id, 0, 1)
+  EpsilonI.rsI <- rnorm(nID.rs, 0, 1)
   EpsilonT.rsI <- rnorm(N.year, 0, 1)
   EpsilonT.rsA <- rnorm(N.year, 0, 1)
   
@@ -194,8 +196,10 @@ simulateInits <- function(N, N.id, N.year = 17, N.age, N.ageC = 5, dens, veg, wi
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
-  year.p <- rnorm(N.year, 0, 0.2)
-  sd.p <- rnorm(1, 0.2, 0.1)
+  ob <- runif(N.year, 0.2, 1)
+  Mu.ob <- runif(1, 0.2, 1)
+  EpsilonT.ob <- rnorm(N.year, 0, 0.2)
+  SigmaT.ob <- rnorm(1, 0.2, 0.1)
   
   
   ## Simulate initial population sizes -----------------------------------------

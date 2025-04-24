@@ -18,7 +18,7 @@ library(doParallel)
 registerDoParallel(3)
 
 # load data
-source("wrangleData_env.R")
+source("wrangleData_en.R")
 enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
@@ -29,7 +29,7 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
 
-source("wrangleData_surv.R")
+source("wrangleData_sv.R")
 svData <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
                            yafs.data = "data/RSmainRB_Mar25.xlsx")
 
@@ -48,7 +48,8 @@ myData  <- list(obs = svData$obs,
                 vegE = enData$vegE)
 
 myConst <- list(nYear = nYear,       # TODO: get from one of the wrangles?
-                nID = svData$nID,
+                nID.sv = svData$nID,
+                nID.rs = rsData$nID,
                 nAge = nAge,           # TODO: get from one of the wrangles?
                 nAgeC = nAgeC,         # TODO: get from one of the wrangles?
                 noAge = svData$noAge,
@@ -66,7 +67,8 @@ testRun <- FALSE # or FALSE
 ## Parameters ------------------------------------------------------------------
 
 # N = number of observations, or reproductive events
-# nID = number of unique kangaroos in the dataset
+# nID.sv = number of unique kangaroos in the survival dataset
+# nID.rs = number of unique kangaroos in the reproductive success dataset
 # nYear = number of years in the dataset
 # nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
 # nAgeC = number of age classes in the analysis (not used so far in RS analysis)
@@ -84,8 +86,8 @@ testRun <- FALSE # or FALSE
 # Sigma.sv
 
 # Mu.ob = (was mu.p)
-# EpsilonT.ob = (was year.p)
-# SigmaT.ob = (was sd.p)
+# Epsilon.ob = (was year.p)
+# Sigma.ob = (was sd.p)
 
 # Mu.sp = mean of state process (was mu1)
 # Mu.op = mean of observation process (was mu2)
@@ -96,7 +98,7 @@ testRun <- FALSE # or FALSE
 
 myCode = nimbleCode({
   
-  ## PROCESS MODEL
+  ## POPULATION MODEL
   ## ----------------------------------------
   
   for (t in 1:(nYear-1)){
@@ -138,7 +140,21 @@ myCode = nimbleCode({
   ## CAPTURE-MARK-RECAPTURE MODEL (CJS)
   ## ----------------------------------------
   
-  ## 1. Survival function
+  #### Likelihood ####
+  for (i in 1:nID.sv){
+    for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
+      # state process
+      state[i, t] ~ dbern(Mu.sp[i, t])
+      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
+      
+      # observation process
+      obs[i, t] ~ dbern(Mu.op[t])
+      Mu.op[t] <- ob[t] * state[i, t]
+    }
+  }
+  
+  #### Constraints ####
+  # survival function
   for (a in 1:nAgeC){                               
     for (t in 1:(nYear-1)){
       logit(sv[a, t]) <- BetaA.sv[a] +
@@ -147,8 +163,8 @@ myCode = nimbleCode({
         # BetaDV.sv[a] * (dens.hat[t] * veg.hat[t]) +
         # BetaVR.sv[a] * (veg.hat[t] / dens.hat[t]) +
         Gamma.sv[t, a]
-    } # t
-  } # a
+    }
+  }
   
   for (t in 1:(nYear-1)){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
@@ -157,20 +173,26 @@ myCode = nimbleCode({
   
   for (m in 1:nNoVeg){
     veg[m] <- 0
-    # veg[m] <- vegM[m]
     # vegM[m] ~ dnorm(0, sd = 2)
   }
   
-  # Estimate missing ages
+  # estimate missing ages
   for (i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
     for (t in (first[noAge[i]]+1):nYear){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
-    } # t
-  } # i
+    }
+  }
   
-  # Priors for fixed effects
+  # observation function
+  for (t in 1:nYear){
+    logit(ob[t]) <- logit(Mu.ob) + Epsilon.ob[t]
+    Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
+  }
+  
+  #### Priors ####
+  # for fixed effects
   for(a in 1:nAgeC){
     BetaA.sv[a] ~ dlogis(0, 1) # TODO: think about this?
     BetaD.sv[a] ~ dnorm(0, sd = 2)
@@ -178,48 +200,29 @@ myCode = nimbleCode({
     # BetaDV.sv[a] ~ dnorm(0, sd = 2)
   }
   
-  # Variance-Covariance matrix
+  # for random effects
+  # variance-covariance matrix
   for (i in 1:nAgeC){
     zero[i] <- 0
     Xi.sv[i] ~ dunif(0, 2)
-  } # i
+  }
   
   for (t in 1:(nYear-1)){
     Epsilon.sv[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC,1:nAgeC])
     for (i in 1:nAgeC){
       Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
-    } # i
-  } # t
+    }
+  }
   
-  # Priors for precision matrix
+  # precision matrix
   Tau.sv[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
   Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
-  
-  ## 2. Observation
-  for (t in 1:nYear){
-    logit(ob[t]) <- logit(Mu.ob) + EpsilonT.ob[t]
-    EpsilonT.ob[t] ~ dnorm(0, sd = SigmaT.ob)
-  }
-  
+  # observation
   Mu.ob ~ dunif(0, 1)
-  SigmaT.ob ~ dunif(0, 10) # or dunif(0.01, 10)
+  Sigma.ob ~ dunif(0, 10) # or dunif(0.01, 10)
   
-  
-  ## 3. Likelihood
-  for (i in 1:nID){
-    for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
-      # State process
-      state[i, t] ~ dbern(Mu.sp[i, t])
-      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
-      
-      # Observation process
-      obs[i, t] ~ dbern(Mu.op[t])
-      Mu.op[t] <- ob[t] * state[i, t]
-    } # t
-  } # i
-  
-}) # nimbleCode
+})
 
 
 ## Assemble --------------------------------------------------------------------
@@ -230,14 +233,14 @@ myCode = nimbleCode({
 # 
 # # monitors
 # params = c(# CJS model
-#            'dens.hat', 'veg.hat', 'ageM',              # latent states
-#            'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',  # covariate effects
-#            'EpsilonT.ob', 'SigmaT.ob',                 # observation parameters
-#            'Gamma.sv', 'Xi.sv', 'Sigma.sv',                 # random effects
+#            'dens.hat', 'veg.hat', 'ageM',             # latent states
+#            'BetaA.sv', 'BetaD.sv', 'BetaV.sv',        # covariate effects
+#            'Epsilon.ob', 'Sigma.ob',                  # observation parameters
+#            'Gamma.sv', 'Xi.sv', 'Sigma.sv',           # random effects
 #            
 #            # Process model
-#            's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD',  # yearly vital rates
-#            'YAF', 'SA', 'AD', 'Ntot')                  # population sizes
+#            's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD', # yearly vital rates
+#            'YAF', 'SA', 'AD', 'Ntot')                 # population sizes
 
 
 # to serialize
@@ -266,11 +269,11 @@ paraNimble <- function(seed, myCode, myConst, myData,
   params = c(# CJS model
              'dens.hat', 'veg.hat', # 'ageM',           # latent states
              'BetaA.sv', 'BetaD.sv', 'BetaV.sv',        # covariate effects
-             'EpsilonT.ob', 'SigmaT.ob',                # observation parameters
+             'Epsilon.ob', 'Sigma.ob',                  # observation parameters
              'Gamma.sv', 'Xi.sv', 'Sigma.sv',           # random effects
 
              # Process model
-             's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD', # yearly vita rates
+             's', 'b', 's.PY', 's.YAF', 's.SA', 's.AD', # yearly vital rates
              'YAF', 'SA', 'AD', 'Ntot')                 # population sizes
   
   # MCMC settings
@@ -378,7 +381,7 @@ library(scales)
 
 summary(out.mcmc) # cannot handle NAs
 MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('EpsilonT.ob', 'SigmaT.ob'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Epsilon.ob', 'Sigma.ob'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('sv', 'b', 's.PY'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), n.eff = TRUE, round = 2)
@@ -394,7 +397,7 @@ for(i in 1:ncol(out.mcmc[[1]])){
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('EpsilonT.ob', 'SigmaT.ob'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Epsilon.ob', 'Sigma.ob'), pdf = FALSE)
 
 # MCMCtrace(out.mcmc, params = c('sv', 'b', 's.PY'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('s.YAF', 's.SA', 's.AD'), pdf = FALSE)
