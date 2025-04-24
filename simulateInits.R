@@ -1,26 +1,26 @@
 #' Simulate initial values for IPM
 #'
-#' @param N 
-#' @param nID.sv 
-#' @param nID.rs 
-#' @param nYear integer. Number of time steps in the model. N.year = 17 by default.
-#' @param nAge integer. Number of adult age classes, or maximum age. N.age = 22 by default.
-#' @param nAgeC integer. Number of age classes in CJS model. N.ageC = 5 by default.
-#' @param dens vector. Where the density data is stored.
-#' @param veg vector. Where the vegetation data is stored.
-#' @param win vector. Where the winter severity data is stored.
-#' @param nNoAge integer. Number of individuals of unknown age in the analysis.
-#' @param nNoDens 
-#' @param nNoVeg 
-#' @param nNoWin 
+#' @param n integer. Number of events in the reproductive success model. n = 0 by default.
+#' @param nID.sv integer. Number of unique kangaroos in the survival model. nID.sv = 0 by default.
+#' @param nID.rs integer. Number of unique kangaroos in the reproductive success model. nID.rs = 0 by default.
+#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
+#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
+#' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
+#' @param dens vector of yearly population density data.
+#' @param veg vector of yearly available vegetation data.
+#' @param win vector of yearly winter severity data.
+#' @param nNoAge integer. Number of individuals of unknown age in the analysis. nNoAge = 0 by default.
+#' @param nNoDens integer. Number of years when population density is unknown. nNoDens = 0 by default.
+#' @param nNoVeg integer. Number of years when available vegetation is unknown. nNoVeg = 0 by default.
+#' @param nNoWin integer. Number of years when winter severity is unknown. nNoWin = 0 by default.
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
 #'
 #' @examples
 
-simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, veg, win,
-                          nNoAge, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
+simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, nAgeC = 5,
+                          dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # for testing purposes
   source("wrangleData_en.R")
@@ -41,14 +41,16 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   n <- rsData$n
   nID.sv <- svData$nID
   nID.rs <- rsData$nID
-  nAge <- rsData$nAge
+  nYear <- 17
+  nAge <- 17
+  nAgeC <- 5
   dens <- enData$dens
   veg <- enData$veg
   win <- enData$win
   nNoAge <- svData$nNoAge
   nNoDens <- enData$N.noDens
   nNoVeg <- enData$nNoVeg
-  nNoWin <- enData$nNoVeg
+  nNoWin <- enData$nNoWin
   
   
   ## Simulate latent states for input data -------------------------------------
@@ -59,20 +61,20 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   veg.hat  <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
   
   # unobserved ages
-  ageM <- sample(3:8, size = N.noAge, replace = T)
+  ageM <- sample(3:8, size = nNoAge, replace = T)
   
   # latent states
-  Mu.sp <- runif(nID.sv * nYear, 0, 1)
-  Mu.op <- runif(nYear, 0, 1)
+  Mu.sp <- runif(nAgeC * nYear, 0, 1)
+  Mu.op <- runif(nAgeC * nYear, 0, 1)
   
   
   ## Simulate vital rate covariate effects -------------------------------------
   
   ## Survival model
-  BetaA.sv <- rnorm(N.ageC, 0, 1)
-  BetaD.sv <- rnorm(N.ageC, 0, 1)
-  BetaV.sv <- rnorm(N.ageC, 0, 1)
-  # BetaDV.sv <- rnorm(N.ageC, 0, 1)
+  BetaA.sv <- rnorm(nAgeC, 0, 1)
+  BetaD.sv <- rnorm(nAgeC, 0, 1)
+  BetaV.sv <- rnorm(nAgeC, 0, 1)
+  # BetaDV.sv <- rnorm(nAgeC, 0, 1)
   
   ## Reproductive success model
   # BetaD.rs <- rnorm(1, 0, 1)
@@ -84,28 +86,28 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   
   ## Survival model
   # variance-covariance matrix
-  zero  <- rep(0, N.ageC)
-  Xi.sv <- rnorm(N.ageC, 1, 0.1)
+  zero  <- rep(0, nAgeC)
+  Xi.sv <- rnorm(nAgeC, 1, 0.1)
   
-  Epsilon.sv <- matrix(rnorm((N.year-1)*N.ageC, 0, 0.1),
-                    ncol = N.ageC, nrow = (N.year-1))
+  Epsilon.sv <- matrix(rnorm((nYear-1)*nAgeC, 0, 0.1),
+                       ncol = nAgeC, nrow = (nYear-1))
   
-  Gamma.sv <- matrix(NA, ncol = N.ageC, nrow = N.year-1)
+  Gamma.sv <- matrix(NA, ncol = nAgeC, nrow = nYear-1)
   
-  for (t in 1:(N.year-1)){
-    for (a in 1:N.ageC){
+  for (t in 1:(nYear-1)){
+    for (a in 1:nAgeC){
       Gamma.sv[t,a] <- Xi.sv[a] * Epsilon.sv[t,a]
     }
   }
   
-  Tau.sv <- diag(N.ageC) + rnorm(N.ageC^2, 0, 0.1)
-  Tau.sv <- matrix(Tau.sv, nrow = N.ageC)
+  Tau.sv <- diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
+  Tau.sv <- matrix(Tau.sv, nrow = nAgeC)
   Tau.sv <- (Tau.sv + t(Tau.sv)) / 2
   
   ## Reproductive success model
   EpsilonI.rsI <- rnorm(nID.rs, 0, 1)
-  EpsilonT.rsI <- rnorm(N.year, 0, 1)
-  EpsilonT.rsA <- rnorm(N.year, 0, 1)
+  EpsilonT.rsI <- rnorm(nYear, 0, 1)
+  EpsilonT.rsA <- rnorm(nYear, 0, 1)
   
   SigmaI.rsI <- runif(1, 0, 10)
   SigmaT.rsI <- runif(1, 0, 10)
@@ -116,10 +118,10 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   
   ## Survival model
   # age-class-specific survival
-  sv <- matrix(NA, nrow = N.ageC, ncol = N.year-1)
+  sv <- matrix(NA, nrow = nAgeC, ncol = nYear-1)
   
-  for(a in 1:N.ageC){
-    for(t in 1:(N.year-1)){
+  for(a in 1:nAgeC){
+    for(t in 1:(nYear-1)){
       sv[a, t] <- plogis(
         BetaA.sv[a] +
         # BetaD.sv[a] * dens.hat[t] +
@@ -158,48 +160,48 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   #   }
   # }
   
-  Mu.rsI <- runif(N.age, 0, 1)
-  Mu.rsA <- runif(N.age, 0, 1)
+  Mu.rsI <- runif(nAge, 0, 1)
+  Mu.rsA <- runif(nAge, 0, 1)
   
   ## Population model
   # breeding rate
-  b <- runif(N.year-1, 0.5, 1) # raw means span 0.58-0.92
+  b <- runif(nYear-1, 0.5, 1) # raw means span 0.58-0.92
   
   # survival of PYs
   # to 1st Sept 1 when they become YAFs
-  s.PY <- runif(N.year-1, 0.1, 1) # raw means span 0.24-0.95
+  s.PY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
   
   # Survival of YAFs
   # to 2nd Sept 1 when they become SA1s
-  s.YAF <- sv[1, 1:(N.year-1)] # raw means span 0.01-0.88
+  s.YAF <- sv[1, 1:(nYear-1)] # raw means span 0.01-0.88
   
   # Survival of SA1s to SA2 & SA2 to AD3
   # 2nd age class in our published CJS model
-  s.SA <- rbind(sv[2, 1:(N.year-1)], sv[2, 1:(N.year-1)])
+  s.SA <- rbind(sv[2, 1:(nYear-1)], sv[2, 1:(nYear-1)])
   
   # Survival of all ADs
-  s.AD <- matrix(0, nrow = N.age, ncol = N.year-1)
+  s.AD <- matrix(0, nrow = nAge, ncol = nYear-1)
   
   for(a in 3:6){
-    s.AD[a, 1:(N.year-1)] <- sv[3, 1:(N.year-1)]
+    s.AD[a, 1:(nYear-1)] <- sv[3, 1:(nYear-1)]
   }
   
   for(a in 7:9){
-    s.AD[a, 1:(N.year-1)] <- sv[4, 1:(N.year-1)]
+    s.AD[a, 1:(nYear-1)] <- sv[4, 1:(nYear-1)]
   }
   
-  for(a in 10:N.age){
-    s.AD[a, 1:(N.year-1)] <- sv[5, 1:(N.year-1)]
+  for(a in 10:nAge){
+    s.AD[a, 1:(nYear-1)] <- sv[5, 1:(nYear-1)]
   }
   
   
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
-  ob <- runif(N.year, 0.2, 1)
-  Mu.ob <- runif(1, 0.2, 1)
-  EpsilonT.ob <- rnorm(N.year, 0, 0.2)
-  SigmaT.ob <- rnorm(1, 0.2, 0.1)
+  ob <- runif(nYear, 0.2, 1)
+  Mu.ob <- runif(1, 0.2, 0.8)
+  Epsilon.ob <- rnorm(nYear, 0, 0.2)
+  Sigma.ob <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
   
   
   ## Simulate initial population sizes -----------------------------------------
@@ -208,15 +210,15 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
   # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  YAF    <- c(5*5, rep(NA, times = N.year-1))
-  SA     <- matrix(NA, nrow = 2, ncol = N.year)
+  YAF    <- c(5*5, rep(NA, times = nYear-1))
+  SA     <- matrix(NA, nrow = 2, ncol = nYear)
   SA[,1] <- c(6*5, 5*5)
   
-  AD     <- matrix(NA, nrow = N.age, ncol = N.year)
-  AD[,1] <- c(0, 0, rep(2*5, times = (N.age-2)/2), rep(1*5, times = (N.age-2)/2))
+  AD     <- matrix(NA, nrow = nAge, ncol = nYear)
+  AD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-10))
   
-  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:N.age,1]),
-              rep(NA, times = N.year-1))
+  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nAge,1]),
+              rep(NA, times = nYear-1))
   
   
   ## Assemble myinits list -----------------------------------------------------
@@ -226,19 +228,35 @@ simulateInits <- function(N, nID.sv, nID.rs, nYear = 17, nAge, nAgeC = 5, dens, 
               veg.hat = veg.hat,
               ageM = ageM,
               
+              Mu.sp = Mu.sp,
+              Mu.op = Mu.op,
+              
               BetaA.sv = BetaA.sv,
               BetaD.sv = BetaD.sv,
               BetaV.sv = BetaV.sv,
-              
-              year.p = year.p,
-              sd.p = sd.p,
               
               Xi.sv = Xi.sv,
               Epsilon.sv = Epsilon.sv,
               Gamma.sv = Gamma.sv,
               Tau.sv = Tau.sv,
               
+              ob = ob,
+              Mu.ob = Mu.ob,
+              Epsilon.ob = Epsilon.ob,
+              Sigma.ob = Sigma.ob,
+              
+              EpsilonI.rsI = EpsilonI.rsI,
+              EpsilonT.rsI = EpsilonT.rsI,
+              EpsilonT.rsA = EpsilonT.rsA,
+              
+              SigmaI.rsI = SigmaI.rsI,
+              SigmaT.rsI = SigmaT.rsI,
+              SigmaT.rsA = SigmaT.rsA,
+              
               sv = sv,
+              Mu.rsI = Mu.rsI,
+              Mu.rsA = Mu.rsA,
+              
               b = b,
               s.PY = s.PY,
               s.YAF = s.YAF,

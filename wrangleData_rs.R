@@ -251,7 +251,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   age  <- as.integer(rs$Age)
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  N      <- length(id)
+  n     <- length(id)
   nID   <- length(unique(id))
   nYear <- length(unique(year))
   nAge  <- length(unique(age))
@@ -274,7 +274,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # ratio <- scale(rs$Ratio)
   # pratio <- scale(rs$PRatio)
   
-  return(list(N = N,
+  return(list(n = n,
               nID.rs = nID,
               nYear = nYear,
               nAge = nAge,

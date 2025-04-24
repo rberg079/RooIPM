@@ -53,20 +53,20 @@ myConst <- list(nYear = nYear,       # TODO: get from one of the wrangles?
                 nAge = nAge,           # TODO: get from one of the wrangles?
                 nAgeC = nAgeC,         # TODO: get from one of the wrangles?
                 noAge = svData$noAge,
-                NnoAge = svData$NnoAge,
-                NnoVeg = enData$NnoVeg,
+                nNoAge = svData$nNoAge,
+                nNoVeg = enData$nNoVeg,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
                 DF = svData$DF)
 
 # Switches/toggles
-testRun <- FALSE # or FALSE
+testRun <- TRUE # or FALSE
 
 
 ## Parameters ------------------------------------------------------------------
 
-# N = number of observations, or reproductive events
+# n = number of events in the reproductive success dataset
 # nID.sv = number of unique kangaroos in the survival dataset
 # nID.rs = number of unique kangaroos in the reproductive success dataset
 # nYear = number of years in the dataset
@@ -79,19 +79,18 @@ testRun <- FALSE # or FALSE
 # BetaDV.sv = covariate effect of interacting density & vegetation (DV) on survival (sv) (was B.densVeg)
 # BetaVR.sv = covariate effect of vegetation per capita, or kangaroo (VR) on survival (sv) (was B.vegRoo)
 
-# Xi.sv
-# Epsilon.sv
-# Gamma.sv
-# Tau.sv
-# Sigma.sv
+# Xi.sv = component of the variance-covariance matrix (was xi)
+# Epsilon.sv = component of the variance-covariance matrix (was eps.raw)
+# Gamma.sv = correlated random effect of year on probability of survival (was gamma)
+# Tau.sv = precision of correlated random effect of year on survival (was Tau.raw)
+# Sigma.sv = standard deviation of correlated random effect of year on survival (was Sigma.raw)
 
-# Mu.ob = (was mu.p)
-# Epsilon.ob = (was year.p)
-# Sigma.ob = (was sd.p)
+# Mu.ob = mean probability of observation (was mu.p)
+# Epsilon.ob = random effect of year on prob. of observation (was year.p)
+# Sigma.ob = standard deviation of effect of year on prob. of observation (was sd.p)
 
-# Mu.sp = mean of state process (was mu1)
-# Mu.op = mean of observation process (was mu2)
-
+# Mu.sp = mean latent state (was mu1)
+# Mu.op = mean latent observation (was mu2)
 
 
 ## Model -----------------------------------------------------------------------

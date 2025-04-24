@@ -49,47 +49,38 @@ myConst <- list(n      = rsData$n,
 testRun <- TRUE # or FALSE
 
 
-## Parameters ------------------------------------------------------------------
-
-# n = number of observations, or reproductive events
-# nID.rs = number of unique kangaroos in the dataset
-# nYear = number of years in the dataset
-# nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
-# nAgeC = number of age classes in the analysis (not used so far in RS analysis)
-
-
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
   
   #### First attempt ####
-  # likelihood
-  for (x in 1:n){
-    rs[x] ~ dbern(rsI[id[x], year[x]])
-  }
-
-  # constraints
-  for (i in 1:nID.rs){
-    for (t in 1:nYear){
-      logit(rsI[i, t]) <- logit(Mu.rsI[age[i, t]]) +
-        # BetaD.rs * dens[t] +
-        # BetaV.rs * veg[t] +
-        # BetaW.rs * win[t] +
-        EpsilonI.rsI[i] +
-        EpsilonT.rsI[t]
-    }
-  }
-  
-  # #### Second attempt ####
-  # for (i in 1:n){
-  #   # likelihood
-  #   rs[i] ~ dbern(rsI[id[i], year[i]])
-  # 
-  #   # constraints
-  #   logit(rsI[id[i], year[i]]) <- logit(Mu.rsI[age[i]]) +
-  #     EpsilonI.rsI[id[i]] +
-  #     EpsilonT.rsI[year[i]]
+  # # likelihood
+  # for (x in 1:n){
+  #   rs[x] ~ dbern(rsI[id[x], year[x]])
   # }
+  # 
+  # # constraints
+  # for (i in 1:nID.rs){
+  #   for (t in 1:nYear){
+  #     logit(rsI[i, t]) <- logit(Mu.rsI[age[i, t]]) +
+  #       # BetaD.rs * dens[t] +
+  #       # BetaV.rs * veg[t] +
+  #       # BetaW.rs * win[t] +
+  #       EpsilonI.rsI[i] +
+  #       EpsilonT.rsI[t]
+  #   }
+  # }
+  
+  #### Second attempt ####
+  for (i in 1:n){
+    # likelihood
+    rs[i] ~ dbern(rsI[id[i], year[i]])
+
+    # constraints
+    logit(rsI[id[i], year[i]]) <- logit(Mu.rsI[age[i]]) +
+      EpsilonI.rsI[id[i]] +
+      EpsilonT.rsI[year[i]]
+  }
   
   # use parameters estimated from individual data above
   # to predict age-specific reproductive success (rsA) here!
@@ -137,7 +128,7 @@ myCode = nimbleCode({
 # to serialize
 # create Nimble function
 paraNimble <- function(seed, myCode, myConst, myData,
-                       rs = rs, enData = enData, testRun){
+                       rsData = rsData, enData = enData, testRun){
   
   library(nimble)
   
@@ -147,22 +138,23 @@ paraNimble <- function(seed, myCode, myConst, myData,
   nAge = myConst$nAge
   
   # assign initial values
-  # TODO: UPDATE SIMULATE INITS FUNCTION!
-  # myInits <- simulateInits(...)
+  source("simulateInits.R")
+  myInits <- simulateInits(n = n, nID.sv = 0, nID.rs = nID.rs, nYear = nYear, nAge = nAge,
+                           dens = myData$dens, veg = myData$veg, win = myData$win)
   
   # assemble model
   myMod <- nimbleModel(code = myCode,
                        data = myData,
-                       constants = myConst
-                       # inits = myInits
+                       constants = myConst,
+                       inits = myInits
                        )
   
   # select parameters to monitor
   params = c(# RS model
-             "Mu.rsI", # "Mu.rsA"
+             "Mu.rsI", "Mu.rsA",
              # "Beta.dens", "Beta.veg", "Beta.win",
-             "EpsilonI.rsI", "EpsilonT.rsI",
-             "SigmaI.rsI", "SigmaT.rsI"
+             "EpsilonI.rsI", "EpsilonT.rsI", "EpsilonT.rsA",
+             "SigmaI.rsI", "SigmaT.rsI", "SigmaT.rsA"
   )
   
   # MCMC settings

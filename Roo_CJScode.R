@@ -62,11 +62,11 @@ myCode = nimbleCode({
   for (i in 1:nID.sv){
     for (t in (first[i] + 1):last[i]){
       # state process
-      state[i, t] ~ dbern(Mu.sp[i, t])
-      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
+      state[i, t] ~ dbern(MuS[i, t])
+      MuS[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
       # observation process
-      obs[i, t] ~ dbern(Mu.op[i, t])
-      Mu.op[i, t] <- ob[i, t] * state[i, t]
+      obs[i, t] ~ dbern(MuO[i, t])
+      MuO[i, t] <- ob[i, t] * state[i, t]
     }
   }
   
@@ -105,7 +105,7 @@ myCode = nimbleCode({
   # observation function
   for (t in 1:nYear){
     for(i in 1:nID.sv){
-      logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
+      logit(ob[i, t]) <- logit(MuO) + Epsilon.ob[t]
     }
     Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
   }
@@ -127,7 +127,7 @@ myCode = nimbleCode({
   }
   
   for (t in 1:(nYear-1)){
-    Epsilon.sv[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
+    Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
     for (i in 1:nAgeC){
       Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
     }
@@ -138,8 +138,8 @@ myCode = nimbleCode({
   Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   # observation
-  Mu.ob ~ dunif(0, 1)
-  Sigma.ob ~ dunif(0, 10) # or dunif(0.01, 10)
+  MuO ~ dunif(0.2, 1)
+  Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
   
 })
 
@@ -180,8 +180,9 @@ paraNimble <- function(seed, myCode, myConst, myData,
              veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
              dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
              
+             MuO = runif(1, 0.2, 0.8),
              Epsilon.ob = rnorm(nYear, 0, 0.2),
-             Sigma.ob = rnorm(1, 0.2, 0.1),
+             Sigma.ob = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
              
              Xi.sv = rnorm(nAgeC, 1, 0.1),
              Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1),
@@ -199,7 +200,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
                        inits = myInits())
   
   # select parameters to monitor
-  vars = c('Epsilon.ob', 'Sigma.ob', # 'state', 'ageM',
+  vars = c('Epsilon.ob', 'Sigma.ob', 'state', 'ageM',
            'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
            'dens.hat', 'veg.hat', 'densE', 'vegE',
            'Gamma.sv', 'Xi.sv', 'Sigma.sv'
@@ -226,13 +227,13 @@ paraNimble <- function(seed, myCode, myConst, myData,
 start.t <- Sys.time()
 this_cluster <- makeCluster(3)
 samples <- parLapply(X = 1:3,
-                          cl = this_cluster,
-                          fun = paraNimble,
-                          myCode = myCode,
-                          myConst = myConst,
-                          myData = myData,
-                          n.burn = 10000,
-                          n.thin = 10)
+                     cl = this_cluster,
+                     fun = paraNimble,
+                     myCode = myCode,
+                     myConst = myConst,
+                     myData = myData,
+                     n.burn = 10000,
+                     n.thin = 10)
 
 beep(sound = 2)
 stopCluster(this_cluster)
@@ -275,7 +276,7 @@ plot(out.mcmc[, paste0('Epsilon.ob[',1:nYear,']')])
 plot(out.mcmc[, 'Sigma.ob'])
 
 plot(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
-plot(out.mcmc[, paste0('ageM[',1:nb.noAge,']')])
+plot(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
 
 # # ...formally
 # gelman.diag(out.mcmc[, paste0('BetaA.sv[',1:nAgeC,']')])
@@ -287,7 +288,7 @@ plot(out.mcmc[, paste0('ageM[',1:nb.noAge,']')])
 # gelman.diag(out.mcmc[, 'Sigma.ob'])
 # 
 # gelman.diag(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
-# gelman.diag(out.mcmc[, paste0('ageM[',1:nb.noAge,']')])
+# gelman.diag(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
 # 
 # # check Neff
 # effectiveSize(out.mcmc[, paste0('BetaA.sv[',1:nAgeC,']')])
@@ -299,7 +300,7 @@ plot(out.mcmc[, paste0('ageM[',1:nb.noAge,']')])
 # effectiveSize(out.mcmc[, 'Sigma.ob'])
 # 
 # effectiveSize(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
-# effectiveSize(out.mcmc[, paste0('ageM[',1:nb.noAge,']')])
+# effectiveSize(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
 
 
 ## Plots -----------------------------------------------------------------------
