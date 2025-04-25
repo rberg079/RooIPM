@@ -20,7 +20,8 @@
 #' @examples
 
 simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, nAgeC = 5,
-                          dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
+                          dens, veg, win,
+                          nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # # for testing purposes
   # source("wrangleData_en.R")
@@ -36,7 +37,7 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   # 
   # source("wrangleData_sv.R")
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-  #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
+  #                          nYAFs.data = "data/RSmainRB_Mar25.xlsx")
   # 
   # n <- rsData$n
   # nID.sv <- svData$nID
@@ -137,34 +138,34 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
 
   ## Reproductive success model
   # age-specific reproductive success
-  # rsI <- numeric(N)
-  # for (i in 1:N) {
-  #   rsI[i] <- plogis(
-  #     qlogis(Mu.rsI[age[i]]) +
-  #       # BetaD.rs * dens[t] +
-  #       # BetaV.rs * veg[t] +
-  #       # BetaW.rs * win[t] +
-  #       EpsilonI.rsI[id[i]] +
-  #       EpsilonT.rsI[year[i]]
-  #   )
-  # }
-  # 
-  # rsA <- numeric(N.age * N.year)
-  # for (a in 1:N.age) {
-  #   for (t in 1:N.year) {
-  #     idx <- (a - 1) * N.year + t
-  #     rsA[idx] <- plogis(
-  #       qlogis(Mu.rsA[a]) +
-  #         # BetaD.rs * dens[t] +
-  #         # BetaV.rs * veg[t] +
-  #         # BetaW.rs * win[t] +
-  #         EpsilonT.rsA[t]
-  #       )
-  #   }
-  # }
-  
   Mu.rsI <- runif(nAge, 0, 1)
   Mu.rsA <- runif(nAge, 0, 1)
+  
+  rsI <- numeric(n)
+  for (i in 1:n) {
+    rsI[i] <- plogis(
+      qlogis(Mu.rsI[i]) +
+        # BetaD.rs * dens[t] +
+        # BetaV.rs * veg[t] +
+        # BetaW.rs * win[t] +
+        EpsilonI.rsI[i] +
+        EpsilonT.rsI[i]
+    )
+  }
+
+  rsA <- numeric(nAge * nYear)
+  for (a in 1:nAge) {
+    for (t in 1:nYear) {
+      idx <- (a - 1) * nYear + t
+      rsA[idx] <- plogis(
+        qlogis(Mu.rsA[a]) +
+          # BetaD.rs * dens[t] +
+          # BetaV.rs * veg[t] +
+          # BetaW.rs * win[t] +
+          EpsilonT.rsA[t]
+        )
+    }
+  }
   
   ## Population model
   # breeding rate
@@ -172,37 +173,37 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   
   # survival of PYs
   # to 1st Sept 1 when they become YAFs
-  s.PY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
+  svPY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
   
   # Survival of YAFs
   # to 2nd Sept 1 when they become SA1s
-  s.YAF <- sv[1, 1:(nYear-1)] # raw means span 0.01-0.88
+  svYAF <- sv[1, 1:(nYear-1)] # raw means span 0.01-0.88
   
   # Survival of SA1s to SA2 & SA2 to AD3
   # 2nd age class in our published CJS model
-  s.SA <- rbind(sv[2, 1:(nYear-1)], sv[2, 1:(nYear-1)])
+  svSA <- rbind(sv[2, 1:(nYear-1)], sv[2, 1:(nYear-1)])
   
   # Survival of all ADs
-  s.AD <- matrix(0, nrow = nAge+2, ncol = nYear-1)
+  svAD <- matrix(0, nrow = nAge+2, ncol = nYear-1)
   
   for(a in 3:6){
-    s.AD[a, 1:(nYear-1)] <- sv[3, 1:(nYear-1)]
+    svAD[a, 1:(nYear-1)] <- sv[3, 1:(nYear-1)]
   }
   
   for(a in 7:9){
-    s.AD[a, 1:(nYear-1)] <- sv[4, 1:(nYear-1)]
+    svAD[a, 1:(nYear-1)] <- sv[4, 1:(nYear-1)]
   }
   
   for(a in 10:(nAge+2)){
-    s.AD[a, 1:(nYear-1)] <- sv[5, 1:(nYear-1)]
+    svAD[a, 1:(nYear-1)] <- sv[5, 1:(nYear-1)]
   }
   
   
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
-  ob <- matrix(runif(nID.sv * nYear, 0.1, 0.9), nrow = nID.sv, ncol = nYear)
-  Mu.ob <- runif(1, 0.2, 0.8)
+  ob <- runif(nYear, 0.1, 0.9)
+  Mu.ob <- runif(1, 0.1, 0.9)
   Epsilon.ob <- rnorm(nYear, 0, 0.2)
   Sigma.ob <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
   
@@ -213,14 +214,16 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  YAF    <- c(5*5, rep(NA, times = nYear-1))
-  SA     <- matrix(NA, nrow = 2, ncol = nYear)
-  SA[,1] <- c(6*5, 5*5)
+  nYAF    <- c(5*5, rep(NA, times = nYear-1))
+  nSA     <- matrix(NA, nrow = 2, ncol = nYear)
+  nSA[,1] <- c(6*5, 5*5)
   
-  AD     <- matrix(NA, nrow = nAge+2, ncol = nYear)
-  AD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8))
+  nAD     <- matrix(NA, nrow = nAge+2, ncol = nYear)
+  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8))
   
-  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:(nAge+2),1]),
+  ## TODO: SIMULATE FORWARD USING THESE VALUES & INITS FOR VITAL RATES, POP SIZE...
+  
+  nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:(nAge+2),1]),
               rep(NA, times = nYear-1))
   
   
@@ -261,15 +264,15 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
               Mu.rsA = Mu.rsA,
               
               b = b,
-              s.PY = s.PY,
-              s.YAF = s.YAF,
-              s.SA = s.SA,
-              s.AD = s.AD,
+              svPY = svPY,
+              svYAF = svYAF,
+              svSA = svSA,
+              svAD = svAD,
               
-              YAF = YAF,
-              SA = SA,
-              AD = AD,
-              Ntot = Ntot
+              nYAF = nYAF,
+              nSA = nSA,
+              nAD = nAD,
+              nTOT = nTOT
               ))
   
 }

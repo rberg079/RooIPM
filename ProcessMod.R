@@ -96,39 +96,42 @@ myCode = nimbleCode({
   ## POPULATION MODEL
   ## ----------------------------------------
   
+  nAD[1:2, 1:nYear] <- 0
+  
   for (t in 1:(nYear-1)){
-    nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2),t])) 
+    nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t])) 
     
-    nSA[1,t+1] ~ dbin(svYAF[t], nYAF[t])
-    nSA[2,t+1] ~ dbin(svSA[1,t], nSA[1,t])
+    nSA[1, t+1] ~ dbin(svYAF[t], nYAF[t])
+    nSA[2, t+1] ~ dbin(svSA[1, t], nSA[1, t])
     
-    nAD[1:2,t+1] <- 0
-    nAD[3,t+1] ~ dbin(svSA[2,t], nSA[2,t])
+    nAD[3, t+1] ~ dbin(svSA[2, t], nSA[2, t])
     
     for (a in 4:(nAge+2)){
-      nAD[a,t+1] ~ dbin(svAD[a,t], nAD[a,t])
+      nAD[a, t+1] ~ dbin(svAD[a, t], nAD[a, t])
     }
-    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2,t+1]) + sum(nAD[3:(nAge+2),t+1])
+    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
   }
   
   # priors
+  svAD[1:2, 1:(nYear-1)] <- 0
+  
   for(t in 1:(nYear-1)){
-    b[t]        ~ dunif(0.5, 1)
-    svPY[t]     ~ dunif(0.1, 1)
-    svYAF[t]    <- sv[1,t]
-    svSA[1,t]   <- sv[2,t]
-    svSA[2,t]   <- sv[2,t]
+    b[t]       ~ dunif(0.5, 1)
+    svPY[t]    ~ dunif(0.1, 1)
+    svYAF[t]   <- sv[1, t]
+    svSA[1, t] <- sv[2, t]
+    svSA[2, t] <- sv[2, t]
     
     for(a in 3:6){ # prime-aged
-      svAD[a,t] <- sv[3,t]
+      svAD[a, t] <- sv[3, t]
     }
     
     for(a in 7:9){ # pre-senescent
-      svAD[a,t] <- sv[4,t]
+      svAD[a, t] <- sv[4, t]
     }
     
     for(a in 10:(nAge+2)){ # senescent
-      svAD[a,t] <- sv[5,t]
+      svAD[a, t] <- sv[5, t]
     }
   }
   
@@ -137,14 +140,14 @@ myCode = nimbleCode({
   
   #### Likelihood ####
   for (i in 1:nID.sv){
-    for (t in (first[i] + 1):last[i]){ # TODO: double-check that the first "first[i]" = first year in IPM
+    for (t in (first[i] + 1):last[i]){
       # state process
       state[i, t] ~ dbern(Mu.sp[i, t])
       Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
       
       # observation process
       obs[i, t] ~ dbern(Mu.op[i, t])
-      Mu.op[i, t] <- ob[i, t] * state[i, t] # TODO: REPARAMETRIZE THIS? [t] ONLY? 
+      Mu.op[i, t] <- ob[t] * state[i, t]
     }
   }
   
@@ -181,17 +184,22 @@ myCode = nimbleCode({
   }
   
   # observation function
+  # for (t in 1:nYear){
+  #   for(i in 1:nID.sv){
+  #   logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
+  #   }
+  #   Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
+  # }
+  
   for (t in 1:nYear){
-    for(i in 1:nID.sv){
-    logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
-    }
+    logit(ob[t]) <- logit(Mu.ob) + Epsilon.ob[t]
     Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
   }
   
   #### Priors ####
   # for fixed effects
   for(a in 1:nAgeC){
-    BetaA.sv[a] ~ dnorm(0, sd = 2) # or dlogis(0, 1)
+    BetaA.sv[a] ~ dnorm(0, sd = 2)
     BetaD.sv[a] ~ dnorm(0, sd = 2)
     BetaV.sv[a] ~ dnorm(0, sd = 2)
     # BetaDV.sv[a] ~ dnorm(0, sd = 2)
@@ -205,9 +213,9 @@ myCode = nimbleCode({
   }
   
   for (t in 1:(nYear-1)){
-    Epsilon.sv[t, 1:nAgeC]  ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC,1:nAgeC])
+    Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
     for (i in 1:nAgeC){
-      Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
+      Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t, i]
     }
   }
   
@@ -312,14 +320,14 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
 
   # select parameters to monitor
   params = c(# CJS model
-             'dens.hat', 'veg.hat', # 'ageM',           # latent states
-             'BetaA.sv', 'BetaD.sv', 'BetaV.sv',        # covariate effects
-             'Mu.ob', 'Epsilon.ob', 'Sigma.ob',         # observation parameters
-             'Gamma.sv', 'Xi.sv', 'Sigma.sv',           # random effects
+             'dens.hat', 'veg.hat', # 'ageM',            # latent states
+             'BetaA.sv', 'BetaD.sv', 'BetaV.sv',         # covariate effects
+             'Mu.ob', 'Epsilon.ob', 'Sigma.ob',          # observation parameters
+             'Gamma.sv', 'Xi.sv', 'Sigma.sv',            # random effects
 
              # Process model
              'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
-             'nYAF', 'nSA', 'nAD', 'nTOT')                 # population sizes
+             'nYAF', 'nSA', 'nAD', 'nTOT')               # population sizes
   
   # MCMC settings
   if(testRun){
@@ -344,7 +352,7 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
                      summary = T,
                      WAIC = T)
 
-  return(samples)
+  return(samples, myInits)
 }
 
 

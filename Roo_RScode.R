@@ -16,10 +16,10 @@ registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
-enData <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
 source("wrangleData_rs.R")
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
@@ -53,40 +53,24 @@ testRun <- TRUE # or FALSE
 
 myCode = nimbleCode({
   
-  #### First attempt ####
-  # # likelihood
-  # for (x in 1:n){
-  #   rs[x] ~ dbern(rsI[id[x], year[x]])
-  # }
-  # 
-  # # constraints
-  # for (i in 1:nID.rs){
-  #   for (t in 1:nYear){
-  #     logit(rsI[i, t]) <- logit(Mu.rsI[age[i, t]]) +
-  #       # BetaD.rs * dens[t] +
-  #       # BetaV.rs * veg[t] +
-  #       # BetaW.rs * win[t] +
-  #       EpsilonI.rsI[i] +
-  #       EpsilonT.rsI[t]
-  #   }
-  # }
-  
-  #### Second attempt ####
-  for (i in 1:n){
-    # likelihood
-    rs[i] ~ dbern(rsI[id[i], year[i]])
-
-    # constraints
-    logit(rsI[id[i], year[i]]) <- logit(Mu.rsI[age[i]]) +
-      EpsilonI.rsI[id[i]] +
-      EpsilonT.rsI[year[i]]
+  #### Likelihood & constraints ####
+  # individual rs function
+  for (x in 1:n){
+    rs[x] ~ dbern(rsI[x])
+    logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
+      # BetaD.rs * dens[t] +
+      # BetaV.rs * veg[t] +
+      # BetaW.rs * win[t] +
+      EpsilonI.rsI[id[x]] +
+      EpsilonT.rsI[year[x]]
   }
   
+  # age-specific rs function
   # use parameters estimated from individual data above
   # to predict age-specific reproductive success (rsA) here!
   for (a in 1:nAge){
     for (t in 1:nYear){
-      logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes s.PY in the population model!
+      logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes svPY!
         # BetaD.rs * dens[t] +
         # BetaV.rs * veg[t] +
         # BetaW.rs * win[t] +
@@ -127,10 +111,11 @@ myCode = nimbleCode({
 
 # to serialize
 # create Nimble function
-paraNimble <- function(seed, myCode, myConst, myData,
+paraNimble <- function(mySeed, myCode, myConst, myData,
                        rsData = rsData, enData = enData, testRun){
   
   library(nimble)
+  set.seed(mySeed)
   
   n = myConst$n
   nID.rs = myConst$nID.rs
@@ -141,6 +126,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
   source("simulateInits.R")
   myInits <- simulateInits(n = n, nID.sv = 0, nID.rs = nID.rs, nYear = nYear, nAge = nAge,
                            dens = myData$dens, veg = myData$veg, win = myData$win)
+                           # nNoVeg = myConst$nNoVeg, nNoWin = myConst$nNoWin
   
   # assemble model
   myMod <- nimbleModel(code = myCode,
@@ -158,9 +144,6 @@ paraNimble <- function(seed, myCode, myConst, myData,
   )
   
   # MCMC settings
-  mySeed  <- 1:3
-  nchains <- 3
-  
   if(testRun){
     niter   <- 10
     nburnin <- 0
@@ -172,7 +155,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
   }
   
   cModel <- compileNimble(myMod)
-  myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
+  myMCMC <- buildMCMC(cModel, monitors = params)
   cmyMCMC <- compileNimble(myMCMC, project = myMod)
   samples <- runMCMC(cmyMCMC,
                      niter = niter,
@@ -180,8 +163,7 @@ paraNimble <- function(seed, myCode, myConst, myData,
                      thin = nthin,
                      setSeed = mySeed,
                      samplesAsCodaMCMC = T,
-                     summary = T,
-                     WAIC = T)
+                     summary = T)
   
   return(samples)
 }
@@ -190,6 +172,9 @@ paraNimble <- function(seed, myCode, myConst, myData,
 ## Run model -------------------------------------------------------------------
 
 # serialized
+mySeed <- 1:3
+nchains <- 3
+
 start.t <- Sys.time()
 this_cluster <- makeCluster(3)
 samples <- parLapply(X = 1:3,
@@ -203,4 +188,11 @@ samples <- parLapply(X = 1:3,
 beep(sound = 2)
 stopCluster(this_cluster)
 dur = now() - start.t; dur
+
+library(MCMCvis)
+out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()
+
+MCMCsummary(out.mcmc,
+            params = c('Mu.rsI', 'Mu.rsA', 'SigmaI.rsI', 'SigmaT.rsI', 'SigmaT.rsA'),
+            n.eff = TRUE, round = 2)
 

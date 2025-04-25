@@ -2,9 +2,9 @@
 #'
 #' @param nAge integer. Maximum age to consider in the analysis. nAge = 22 by default.
 #' @param nAgeC integer. Number of age classes to consider in the analysis. nAgeC = 5 by default.
-#' @param ntimes integer. Number of years to consider in the analysis. ntimes = 17 by default.
+#' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
-#' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + ntimes - 1 by default.
+#' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
 #' @param modelNames character vector. User-defined names for models to compare. 
 #' @param plotFolder character string. Path to the folder in which to store comparison plots.
@@ -16,7 +16,7 @@
 #'
 #' @examples
 
-compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, maxYear,
+compareModels <- function(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008, maxYear,
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
 
@@ -40,7 +40,7 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
   
   # set maxYear if not provided
   if(missing(maxYear)){
-    maxYear <- minYear + ntimes - 1
+    maxYear <- minYear + nYear - 1
   }
   
   # count number of models
@@ -117,39 +117,39 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
                  paste0('B.veg[', 1:nAgeC, ']')),
     
     CJScovar = c(paste0('Sigma.raw[', 1:nAgeC, ', ', 1:nAgeC, ']')),
-                 # expand.grid(t = 1:(ntimes - 1), a = 1:nAgeC) %>%
+                 # expand.grid(t = 1:(nYear - 1), a = 1:nAgeC) %>%
                  #   mutate(param = paste0('gamma[', t, ', ', a, ']')) %>%
                  #   pull(param),
                  # paste0('xi[', 1:nAgeC, ']')),
     
     CJSobs   = c('mean.p', 'sd.p',
-                 paste0('year.p[', 1:ntimes, ']')),
+                 paste0('year.p[', 1:nYear, ']')),
     
-    CJSenv   = c(paste0('dens.hat[', 1:(ntimes-1), ']'),
-                 paste0('veg.hat[', 1:(ntimes-1), ']')),
+    CJSenv   = c(paste0('dens.hat[', 1:(nYear-1), ']'),
+                 paste0('veg.hat[', 1:(nYear-1), ']')),
     
     CJSsurv  = c(expand.grid(a = 1:nAgeC, t = c(1, 5, 9, 13)) %>% 
                    mutate(param = paste0('s[', a, ', ', t, ']')) %>% 
                    pull(param)),
     
-    rates    = c(paste0('b[', 1:(ntimes-1), ']'),
-                 paste0('s.PY[', 1:(ntimes-1), ']'))
-                 # paste0('s.YAF[', 1:(ntimes-1), ']'),
-                 # expand.grid(a = 1:2, t = 1:(ntimes-1)) %>% 
+    rates    = c(paste0('b[', 1:(nYear-1), ']'),
+                 paste0('s.PY[', 1:(nYear-1), ']'))
+                 # paste0('s.YAF[', 1:(nYear-1), ']'),
+                 # expand.grid(a = 1:2, t = 1:(nYear-1)) %>% 
                  #   mutate(param = paste0('s.SA[', a, ', ', t, ']')) %>% 
                  #   pull(param),
-                 # expand.grid(a = 1:nAge, t = 1:(ntimes-1)) %>% 
+                 # expand.grid(a = 1:nAge, t = 1:(nYear-1)) %>% 
                  #   mutate(param = paste0('s.AD[', a, ', ', t, ']')) %>% 
                  #   pull(param)),
     
-    # popsizes = c(paste0('YAF[', 1:ntimes, ']'),
-    #              expand.grid(a = 1:2, t = 1:(ntimes-1)) %>% 
+    # popsizes = c(paste0('YAF[', 1:nYear, ']'),
+    #              expand.grid(a = 1:2, t = 1:(nYear-1)) %>% 
     #                mutate(param = paste0('SA[', a, ', ', t, ']')) %>% 
     #                pull(param),
-    #              expand.grid(a = 1:nAge, t = 1:(ntimes-1)) %>% 
+    #              expand.grid(a = 1:nAge, t = 1:(nYear-1)) %>% 
     #                mutate(param = paste0('AD[', a, ', ', t, ']')) %>% 
     #                pull(param),
-    #              paste0('Ntot[', 1:ntimes, ']'))
+    #              paste0('Ntot[', 1:nYear, ']'))
     )
   
   # set parameters for plotting time series of posterior summaries
@@ -237,7 +237,7 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
   }
 }
 
-# test <- compareModels(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008,
+# test <- compareModels(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008,
 #                       postPaths = "results/IPM_CJS.rds", modelNames = c("IPM/CJS"),
 #                       plotFolder = "figures", returnSumData = TRUE)
 
