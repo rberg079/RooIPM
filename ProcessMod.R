@@ -97,6 +97,7 @@ myCode = nimbleCode({
   ## ----------------------------------------
   
   nAD[1:2, 1:nYear] <- 0
+  nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:(nAge+2), 1])
   
   for (t in 1:(nYear-1)){
     nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t])) 
@@ -284,7 +285,7 @@ myCode = nimbleCode({
 # serialized
 # create Nimble function
 paraNimble <- function(mySeed, myCode, myConst, myData,
-                       svData = svData, enData = enData, testRun){
+                       svData, rsData, enData, testRun){
 
   library(nimble)
   set.seed(mySeed)
@@ -353,7 +354,7 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
                      summary = T,
                      WAIC = T)
 
-  return(samples, myInits)
+  return(samples)
 }
 
 
@@ -386,6 +387,7 @@ samples <- parLapply(X = 1:3,
                      myConst = myConst,
                      myData = myData,
                      svData = svData,
+                     rsData = rsData,
                      enData = enData,
                      testRun = testRun)
 
