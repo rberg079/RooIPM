@@ -55,7 +55,7 @@ myCode = nimbleCode({
   
   #### Likelihood & constraints ####
   # individual rs function
-  for (x in 1:n){
+  for(x in 1:n){
     rs[x] ~ dbern(rsI[x])
     logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
       # BetaD.rs * dens[year[x]] +
@@ -68,8 +68,8 @@ myCode = nimbleCode({
   # age-specific rs function
   # use parameters estimated from individual data above
   # to predict age-specific reproductive success (rsA) here!
-  for (a in 1:nAge){
-    for (t in 1:nYear){
+  for(a in 1:nAge){
+    for(t in 1:nYear){
       logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes svPY!
         # BetaD.rs * dens[t] +
         # BetaV.rs * veg[t] +
@@ -80,7 +80,7 @@ myCode = nimbleCode({
     
   ##### Priors ####
   # priors for fixed effects
-  for (a in 1:nAge){
+  for(a in 1:nAge){
     Mu.rsI[a] ~ dunif(0, 1)
     Mu.rsA[a] ~ dunif(0, 1)
   }
@@ -90,11 +90,11 @@ myCode = nimbleCode({
   # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
   
   # priors for random effects
-  for (i in 1:nID.rs){
+  for(i in 1:nID.rs){
     EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
   }
   
-  for (t in 1:nYear){
+  for(t in 1:nYear){
     EpsilonT.rsI[t] ~ dnorm(0, sd = SigmaT.rsI)
     EpsilonT.rsA[t] ~ dnorm(0, sd = SigmaT.rsA)
   }

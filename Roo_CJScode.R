@@ -63,8 +63,8 @@ testRun <- TRUE # or FALSE
 myCode = nimbleCode({
   
   #### Likelihood ####
-  for (i in 1:nID.sv){
-    for (t in (first[i] + 1):last[i]){
+  for(i in 1:nID.sv){
+    for(t in (first[i] + 1):last[i]){
       # state process
       state[i, t] ~ dbern(Mu.sp[i, t])
       Mu.sp[i, t] <- sv[i, t-1] * state[i, t-1]
@@ -76,8 +76,8 @@ myCode = nimbleCode({
   
   #### Constraints ####
   # survival function
-  for (i in 1:nID.sv){                               
-    for (t in first[i]:(last[i]-1)){
+  for(i in 1:nID.sv){                               
+    for(t in first[i]:(last[i]-1)){
       logit(sv[i, t]) <- BetaA.sv[ageC[age[i, t]]] +
         BetaD.sv[ageC[age[i, t]]] * dens.hat[t] +
         BetaV.sv[ageC[age[i, t]]] * veg.hat[t] +
@@ -87,27 +87,27 @@ myCode = nimbleCode({
     }
   }
   
-  for (t in 1:nYear){
+  for(t in 1:nYear){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (m in 1:nNoVeg){
+  for(m in 1:nNoVeg){
     veg[m] <- 0
     # veg[m] ~ dnorm(0, 0.001)
   }
   
   # estimate missing ages
-  for (i in 1:nNoAge){
+  for(i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25, 1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for (t in (first[noAge[i]]+1):nYear){
+    for(t in (first[noAge[i]]+1):nYear){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
     }
   }
   
   # observation function
-  for (t in 1:nYear){
+  for(t in 1:nYear){
     for(i in 1:nID.sv){
       logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
     }
@@ -125,14 +125,14 @@ myCode = nimbleCode({
   
   # for random effects
   # variance-covariance matrix
-  for (i in 1:nAgeC){
+  for(i in 1:nAgeC){
     zero[i] <- 0
     Xi.sv[i] ~ dunif(0, 2)
   }
   
-  for (t in 1:(nYear-1)){
+  for(t in 1:(nYear-1)){
     Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
-    for (i in 1:nAgeC){
+    for(i in 1:nAgeC){
       Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t,i]
     }
   }
@@ -339,13 +339,13 @@ corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
 # check variance-correlation matrix, with Sigma.sv on diagonal
 varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(betaz)))
 
-for (i in 1:myConst$nAgeC){
+for(i in 1:myConst$nAgeC){
   varCorrMatrix[i,i,] <- betaz[, paste0('Xi.sv[', i,']')]*
     sqrt(betaz[, paste0('Sigma.sv[', i,', ', i,']')])
 }
 
-for (j in 1:(myConst$nAgeC-1)){
-  for (i in (j+1):myConst$nAgeC){
+for(j in 1:(myConst$nAgeC-1)){
+  for(i in (j+1):myConst$nAgeC){
     varCorrMatrix[j,i,] <- (betaz[, paste0('Sigma.sv[',i,', ',j,']')])/
       sqrt(betaz[, paste0('Sigma.sv[', j,', ', j,']')]*
              betaz[, paste0('Sigma.sv[', i,', ', i,']')])

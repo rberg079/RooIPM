@@ -24,14 +24,14 @@ enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
 
+source("wrangleData_sv.R")
+svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+                         yafs.data = "data/RSmainRB_Mar25.xlsx")
+
 source("wrangleData_rs.R")
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
-
-source("wrangleData_sv.R")
-svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-                         yafs.data = "data/RSmainRB_Mar25.xlsx")
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -99,7 +99,7 @@ myCode = nimbleCode({
   nAD[1:2, 1:nYear] <- 0
   nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:(nAge+2), 1])
   
-  for (t in 1:(nYear-1)){
+  for(t in 1:(nYear-1)){
     nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t])) 
     
     nSA[1, t+1] ~ dbin(svYAF[t], nYAF[t])
@@ -107,7 +107,7 @@ myCode = nimbleCode({
     
     nAD[3, t+1] ~ dbin(svSA[2, t], nSA[2, t])
     
-    for (a in 4:(nAge+2)){
+    for(a in 4:(nAge+2)){
       nAD[a, t+1] ~ dbin(svAD[a, t], nAD[a, t])
     }
     nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
@@ -140,8 +140,8 @@ myCode = nimbleCode({
   ## ----------------------------------------
   
   #### Likelihood ####
-  for (i in 1:nID.sv){
-    for (t in (first[i] + 1):last[i]){
+  for(i in 1:nID.sv){
+    for(t in (first[i] + 1):last[i]){
       # state process
       state[i, t] ~ dbern(Mu.sp[i, t])
       Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
@@ -154,8 +154,8 @@ myCode = nimbleCode({
   
   #### Constraints ####
   # survival function
-  for (a in 1:nAgeC){                               
-    for (t in 1:(nYear-1)){
+  for(a in 1:nAgeC){                               
+    for(t in 1:(nYear-1)){
       logit(sv[a, t]) <- BetaA.sv[a] +
         BetaD.sv[a] * dens.hat[t] +
         BetaV.sv[a] * veg.hat[t] +
@@ -165,34 +165,34 @@ myCode = nimbleCode({
     }
   }
   
-  for (t in 1:(nYear-1)){
+  for(t in 1:(nYear-1)){
     dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
     veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
   }
   
-  for (m in 1:nNoVeg){
+  for(m in 1:nNoVeg){
     veg[m] <- 0
     # vegM[m] ~ dnorm(0, sd = 2)
   }
   
   # estimate missing ages
-  for (i in 1:nNoAge){
+  for(i in 1:nNoAge){
     ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
     age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for (t in (first[noAge[i]]+1):nYear){
+    for(t in (first[noAge[i]]+1):nYear){
       age[noAge[i], t] <- age[noAge[i], t-1] + 1
     }
   }
   
   # observation function
-  # for (t in 1:nYear){
+  # for(t in 1:nYear){
   #   for(i in 1:nID.sv){
   #   logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
   #   }
   #   Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
   # }
   
-  for (t in 1:nYear){
+  for(t in 1:nYear){
     logit(ob[t]) <- logit(Mu.ob) + Epsilon.ob[t]
     Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
   }
@@ -208,14 +208,14 @@ myCode = nimbleCode({
   
   # for random effects
   # variance-covariance matrix
-  for (i in 1:nAgeC){
+  for(i in 1:nAgeC){
     zero[i] <- 0
     Xi.sv[i] ~ dunif(0, 2)
   }
   
-  for (t in 1:(nYear-1)){
+  for(t in 1:(nYear-1)){
     Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
-    for (i in 1:nAgeC){
+    for(i in 1:nAgeC){
       Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t, i]
     }
   }
@@ -233,183 +233,81 @@ myCode = nimbleCode({
 
 ## Assemble --------------------------------------------------------------------
 
-# # unserialized
-# # n = myConst$n
-# nID.sv = myConst$nID.sv
-# # nID.rs = myConst$nID.rs
-# nYear = myConst$nYear
-# nAge  = myConst$nAge
-# nAgeC = myConst$nAgeC
-# 
-# dens = enData$dens
-# veg = enData$veg
-# # win = enData$win
-# 
-# nNoAge = myConst$nNoAge
-# # nNoDens = myConst$nNoDens
-# nNoVeg = myConst$nNoVeg
-# # nNoWin = myConst$nNoWin
-# 
-# source("simulateInits.R")
-# myInits <- simulateInits(
-#   nID.sv = nID.sv, nYear = nYear, nAge = nAge, nAgeC = nAgeC, # n = n, nID.rs = nID.rs,
-#   dens = dens, veg = veg, nNoAge = nNoAge, nNoVeg = nNoVeg # win = win, nNoWin = nNoWin
-# )
-# 
-# # monitors
-# params = c(# CJS model
-#            'dens.hat', 'veg.hat', 'ageM',             # latent states
-#            'BetaA.sv', 'BetaD.sv', 'BetaV.sv',        # covariate effects
-#            'Mu.ob', 'Epsilon.ob', 'Sigma.ob',         # observation parameters
-#            'Gamma.sv', 'Xi.sv', 'Sigma.sv',           # random effects
-#            
-#            # Process model
-#            'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
-#            'nYAF', 'nSA', 'nAD', 'nTOT')                 # population sizes
-# 
-# # MCMC specs
-# mySeed  <- 1
-# nchains <- 1
-# 
-# if(testRun){
-#   niter   <- 10
-#   nburnin <- 0
-#   nthin   <- 1
-# }else{
-#   niter   <- 10000
-#   nburnin <- 2000
-#   nthin   <- 1
-# }
-# 
+nchains   <- 3
+seedMod   <- 1:nchains
+seedInits <- 1
 
-# serialized
-# create Nimble function
-paraNimble <- function(mySeed, myCode, myConst, myData,
-                       svData, rsData, enData, testRun){
+# assign initial values
+source("simulateInits.R")
+set.seed(seedInits)
+myInits <- list()
+for(c in 1:nchains){
+  myInits[[c]] <- simulateInits(
+    # n = rsData$n,
+    nID.sv = myConst$nID.sv,
+    # nID.rs = myConst$nID.rs,
+    nYear = myConst$nYear,
+    nAge = myConst$nAge,
+    nAgeC = myConst$nAgeC,
+    
+    age = myData$age,
+    dens = myData$dens,
+    veg = myData$veg,
+    # win = myData$win,
+    
+    nNoAge = myConst$nNoAge,
+    # nNoDens = myConst$nNoDens,
+    nNoVeg = myConst$nNoVeg,
+    # nNoWin = myConst$nNoWin
+    )
+}
 
-  library(nimble)
-  set.seed(mySeed)
+# select parameters to monitors
+params = c(
+  # Survival model
+  'dens.hat', 'veg.hat', # 'ageM',            # latent states
+  'BetaA.sv', 'BetaD.sv', 'BetaV.sv',         # covariate effects
+  'Mu.ob', 'Epsilon.ob', 'Sigma.ob',          # observation parameters
+  'Gamma.sv', 'Xi.sv', 'Sigma.sv',            # random effects
   
-  # n      = myConst$n
-  nID.sv = myConst$nID.sv
-  # nID.rs = myConst$nID.rs
-  nYear  = myConst$nYear
-  nAge   = myConst$nAge
-  nAgeC  = myConst$nAgeC
-  
-  age  = rsData$age
-  dens = enData$dens
-  veg  = enData$veg
-  # win  = enData$win
+  # Population model
+  'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
+  'nYAF', 'nSA', 'nAD', 'nTOT')               # population sizes
 
-  nNoAge  = myConst$nNoAge
-  # nNoDens = myConst$nNoDens
-  nNoVeg  = myConst$nNoVeg
-  # nNoWin  = myConst$nNoWin
-
-  # assign initial values
-  source("simulateInits.R")
-  myInits <- simulateInits(
-    nID.sv = nID.sv, nYear = nYear, nAge = nAge, nAgeC = nAgeC, # n = n, nID.rs = nID.rs,
-    age = age, dens = dens, veg = veg, nNoAge = nNoAge, nNoVeg = nNoVeg # win = win, nNoWin = nNoWin
-  )
-
-  # assemble model
-  myMod <- nimbleModel(code = myCode,
-                       data = myData,
-                       constants = myConst,
-                       inits = myInits)
-
-  # select parameters to monitor
-  params = c(# CJS model
-             'dens.hat', 'veg.hat', # 'ageM',            # latent states
-             'BetaA.sv', 'BetaD.sv', 'BetaV.sv',         # covariate effects
-             'Mu.ob', 'Epsilon.ob', 'Sigma.ob',          # observation parameters
-             'Gamma.sv', 'Xi.sv', 'Sigma.sv',            # random effects
-
-             # Process model
-             'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
-             'nYAF', 'nSA', 'nAD', 'nTOT')               # population sizes
-  
-  # MCMC settings
-  if(testRun){
-    niter   <- 10
-    nburnin <- 0
-    nthin   <- 1
-  }else{
-    niter   <- 10000
-    nburnin <- 6000
-    nthin   <- 1
-  }
-  
-  cModel <- compileNimble(myMod)
-  myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
-  cmyMCMC <- compileNimble(myMCMC, project = myMod)
-  samples <- runMCMC(cmyMCMC,
-                     niter = niter,
-                     nburnin = nburnin,
-                     thin = nthin,
-                     setSeed = mySeed,
-                     samplesAsCodaMCMC = T,
-                     summary = T,
-                     WAIC = T)
-
-  return(samples)
+# select MCMC settings
+if(testRun){
+  niter   <- 10
+  nburnin <- 0
+  nthin   <- 1
+}else{
+  niter   <- 10000
+  nburnin <- 6000
+  nthin   <- 1
 }
 
 
 ## Run model -------------------------------------------------------------------
 
-# # unserialized for debugging
-# mySeed <- 1
-# samples <- nimbleMCMC(code = myCode,
-#                       data = myData,
-#                       constants = myConst,
-#                       inits = myInits,
-#                       monitors = params,
-#                       niter = niter,
-#                       nburnin = nburnin,
-#                       nchains = nchains,
-#                       thin = nthin,
-#                       samplesAsCodaMCMC = T,
-#                       setSeed = mySeed)
-
-# serialized for proper inference
-mySeed <- 1:3
-nchains <- 3
-
-start.t <- Sys.time()
-this_cluster <- makeCluster(3)
-samples <- parLapply(X = 1:3,
-                     cl = this_cluster,
-                     fun = paraNimble,
-                     myCode = myCode,
-                     myConst = myConst,
-                     myData = myData,
-                     svData = svData,
-                     rsData = rsData,
-                     enData = enData,
-                     testRun = testRun)
-
-beep(sound = 2)
-stopCluster(this_cluster)
-dur = now() - start.t; dur
+start <- Sys.time()
+samples <- nimbleMCMC(code = myCode,
+                      data = myData,
+                      constants = myConst,
+                      inits = myInits,
+                      monitors = params,
+                      niter = niter,
+                      nburnin = nburnin,
+                      nchains = nchains,
+                      thin = nthin,
+                      samplesAsCodaMCMC = T,
+                      setSeed = seedMod)
+dur <- Sys.time() - start; dur
+beep(2)
 
 # MCMC output
-# out.mcmc <- as.mcmc.list(samples)                                 # unserialized
-out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list() # serialized
-
-# remove one or several parameters from output
-# out.mcmc <- out.mcmc[, !grepl('ageM', colnames(out.mcmc[[1]]))]
-# forget <- '^ageM\\[|^dens\\.hat\\[|^veg\\.hat\\[' # & wtv else
-# out.mcmc <- out.mcmc[, !grepl(forget, colnames(out.mcmc[[1]]))]
-
-# WAIC value
-# waic <- map_dbl(samples, ~ .$WAIC$WAIC); waic # unserialized
-waic <- samples %>% map_dbl(~.$WAIC$WAIC); waic # serialized
+out.mcmc <- as.mcmc.list(samples)
 
 # save output
-fit <- list(model = myCode, out.mcmc = out.mcmc, waic = waic, dur = dur)
+fit <- list(model = myCode, out.mcmc = out.mcmc, dur = dur)
 # write_rds(fit, 'results/IPM_CJS.rds', compress = 'xz')
 
 
@@ -429,23 +327,22 @@ MCMCsummary(out.mcmc, params = c('sv', 'b', 'svPY'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
-# find parameters generating NAs
-for(i in 1:ncol(out.mcmc[[1]])){
-  if(any(is.na(out.mcmc[[1]][,i]))){
-    message(paste0(colnames(out.mcmc[[1]])[i]))
-    print(out.mcmc[[1]][1:3,i])
-  }
-}
+# # find parameters generating NAs
+# for(i in 1:ncol(out.mcmc[[1]])){
+#   if(any(is.na(out.mcmc[[1]][,i]))){
+#     message(paste0(colnames(out.mcmc[[1]])[i]))
+#     print(out.mcmc[[1]][1:3,i])
+#   }
+# }
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Epsilon.ob', 'Sigma.ob'), pdf = FALSE)
-
-# MCMCtrace(out.mcmc, params = c('sv', 'b', 'svPY'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
-
 MCMCtrace(out.mcmc, params = c('Sigma.sv'), pdf = FALSE)
+
+MCMCtrace(out.mcmc, params = c('sv', 'b', 'svPY'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 
 
 ## Plots -----------------------------------------------------------------------
@@ -455,8 +352,7 @@ nAge  <- myConst$nAge
 nAgeC <- myConst$nAgeC
 
 # posterior samples
-# out.mat <- as.matrix(samples)                                              # unserialized
-out.mat <- samples %>% map(~as.matrix(.$samples)) %>% do.call(what = rbind)  # serialized
+out.mat <- as.matrix(samples)
 
 # parameters to include
 table.params <- c(
@@ -523,13 +419,13 @@ corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
 # check variance-correlation matrix, with Sigma.sv on diagonal
 varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
 
-for (i in 1:myConst$nAgeC){
+for(i in 1:myConst$nAgeC){
   varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.sv[', i,']')]*
     sqrt(out.dat[, paste0('Sigma.sv[', i,', ', i,']')])
 }
 
-for (j in 1:(myConst$nAgeC-1)){
-  for (i in (j+1):myConst$nAgeC){
+for(j in 1:(myConst$nAgeC-1)){
+  for(i in (j+1):myConst$nAgeC){
     varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.sv[', i, ', ', j, ']')])/
       sqrt(out.dat[, paste0('Sigma.sv[', j, ', ', j, ']')]*
              out.dat[, paste0('Sigma.sv[', i, ', ', i, ']')])
@@ -551,14 +447,14 @@ for(i in 1:nrow(df)){
 }
 
 df$sv = inv.logit(apply(sv.pred, 1, mean))
-df$sv.lCI = inv.logit(apply(sv.pred, 1, quantile, 0.025))
-df$sv.uCI = inv.logit(apply(sv.pred, 1, quantile, 0.975))
+df$svLCI = inv.logit(apply(sv.pred, 1, quantile, 0.025))
+df$svUCI = inv.logit(apply(sv.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
   mutate(ageC = as.factor(ageC)) %>% 
   ggplot(aes(x = year, y = sv)) +
-  geom_ribbon(aes(ymin = sv.cil, ymax = sv.ciu, fill = ageC), alpha = 0.2) +
+  geom_ribbon(aes(ymin = svLCI, ymax = svUCI, fill = ageC), alpha = 0.2) +
   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
   labs(x = "Year", y = "Survival", fill = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +
