@@ -54,6 +54,10 @@ myConst <- list(nID.sv = svData$nID.sv,
 # sapply(1:nrow(myData$state), function (i) myData$age[i, myConst$first[i]]) %>% table(useNA = 'a')   # should all be >= 1
 # table(myConst$first >= myConst$last, useNA = 'a')                                                   # should all be F
 
+# Switches/toggles
+testRun <- TRUE # or FALSE
+
+
 ## Model -----------------------------------------------------------------------
 
 myCode = nimbleCode({
@@ -113,7 +117,7 @@ myCode = nimbleCode({
   #### Priors ####
   # for fixed effects
   for(a in 1:nAgeC){
-    BetaA.sv[a] ~ dlogis(0, 1) # TODO: think about this?
+    BetaA.sv[a] ~ dnorm(0, sd = 2) # or dlogis(0, 1)
     BetaD.sv[a] ~ dnorm(0, 0.001)
     BetaV.sv[a] ~ dnorm(0, 0.001)
     # BetaDV.sv[a] ~ dnorm(0, 0.001)
@@ -138,7 +142,7 @@ myCode = nimbleCode({
   Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   # observation
-  Mu.ob ~ dunif(0.01, 0.99)
+  Mu.ob ~ dunif(0.01, 0.99) # or dunif(0, 1)
   Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
   
 })
@@ -147,51 +151,51 @@ myCode = nimbleCode({
 ## Assemble --------------------------------------------------------------------
 
 # create Nimble function
-paraNimble <- function(seed, myCode, myConst, myData,
-                       n.burn = 1000, n.thin = 1){
+paraNimble <- function(mySeed, myCode, myConst, myData, testRun){
   
   library(nimble)
   library(coda)
   
+  set.seed(mySeed)
+  
   nID.sv = myConst$nID.sv
   nYear = myConst$nYear
-  
-  age = myData$age
   nAgeC = myConst$nAgeC
-  noAge = myConst$noAge
   nNoAge = myConst$nNoAge
+  nNoVeg = myConst$nNoVeg
   
+  noAge = myConst$noAge
   first = myConst$first
   last = myConst$last 
   
+  age = myData$age
   veg = myData$veg
   dens = myData$dens
-  nNoVeg = myConst$nNoVeg
   
   # assign initial values
   myInits <- function(i){
-    l = list(ageM = sample(3:8, size = nNoAge, replace = T),
-             
-             BetaA.sv = rnorm(nAgeC, 0, 1),
-             BetaV.sv = rnorm(nAgeC, 0, 1),
-             BetaD.sv = rnorm(nAgeC, 0, 1),
-             # BetaDV.sv = rnorm(nAgeC, 0, 1),
-             
-             veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
-             dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
-             
-             Mu.ob = runif(1, 0.1, 0.9),
-             Epsilon.ob = rnorm(nYear, 0, 0.2),
-             Sigma.ob = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
-             
-             Xi.sv = rnorm(nAgeC, 1, 0.1),
-             Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1),
-                                 ncol = nAgeC, nrow = (nYear-1))
+    l = list(
+      ageM = sample(3:8, size = nNoAge, replace = T),
+      
+      BetaA.sv = rnorm(nAgeC, 0, 1),
+      BetaV.sv = rnorm(nAgeC, 0, 1),
+      BetaD.sv = rnorm(nAgeC, 0, 1),
+      # BetaDV.sv = rnorm(nAgeC, 0, 1),
+      
+      veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
+      dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
+      
+      ob <- matrix(runif(nID.sv * nYear, 0.1, 0.9), nrow = nID.sv, ncol = nYear),
+      
+      Mu.ob = runif(1, 0.1, 0.9),
+      Epsilon.ob = rnorm(nYear, 0, 0.2),
+      Sigma.ob = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
+      
+      Xi.sv = rnorm(nAgeC, 1, 0.1),
+      Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1), ncol = nAgeC, nrow = nYear-1)
     )
     Tau.sv = diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
     l$Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
-    
-    l$ob <- matrix(runif(nID.sv * nYear, 0.1, 0.9), nrow = nID.sv, ncol = nYear)
     return(l)
   }
   
@@ -202,21 +206,31 @@ paraNimble <- function(seed, myCode, myConst, myData,
                        inits = myInits())
   
   # select parameters to monitor
-  vars = c('Epsilon.ob', 'Sigma.ob', 'state', 'ageM',
-           'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
-           'dens.hat', 'veg.hat', 'densE', 'vegE',
-           'Gamma.sv', 'Xi.sv', 'Sigma.sv'
-  )
+  params = c('Epsilon.ob', 'Sigma.ob', 'state', 'ageM',
+             'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
+             'dens.hat', 'veg.hat', 'densE', 'vegE',
+             'Gamma.sv', 'Xi.sv', 'Sigma.sv')
   
   # select MCMC settings
+  if(testRun){
+    niter   <- 10
+    nburnin <- 0
+    nthin   <- 1
+  }else{
+    niter   <- 10000
+    nburnin <- 6000
+    nthin   <- 1
+  }
+  
   cModel <- compileNimble(myMod)
-  mymcmc <- buildMCMC(cModel, monitors = vars, enableWAIC = T)
-  CmyMCMC <- compileNimble(mymcmc, project = myMod)
-  samples <- runMCMC(CmyMCMC,
+  myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
+  cmyMCMC <- compileNimble(myMCMC, project = myMod)
+  samples <- runMCMC(cmyMCMC,
+                     niter = niter,
+                     nburnin = nburnin,
+                     thin = nthin,
+                     setSeed = mySeed,
                      samplesAsCodaMCMC = T,
-                     niter = n.burn + 1000*n.thin,
-                     nburnin = n.burn,
-                     thin = n.thin,
                      summary = T,
                      WAIC = T)
   
@@ -226,16 +240,18 @@ paraNimble <- function(seed, myCode, myConst, myData,
 
 ## Run model -------------------------------------------------------------------
 
+mySeed <- 1:3
+nchains <- 3
+
 start.t <- Sys.time()
-this_cluster <- makeCluster(3)
-samples <- parLapply(X = 1:3,
-                     cl = this_cluster,
+this_cluster <- makeCluster(nchains)
+samples <- parLapply(cl = this_cluster,
+                     X = 1:nchains,
                      fun = paraNimble,
                      myCode = myCode,
                      myConst = myConst,
                      myData = myData,
-                     n.burn = 10000,
-                     n.thin = 10)
+                     testRun = testRun)
 
 beep(sound = 2)
 stopCluster(this_cluster)
@@ -272,7 +288,7 @@ nYear <- myConst$nYear
 nAgeC <- myConst$nAgeC
 
 par(mar = c(1,1,1,1))
-plot(out.mcmc[, paste0('BetaA.sv[',1:mnAgeC,']')])
+plot(out.mcmc[, paste0('BetaA.sv[',1:nAgeC,']')])
 plot(out.mcmc[, paste0('BetaV.sv[',1:nAgeC,']')])
 plot(out.mcmc[, paste0('BetaD.sv[',1:nAgeC,']')])
 plot(out.mcmc[, paste0('BetaDV.sv[',1:nAgeC,']')])

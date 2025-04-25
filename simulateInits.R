@@ -22,50 +22,53 @@
 simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, nAgeC = 5,
                           dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
-  # for testing purposes
-  source("wrangleData_en.R")
-  enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
-  
-  source("wrangleData_rs.R")
-  rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                           obs.data = "data/PromObs_2008-2019.xlsx",
-                           known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
-  
-  source("wrangleData_sv.R")
-  svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-                           yafs.data = "data/RSmainRB_Mar25.xlsx")
-  
-  n <- rsData$n
-  nID.sv <- svData$nID
-  nID.rs <- rsData$nID
-  nYear <- 17
-  nAge <- 17
-  nAgeC <- 5
-  dens <- enData$dens
-  veg <- enData$veg
-  win <- enData$win
-  nNoAge <- svData$nNoAge
-  nNoDens <- enData$N.noDens
-  nNoVeg <- enData$nNoVeg
-  nNoWin <- enData$nNoWin
+  # # for testing purposes
+  # source("wrangleData_en.R")
+  # enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+  #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+  # 
+  # source("wrangleData_rs.R")
+  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+  #                          obs.data = "data/PromObs_2008-2019.xlsx",
+  #                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+  # 
+  # source("wrangleData_sv.R")
+  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+  #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
+  # 
+  # n <- rsData$n
+  # nID.sv <- svData$nID
+  # nID.rs <- rsData$nID
+  # nYear <- 17
+  # nAge <- 17
+  # nAgeC <- 5
+  # dens <- enData$dens
+  # veg <- enData$veg
+  # win <- enData$win
+  # nNoAge <- svData$nNoAge
+  # nNoDens <- enData$N.noDens
+  # nNoVeg <- enData$nNoVeg
+  # nNoWin <- enData$nNoWin
   
   
   ## Simulate latent states for input data -------------------------------------
   
   ## Survival model
   # true environment
-  dens.hat <- ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens)
-  veg.hat  <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
+  # dens.hat <- ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens)
+  # veg.hat  <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
+  
+  dens.hat <- rnorm(nYear-1, 0, 1)
+  veg.hat <- rnorm(nYear-1, 0, 1)
   
   # unobserved ages
   ageM <- sample(3:8, size = nNoAge, replace = T)
   
   # latent states
-  Mu.sp <- runif(nAgeC * nYear, 0, 1)
-  Mu.op <- runif(nAgeC * nYear, 0, 1)
+  Mu.sp <- matrix(runif(nID.sv * nYear, 0, 1), nrow = nID.sv, ncol = nYear)
+  Mu.op <- matrix(runif(nID.sv * nYear, 0, 1), nrow = nID.sv, ncol = nYear)
   
   
   ## Simulate vital rate covariate effects -------------------------------------
@@ -180,7 +183,7 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   s.SA <- rbind(sv[2, 1:(nYear-1)], sv[2, 1:(nYear-1)])
   
   # Survival of all ADs
-  s.AD <- matrix(0, nrow = nAge, ncol = nYear-1)
+  s.AD <- matrix(0, nrow = nAge+2, ncol = nYear-1)
   
   for(a in 3:6){
     s.AD[a, 1:(nYear-1)] <- sv[3, 1:(nYear-1)]
@@ -190,7 +193,7 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
     s.AD[a, 1:(nYear-1)] <- sv[4, 1:(nYear-1)]
   }
   
-  for(a in 10:nAge){
+  for(a in 10:(nAge+2)){
     s.AD[a, 1:(nYear-1)] <- sv[5, 1:(nYear-1)]
   }
   
@@ -198,7 +201,7 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
-  ob <- runif(nYear, 0.2, 1)
+  ob <- matrix(runif(nID.sv * nYear, 0.1, 0.9), nrow = nID.sv, ncol = nYear)
   Mu.ob <- runif(1, 0.2, 0.8)
   Epsilon.ob <- rnorm(nYear, 0, 0.2)
   Sigma.ob <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
@@ -214,10 +217,10 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   SA     <- matrix(NA, nrow = 2, ncol = nYear)
   SA[,1] <- c(6*5, 5*5)
   
-  AD     <- matrix(NA, nrow = nAge, ncol = nYear)
-  AD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-10))
+  AD     <- matrix(NA, nrow = nAge+2, ncol = nYear)
+  AD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8))
   
-  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:nAge,1]),
+  Ntot   <- c(YAF[1] + sum(SA[1:2,1]) + sum(AD[3:(nAge+2),1]),
               rep(NA, times = nYear-1))
   
   
