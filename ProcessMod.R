@@ -295,7 +295,8 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
   nYear  = myConst$nYear
   nAge   = myConst$nAge
   nAgeC  = myConst$nAgeC
-
+  
+  age  = rsData$age
   dens = enData$dens
   veg  = enData$veg
   # win  = enData$win
@@ -309,7 +310,7 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
   source("simulateInits.R")
   myInits <- simulateInits(
     nID.sv = nID.sv, nYear = nYear, nAge = nAge, nAgeC = nAgeC, # n = n, nID.rs = nID.rs,
-    dens = dens, veg = veg, nNoAge = nNoAge, nNoVeg = nNoVeg # win = win, nNoWin = nNoWin
+    age = age, dens = dens, veg = veg, nNoAge = nNoAge, nNoVeg = nNoVeg # win = win, nNoWin = nNoWin
   )
 
   # assemble model

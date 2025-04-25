@@ -20,38 +20,41 @@
 #' @examples
 
 simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, nAgeC = 5,
-                          dens, veg, win,
+                          age, dens, veg, win,
                           nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
-  # # for testing purposes
-  # source("wrangleData_en.R")
-  # enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-  #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
-  # 
-  # source("wrangleData_rs.R")
-  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          obs.data = "data/PromObs_2008-2019.xlsx",
-  #                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
-  # 
-  # source("wrangleData_sv.R")
-  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-  #                          nYAFs.data = "data/RSmainRB_Mar25.xlsx")
-  # 
-  # n <- rsData$n
-  # nID.sv <- svData$nID
-  # nID.rs <- rsData$nID
-  # nYear <- 17
-  # nAge <- 17
-  # nAgeC <- 5
-  # dens <- enData$dens
-  # veg <- enData$veg
-  # win <- enData$win
-  # nNoAge <- svData$nNoAge
-  # nNoDens <- enData$N.noDens
-  # nNoVeg <- enData$nNoVeg
-  # nNoWin <- enData$nNoWin
+  # for testing purposes
+  library(tidyverse)
+  library(readxl)
+  
+  source("wrangleData_en.R")
+  enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+
+  source("wrangleData_rs.R")
+  rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                           obs.data = "data/PromObs_2008-2019.xlsx",
+                           known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+
+  source("wrangleData_sv.R")
+  svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+                           yafs.data = "data/RSmainRB_Mar25.xlsx")
+
+  n <- rsData$n
+  nID.sv <- svData$nID
+  nID.rs <- rsData$nID
+  nYear <- 17
+  nAge <- 17
+  nAgeC <- 5
+  dens <- enData$dens
+  veg <- enData$veg
+  win <- enData$win
+  nNoAge <- svData$nNoAge
+  nNoDens <- enData$N.noDens
+  nNoVeg <- enData$nNoVeg
+  nNoWin <- enData$nNoWin
   
   
   ## Simulate latent states for input data -------------------------------------
@@ -142,17 +145,17 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   Mu.rsA <- runif(nAge, 0, 1)
   
   rsI <- numeric(n)
-  for (i in 1:n) {
-    rsI[i] <- plogis(
-      qlogis(Mu.rsI[i]) +
-        # BetaD.rs * dens[t] +
-        # BetaV.rs * veg[t] +
-        # BetaW.rs * win[t] +
-        EpsilonI.rsI[i] +
-        EpsilonT.rsI[i]
+  for (x in 1:n) {
+    rsI[x] <- plogis(
+      qlogis(Mu.rsI[age[x]]) +
+        # BetaD.rs * dens[year[x]] +
+        # BetaV.rs * veg[year[x]] +
+        # BetaW.rs * win[year[x]] +
+        EpsilonI.rsI[x] +
+        EpsilonT.rsI[x]
     )
   }
-
+  
   rsA <- numeric(nAge * nYear)
   for (a in 1:nAge) {
     for (t in 1:nYear) {
@@ -214,17 +217,26 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  nYAF    <- c(5*5, rep(NA, times = nYear-1))
+  nYAF    <- c(5*5, rep(NA, times = nYear-1)); nYAF
   nSA     <- matrix(NA, nrow = 2, ncol = nYear)
-  nSA[,1] <- c(6*5, 5*5)
+  nSA[,1] <- c(6*5, 5*5); nSA
   
-  nAD     <- matrix(NA, nrow = nAge+2, ncol = nYear)
-  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8))
-  
-  ## TODO: SIMULATE FORWARD USING THESE VALUES & INITS FOR VITAL RATES, POP SIZE...
+  nAD     <- matrix(0, nrow = nAge+2, ncol = nYear); nAD
+  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8)); nAD
   
   nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:(nAge+2),1]),
-              rep(NA, times = nYear-1))
+              rep(NA, times = nYear-1)); nTOT
+  
+  for (t in 1:(nYear-1)){
+    nYAF[t+1]   <- rbinom(1, sum(nAD[3:(nAge+2), t]), b[t] * svPY[t])
+    nSA[1, t+1] <- rbinom(1, nYAF[t], svYAF[t])
+    nSA[2, t+1] <- rbinom(1, nSA[1, t], svSA[1, t])
+    nAD[3, t+1] <- rbinom(1, nSA[2, t], svSA[2, t])
+    for (a in 4:(nAge+2)){
+      nAD[a, t+1] <- rbinom(1, nAD[a-1, t], svAD[a-1, t])
+    }
+    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
+  }
   
   
   ## Assemble myinits list -----------------------------------------------------

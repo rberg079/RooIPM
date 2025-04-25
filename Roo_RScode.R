@@ -58,9 +58,9 @@ myCode = nimbleCode({
   for (x in 1:n){
     rs[x] ~ dbern(rsI[x])
     logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
-      # BetaD.rs * dens[t] +
-      # BetaV.rs * veg[t] +
-      # BetaW.rs * win[t] +
+      # BetaD.rs * dens[year[x]] +
+      # BetaV.rs * veg[year[x]] +
+      # BetaW.rs * win[year[x]] +
       EpsilonI.rsI[id[x]] +
       EpsilonT.rsI[year[x]]
   }
@@ -125,7 +125,7 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
   # assign initial values
   source("simulateInits.R")
   myInits <- simulateInits(n = n, nID.sv = 0, nID.rs = nID.rs, nYear = nYear, nAge = nAge,
-                           dens = myData$dens, veg = myData$veg, win = myData$win)
+                           age = myData$age, dens = myData$dens, veg = myData$veg, win = myData$win)
                            # nNoVeg = myConst$nNoVeg, nNoWin = myConst$nNoWin
   
   # assemble model
