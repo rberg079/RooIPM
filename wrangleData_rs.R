@@ -275,7 +275,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # pratio <- scale(rs$PRatio)
   
   return(list(n = n,
-              nID.rs = nID,
+              nIDr = nID,
               nYear = nYear,
               nAge = nAge,
               nAgeC = nAgeC,

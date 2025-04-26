@@ -39,7 +39,7 @@ myData <-  list(rs   = rsData$survS1,
                 win  = enData$win)
 
 myConst <- list(n      = rsData$n,
-                nID.rs = rsData$nID.rs,
+                nIDr = rsData$nIDr,
                 nYear  = rsData$nYear,
                 nAge   = rsData$nAge,
                 nAgeC  = rsData$nAgeC)
@@ -90,7 +90,7 @@ myCode = nimbleCode({
   # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
   
   # priors for random effects
-  for(i in 1:nID.rs){
+  for(i in 1:nIDr){
     EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
   }
   
@@ -118,13 +118,13 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
   set.seed(mySeed)
   
   n = myConst$n
-  nID.rs = myConst$nID.rs
+  nIDr = myConst$nIDr
   nYear = myConst$nYear
   nAge = myConst$nAge
   
   # assign initial values
   source("simulateInits.R")
-  myInits <- simulateInits(n = n, nID.sv = 0, nID.rs = nID.rs, nYear = nYear, nAge = nAge,
+  myInits <- simulateInits(n = n, nIDs = 0, nIDr = nIDr, nYear = nYear, nAge = nAge,
                            age = myData$age, dens = myData$dens, veg = myData$veg, win = myData$win)
                            # nNoVeg = myConst$nNoVeg, nNoWin = myConst$nNoWin
   

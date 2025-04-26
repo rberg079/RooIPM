@@ -4,6 +4,9 @@
 
 ## Set up ----------------------------------------------------------------------
 
+# set toggles
+testRun <- TRUE
+
 # load packages
 library(tidyverse)
 library(lubridate)
@@ -56,182 +59,11 @@ myConst <- list(nYear = rsData$nYear,
                 W = svData$W,
                 DF = svData$DF)
 
-# Switches/toggles
-testRun <- TRUE # or FALSE
-
-
-## Parameters ------------------------------------------------------------------
-
-# n = number of events in the reproductive success dataset
-# nID.sv = number of unique kangaroos in the survival dataset
-# nID.rs = number of unique kangaroos in the reproductive success dataset
-# nYear = number of years in the dataset
-# nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
-# nAgeC = number of age classes in the analysis (not used so far in RS analysis)
-
-# BetaA.sv = covariate effect of age (A) on survival (sv) (was B.age)
-# BetaD.sv = covariate effect of density (D) on survival (sv) (was B.dens)
-# BetaV.sv = covariate effect of vegetation (V) on survival (sv) (was B.veg)
-# BetaDV.sv = covariate effect of interacting density & vegetation (DV) on survival (sv) (was B.densVeg)
-# BetaVR.sv = covariate effect of vegetation per capita, or kangaroo (VR) on survival (sv) (was B.vegRoo)
-
-# Xi.sv = component of the variance-covariance matrix (was xi)
-# Epsilon.sv = component of the variance-covariance matrix (was eps.raw)
-# Gamma.sv = correlated random effect of year on probability of survival (was gamma)
-# Tau.sv = precision of correlated random effect of year on survival (was Tau.raw)
-# Sigma.sv = standard deviation of correlated random effect of year on survival (was Sigma.raw)
-
-# Mu.ob = mean probability of observation (was mu.p)
-# Epsilon.ob = random effect of year on prob. of observation (was year.p)
-# Sigma.ob = standard deviation of effect of year on prob. of observation (was sd.p)
-
-# Mu.sp = mean latent state (was mu1)
-# Mu.op = mean latent observation (was mu2)
-
-
-## Model -----------------------------------------------------------------------
-
-myCode = nimbleCode({
-  
-  ## POPULATION MODEL
-  ## ----------------------------------------
-  
-  nAD[1:2, 1:nYear] <- 0
-  nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:(nAge+2), 1])
-  
-  for(t in 1:(nYear-1)){
-    nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t])) 
-    
-    nSA[1, t+1] ~ dbin(svYAF[t], nYAF[t])
-    nSA[2, t+1] ~ dbin(svSA[1, t], nSA[1, t])
-    
-    nAD[3, t+1] ~ dbin(svSA[2, t], nSA[2, t])
-    
-    for(a in 4:(nAge+2)){
-      nAD[a, t+1] ~ dbin(svAD[a, t], nAD[a, t])
-    }
-    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
-  }
-  
-  # priors
-  svAD[1:2, 1:(nYear-1)] <- 0
-  
-  for(t in 1:(nYear-1)){
-    b[t]       ~ dunif(0.5, 1)
-    svPY[t]    ~ dunif(0.1, 1)
-    svYAF[t]   <- sv[1, t]
-    svSA[1, t] <- sv[2, t]
-    svSA[2, t] <- sv[2, t]
-    
-    for(a in 3:6){ # prime-aged
-      svAD[a, t] <- sv[3, t]
-    }
-    
-    for(a in 7:9){ # pre-senescent
-      svAD[a, t] <- sv[4, t]
-    }
-    
-    for(a in 10:(nAge+2)){ # senescent
-      svAD[a, t] <- sv[5, t]
-    }
-  }
-  
-  ## CAPTURE-MARK-RECAPTURE MODEL (CJS)
-  ## ----------------------------------------
-  
-  #### Likelihood ####
-  for(i in 1:nID.sv){
-    for(t in (first[i] + 1):last[i]){
-      # state process
-      state[i, t] ~ dbern(Mu.sp[i, t])
-      Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
-      
-      # observation process
-      obs[i, t] ~ dbern(Mu.op[i, t])
-      Mu.op[i, t] <- ob[t] * state[i, t]
-    }
-  }
-  
-  #### Constraints ####
-  # survival function
-  for(a in 1:nAgeC){                               
-    for(t in 1:(nYear-1)){
-      logit(sv[a, t]) <- BetaA.sv[a] +
-        BetaD.sv[a] * dens.hat[t] +
-        BetaV.sv[a] * veg.hat[t] +
-        # BetaDV.sv[a] * (dens.hat[t] * veg.hat[t]) +
-        # BetaVR.sv[a] * (veg.hat[t] / dens.hat[t]) +
-        Gamma.sv[t, a]
-    }
-  }
-  
-  for(t in 1:(nYear-1)){
-    dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-    veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
-  }
-  
-  for(m in 1:nNoVeg){
-    veg[m] <- 0
-    # vegM[m] ~ dnorm(0, sd = 2)
-  }
-  
-  # estimate missing ages
-  for(i in 1:nNoAge){
-    ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
-    age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-    for(t in (first[noAge[i]]+1):nYear){
-      age[noAge[i], t] <- age[noAge[i], t-1] + 1
-    }
-  }
-  
-  # observation function
-  # for(t in 1:nYear){
-  #   for(i in 1:nID.sv){
-  #   logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
-  #   }
-  #   Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
-  # }
-  
-  for(t in 1:nYear){
-    logit(ob[t]) <- logit(Mu.ob) + Epsilon.ob[t]
-    Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
-  }
-  
-  #### Priors ####
-  # for fixed effects
-  for(a in 1:nAgeC){
-    BetaA.sv[a] ~ dnorm(0, sd = 2)
-    BetaD.sv[a] ~ dnorm(0, sd = 2)
-    BetaV.sv[a] ~ dnorm(0, sd = 2)
-    # BetaDV.sv[a] ~ dnorm(0, sd = 2)
-  }
-  
-  # for random effects
-  # variance-covariance matrix
-  for(i in 1:nAgeC){
-    zero[i] <- 0
-    Xi.sv[i] ~ dunif(0, 2)
-  }
-  
-  for(t in 1:(nYear-1)){
-    Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
-    for(i in 1:nAgeC){
-      Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t, i]
-    }
-  }
-  
-  # precision matrix
-  Tau.sv[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
-  Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
-  
-  # observation
-  Mu.ob ~ dunif(0.01, 0.99) # or dunif(0, 1)
-  Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
-  
-})
-
 
 ## Assemble --------------------------------------------------------------------
+
+source("writeCode.R")
+myCode <- writeCode()
 
 nchains   <- 3
 seedMod   <- 1:nchains
@@ -320,12 +152,6 @@ library(ggplot2)
 library(scales)
 
 summary(out.mcmc) # cannot handle NAs
-MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Mu.ob', 'Epsilon.ob', 'Sigma.ob'), n.eff = TRUE, round = 2)
-
-MCMCsummary(out.mcmc, params = c('sv', 'b', 'svPY'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
 # # find parameters generating NAs
 # for(i in 1:ncol(out.mcmc[[1]])){
@@ -334,6 +160,15 @@ MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, ro
 #     print(out.mcmc[[1]][1:3,i])
 #   }
 # }
+
+# summaries
+MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.ob', 'Epsilon.ob', 'Sigma.ob'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Sigma.sv'), n.eff = TRUE, round = 2)
+
+MCMCsummary(out.mcmc, params = c('sv', 'b', 'svPY'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), pdf = FALSE)
@@ -345,7 +180,7 @@ MCMCtrace(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 
 
-## Plots -----------------------------------------------------------------------
+## Plot population model -------------------------------------------------------
 
 nYear <- myConst$nYear
 nAge  <- myConst$nAge
@@ -406,7 +241,7 @@ ggplot(df, aes(x = Year, y = Mean)) +
 # ggsave("figures/IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
 
 
-## Plots CJS -------------------------------------------------------------------
+## Plots survival model --------------------------------------------------------
 
 out.dat <- out.mcmc %>% map(as.data.frame) %>% bind_rows()
 

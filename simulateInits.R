@@ -1,8 +1,8 @@
 #' Simulate initial values for IPM
 #'
 #' @param n integer. Number of events in the reproductive success model. n = 0 by default.
-#' @param nID.sv integer. Number of unique kangaroos in the survival model. nID.sv = 0 by default.
-#' @param nID.rs integer. Number of unique kangaroos in the reproductive success model. nID.rs = 0 by default.
+#' @param nIDs integer. Number of unique kangaroos in the survival model. nIDs = 0 by default.
+#' @param nIDr integer. Number of unique kangaroos in the reproductive success model. nIDr = 0 by default.
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
@@ -19,7 +19,7 @@
 #'
 #' @examples
 
-simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, nAgeC = 5,
+simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAgeC = 5,
                           age, dens, veg, win,
                           nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
@@ -43,8 +43,8 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
   # 
   # n <- rsData$n
-  # nID.sv <- svData$nID
-  # nID.rs <- rsData$nID
+  # nIDs <- svData$nID
+  # nIDr <- rsData$nID
   # nYear <- 17
   # nAge <- 17
   # nAgeC <- 5
@@ -71,8 +71,8 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   ageM <- sample(3:8, size = nNoAge, replace = T)
   
   # latent states
-  Mu.sp <- matrix(runif(nID.sv * nYear, 0, 1), nrow = nID.sv, ncol = nYear)
-  Mu.op <- matrix(runif(nID.sv * nYear, 0, 1), nrow = nID.sv, ncol = nYear)
+  Mu.sp <- matrix(runif(nIDs * nYear, 0, 1), nrow = nIDs, ncol = nYear)
+  Mu.op <- matrix(runif(nIDs * nYear, 0, 1), nrow = nIDs, ncol = nYear)
   
   
   ## Simulate vital rate covariate effects -------------------------------------
@@ -112,7 +112,7 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
   Tau.sv <- (Tau.sv + t(Tau.sv)) / 2
   
   ## Reproductive success model
-  EpsilonI.rsI <- rnorm(nID.rs, 0, 1)
+  EpsilonI.rsI <- rnorm(nIDr, 0, 1)
   EpsilonT.rsI <- rnorm(nYear, 0, 1)
   EpsilonT.rsA <- rnorm(nYear, 0, 1)
   
@@ -288,7 +288,4 @@ simulateInits <- function(n = 0, nID.sv = 0, nID.rs = 0, nYear = 17, nAge = 17, 
               ))
   
 }
-
-# test <- simulateInits(N.year = 40, N.age = 20)
-# test
 

@@ -264,7 +264,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
               age = age,
               ageC = ageC,
               
-              nID.sv = nID,
+              nIDs = nID,
               nYear = nYear,
               
               nAgeC = nAgeC,
