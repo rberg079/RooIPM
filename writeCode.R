@@ -67,6 +67,11 @@ writeCode <- function(){
   library(lubridate)
   library(nimble)
   
+  # check that all years are represented in RS data
+  if(setequal(1:17, unique(myData$year.R)) == FALSE){
+    stop("Some years not represented in rsData.")
+  }
+  
   
   ## Model ---------------------------------------------------------------------
   
@@ -79,13 +84,20 @@ writeCode <- function(){
     nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:(nAge+2), 1])
     
     for(t in 1:(nYear-1)){
-      nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t])) 
+      # nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t]))
       
+      # TODO: DISCUSS THIS NEW BIT WITH CHLOE
+      # my attempt at adding dependence of svPY on mom's age!
+      nYAF[t+1] ~ dbin(
+        sum(b[t] * svPY[3:(nAge+2), t] * nAD[3:(nAge+2), t]) / sum(nAD[3:(nAge+2), t]),
+        sum(nAD[3:(nAge+2), t])
+      )
+
       nSA[1, t+1] ~ dbin(svYAF[t], nYAF[t])
       nSA[2, t+1] ~ dbin(svSA[1, t], nSA[1, t])
-      
+
       nAD[3, t+1] ~ dbin(svSA[2, t], nSA[2, t])
-      
+
       for(a in 4:(nAge+2)){
         nAD[a, t+1] ~ dbin(svAD[a, t], nAD[a, t])
       }
@@ -97,10 +109,15 @@ writeCode <- function(){
     
     for(t in 1:(nYear-1)){
       b[t]       ~ dunif(0.5, 1)
-      svPY[t]    ~ dunif(0.1, 1)
+      # svPY[t]    ~ dunif(0.1, 1)
       svYAF[t]   <- sv[1, t]
       svSA[1, t] <- sv[2, t]
       svSA[2, t] <- sv[2, t]
+      
+      # TODO: DISCUSS NEW svPY HERE AS WELL!!
+      for(a in 3:(nAge+2)){
+        svPY[a, t] <- rsA[a-2, t] # age.R in RS model is age-2!
+      }
       
       for(a in 3:6){ # prime-aged
         svAD[a, t] <- sv[3, t]
@@ -115,7 +132,7 @@ writeCode <- function(){
       }
     }
     
-    ## CAPTURE-MARK-RECAPTURE MODEL (CJS)
+    ## SURVIVAL MODEL (CJS)
     ## -------------------------------------------------------------------------
     
     #### Likelihood ####
@@ -123,7 +140,7 @@ writeCode <- function(){
       for(t in (first[i] + 1):last[i]){
         # state process
         state[i, t] ~ dbern(Mu.sp[i, t])
-        Mu.sp[i, t] <- sv[ageC[age[i, t-1]], t-1] * state[i, t-1]
+        Mu.sp[i, t] <- sv[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
         
         # observation process
         obs[i, t] ~ dbern(Mu.op[i, t])
@@ -157,9 +174,9 @@ writeCode <- function(){
     # estimate missing ages
     for(i in 1:nNoAge){
       ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
-      age[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
+      age.S[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
       for(t in (first[noAge[i]]+1):nYear){
-        age[noAge[i], t] <- age[noAge[i], t-1] + 1
+        age.S[noAge[i], t] <- age.S[noAge[i], t-1] + 1
       }
     }
     
@@ -200,7 +217,62 @@ writeCode <- function(){
     Mu.ob ~ dunif(0.01, 0.99) # or dunif(0, 1)
     Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
     
-  })
+    
+    ## REPRODUCTIVE SUCCESS MODEL
+    ## -------------------------------------------------------------------------
+    
+    #### Likelihood & constraints ####
+    # individual rs function
+    for(x in 1:nRS){
+      rs[x] ~ dbern(rsI[x])
+      logit(rsI[x]) <- logit(Mu.rsI[age.R[x]]) +
+        # BetaD.rs * dens[year.R[x]] +
+        # BetaV.rs * veg[year.R[x]] +
+        # BetaW.rs * win[year.R[x]] +
+        EpsilonI.rsI[id.R[x]] +
+        EpsilonT.rsI[year.R[x]]
+    }
+    
+    # age-specific rs function
+    # use parameters estimated from individual data above
+    # to predict age-specific reproductive success (rsA) here!
+    for(a in 1:nAge){
+      for(t in 1:nYear){
+        logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes svPY!
+          # BetaD.rs * dens[t] +
+          # BetaV.rs * veg[t] +
+          # BetaW.rs * win[t] +
+          EpsilonT.rsA[t]
+      }
+    }
+    
+    ##### Priors ####
+    # priors for fixed effects
+    for(a in 1:nAge){
+      Mu.rsI[a] ~ dunif(0, 1)
+      Mu.rsA[a] ~ dunif(0, 1)
+    }
+    
+    # Beta.dens ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # Beta.veg  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    
+    # priors for random effects
+    for(i in 1:nID.R){
+      EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
+    }
+    
+    for(t in 1:nYear){
+      EpsilonT.rsI[t] ~ dnorm(0, sd = SigmaT.rsI)
+      EpsilonT.rsA[t] ~ dnorm(0, sd = SigmaT.rsA)
+    }
+    
+    # priors for sigma
+    SigmaI.rsI ~ dunif(0, 100)
+    SigmaT.rsI ~ dunif(0, 100)
+    SigmaT.rsA ~ dunif(0, 100)
+    
+  }) # nimbleCode
   
 }
 

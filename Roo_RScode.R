@@ -38,11 +38,11 @@ myData <-  list(rs   = rsData$survS1,
                 veg  = enData$veg,
                 win  = enData$win)
 
-myConst <- list(n      = rsData$n,
-                nIDr = rsData$nIDr,
-                nYear  = rsData$nYear,
-                nAge   = rsData$nAge,
-                nAgeC  = rsData$nAgeC)
+myConst <- list(nRS   = rsData$nRS,
+                nID.R  = rsData$nID.R,
+                nYear = rsData$nYear,
+                nAge  = rsData$nAge,
+                nAgeC = rsData$nAgeC)
 # TODO: deal with missing environment
 
 # Switches/toggles
@@ -55,7 +55,7 @@ myCode = nimbleCode({
   
   #### Likelihood & constraints ####
   # individual rs function
-  for(x in 1:n){
+  for(x in 1:nRS){
     rs[x] ~ dbern(rsI[x])
     logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
       # BetaD.rs * dens[year[x]] +
@@ -90,7 +90,7 @@ myCode = nimbleCode({
   # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
   
   # priors for random effects
-  for(i in 1:nIDr){
+  for(i in 1:nID.R){
     EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
   }
   
@@ -117,14 +117,14 @@ paraNimble <- function(mySeed, myCode, myConst, myData,
   library(nimble)
   set.seed(mySeed)
   
-  n = myConst$n
-  nIDr = myConst$nIDr
+  nRS = myConst$nRS
+  nID.R = myConst$nID.R
   nYear = myConst$nYear
   nAge = myConst$nAge
   
   # assign initial values
   source("simulateInits.R")
-  myInits <- simulateInits(n = n, nIDs = 0, nIDr = nIDr, nYear = nYear, nAge = nAge,
+  myInits <- simulateInits(nRS = nRS, nID.S = 0, nID.R = nID.R, nYear = nYear, nAge = nAge,
                            age = myData$age, dens = myData$dens, veg = myData$veg, win = myData$win)
                            # nNoVeg = myConst$nNoVeg, nNoWin = myConst$nNoWin
   

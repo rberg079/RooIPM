@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 
 # load packages
 library(tidyverse)
@@ -39,21 +39,30 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 state = svData$state,
-                age = svData$age,
+                age.S = svData$age,
                 ageC = svData$ageC,
+                
+                rs = rsData$survS1,
+                id.R = rsData$id,
+                year.R = rsData$year,
+                age.R = rsData$age-2,
+                
                 dens = enData$dens,
-                densE = enData$densE,
                 veg = enData$veg,
+                win = enData$win,
+                densE = enData$densE,
                 vegE = enData$vegE)
 
-myConst <- list(nYear = rsData$nYear,
-                nIDs = svData$nID,
-                nIDr = rsData$nID,
+myConst <- list(nRS = rsData$nRS,
+                nID.S = svData$nID,
+                nID.R = rsData$nID,
+                nYear = rsData$nYear,
                 nAge = rsData$nAge,
                 nAgeC = rsData$nAgeC,
                 noAge = svData$noAge,
                 nNoAge = svData$nNoAge,
                 nNoVeg = enData$nNoVeg,
+                nNoWin = enData$nNoWin,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
@@ -75,14 +84,14 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    # n = rsData$n,
-    nIDs = myConst$nIDs,
-    # nIDr = myConst$nIDr,
+    # nRS = rsData$nRS,
+    nID.S = myConst$nID.S,
+    # nID.R = myConst$nID.R,
     nYear = myConst$nYear,
     nAge = myConst$nAge,
     nAgeC = myConst$nAgeC,
     
-    age = myData$age,
+    age.R = myData$age.R,
     dens = myData$dens,
     veg = myData$veg,
     # win = myData$win,

@@ -1,8 +1,8 @@
 #' Simulate initial values for IPM
 #'
 #' @param n integer. Number of events in the reproductive success model. n = 0 by default.
-#' @param nIDs integer. Number of unique kangaroos in the survival model. nIDs = 0 by default.
-#' @param nIDr integer. Number of unique kangaroos in the reproductive success model. nIDr = 0 by default.
+#' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
+#' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
@@ -19,9 +19,8 @@
 #'
 #' @examples
 
-simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAgeC = 5,
-                          age, dens, veg, win,
-                          nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
+simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nAgeC = 5,
+                          age.R, dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # # for testing purposes
   # library(tidyverse)
@@ -43,8 +42,8 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
   # 
   # n <- rsData$n
-  # nIDs <- svData$nID
-  # nIDr <- rsData$nID
+  # nID.S <- svData$nID
+  # nID.R <- rsData$nID
   # nYear <- 17
   # nAge <- 17
   # nAgeC <- 5
@@ -71,8 +70,8 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   ageM <- sample(3:8, size = nNoAge, replace = T)
   
   # latent states
-  Mu.sp <- matrix(runif(nIDs * nYear, 0, 1), nrow = nIDs, ncol = nYear)
-  Mu.op <- matrix(runif(nIDs * nYear, 0, 1), nrow = nIDs, ncol = nYear)
+  Mu.sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
+  Mu.op <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
   
   
   ## Simulate vital rate covariate effects -------------------------------------
@@ -112,7 +111,7 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   Tau.sv <- (Tau.sv + t(Tau.sv)) / 2
   
   ## Reproductive success model
-  EpsilonI.rsI <- rnorm(nIDr, 0, 1)
+  EpsilonI.rsI <- rnorm(nID.R, 0, 1)
   EpsilonT.rsI <- rnorm(nYear, 0, 1)
   EpsilonT.rsA <- rnorm(nYear, 0, 1)
   
@@ -147,7 +146,7 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   rsI <- numeric(n)
   for (x in 1:n) {
     rsI[x] <- plogis(
-      qlogis(Mu.rsI[age[x]]) +
+      qlogis(Mu.rsI[age.R[x]]) +
         # BetaD.rs * dens[year[x]] +
         # BetaV.rs * veg[year[x]] +
         # BetaW.rs * win[year[x]] +
@@ -176,7 +175,12 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   
   # survival of PYs
   # to 1st Sept 1 when they become YAFs
-  svPY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
+  # svPY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
+  
+  # TODO: DISCUSS NEW svPY HERE AS WELL!!
+  for(a in 3:(nAge+2)){
+    svPY[a, 1:(nYear-1)] <- rsA[a-2, 1:(nYear-1)] # age.R in RS model is age-2!
+  }
   
   # Survival of YAFs
   # to 2nd Sept 1 when they become SA1s
@@ -227,8 +231,13 @@ simulateInits <- function(n = 0, nIDs = 0, nIDr = 0, nYear = 17, nAge = 17, nAge
   nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:(nAge+2),1]),
               rep(NA, times = nYear-1)); nTOT
   
+  # TODO: DISCUSS NEW svPY HERE AS WELL!!
   for (t in 1:(nYear-1)){
-    nYAF[t+1]   <- rbinom(1, sum(nAD[3:(nAge+2), t]), b[t] * svPY[t])
+    # nYAF[t+1]   <- rbinom(1, sum(nAD[3:(nAge+2), t]), b[t] * svPY[t])
+    nYAF[t+1]   <- rbinom(1,
+                          sum(nAD[3:(nAge+2), t]), 
+                          sum(b[t] * svPY[3:(nAge+2), t] * nAD[3:(nAge+2), t]) / sum(nAD[3:(nAge+2), t]))
+    
     nSA[1, t+1] <- rbinom(1, nYAF[t], svYAF[t])
     nSA[2, t+1] <- rbinom(1, nSA[1, t], svSA[1, t])
     nAD[3, t+1] <- rbinom(1, nSA[2, t], svSA[2, t])
