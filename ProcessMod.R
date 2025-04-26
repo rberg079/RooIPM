@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 
 # load packages
 library(tidyverse)
@@ -47,8 +47,8 @@ myData  <- list(obs = svData$obs,
                 vegE = enData$vegE)
 
 myConst <- list(nYear = rsData$nYear,
-                nID.sv = svData$nID,
-                nID.rs = rsData$nID,
+                nIDs = svData$nID,
+                nIDr = rsData$nID,
                 nAge = rsData$nAge,
                 nAgeC = rsData$nAgeC,
                 noAge = svData$noAge,
@@ -76,8 +76,8 @@ myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
     # n = rsData$n,
-    nID.sv = myConst$nID.sv,
-    # nID.rs = myConst$nID.rs,
+    nIDs = myConst$nIDs,
+    # nIDr = myConst$nIDr,
     nYear = myConst$nYear,
     nAge = myConst$nAge,
     nAgeC = myConst$nAgeC,
@@ -151,7 +151,7 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-summary(out.mcmc) # cannot handle NAs
+# summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
 # for(i in 1:ncol(out.mcmc[[1]])){

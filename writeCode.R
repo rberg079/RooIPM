@@ -150,8 +150,8 @@ writeCode <- function(){
     }
     
     for(m in 1:nNoVeg){
-      veg[m] <- 0
-      # vegM[m] ~ dnorm(0, sd = 2)
+      # veg[m] <- 0
+      vegM[m] ~ dnorm(0, sd = 2)
     }
     
     # estimate missing ages
