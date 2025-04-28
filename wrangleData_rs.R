@@ -248,14 +248,14 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   id   <- match(id, sort(unique(id)))
   year <- as.integer(factor(rs$Year))
   
-  age  <- as.integer(rs$Age)
+  age.R  <- as.integer(rs$Age)
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  n     <- length(id)
-  nID   <- length(unique(id))
+  nRS   <- length(id)
+  nID.R <- length(unique(id))
   nYear <- length(unique(year))
-  nAge  <- length(unique(age))
-  nAgeC <- length(unique(ageC))
+  nAge  <- max(age.R)
+  nAgeC <- max(ageC)
   
   # teeth <- rs$Teeth      # unscaled!
   # leg <- scale(rs$Leg)
@@ -274,14 +274,14 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # ratio <- scale(rs$Ratio)
   # pratio <- scale(rs$PRatio)
   
-  return(list(n = n,
-              nIDr = nID,
+  return(list(nRS = nRS,
+              nID.R = nID.R,
               nYear = nYear,
               nAge = nAge,
               nAgeC = nAgeC,
               id = id,
               year = year,
-              age = age,
+              age.R = age.R,
               ageC = ageC,
               # teeth = teeth,
               # leg = leg,

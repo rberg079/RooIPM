@@ -105,15 +105,21 @@ for(c in 1:nchains){
 
 # select parameters to monitors
 params = c(
+  # Population model
+  'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
+  'nYAF', 'nSA', 'nAD', 'nTOT',               # population sizes
+  
   # Survival model
   'dens.hat', 'veg.hat', # 'ageM',            # latent states
   'BetaA.sv', 'BetaD.sv', 'BetaV.sv',         # covariate effects
   'Mu.ob', 'Epsilon.ob', 'Sigma.ob',          # observation parameters
   'Gamma.sv', 'Xi.sv', 'Sigma.sv',            # random effects
   
-  # Population model
-  'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
-  'nYAF', 'nSA', 'nAD', 'nTOT')               # population sizes
+  # Reproductive success model
+  "Mu.rsI", "Mu.rsA",                             # mean reproductive success
+  # 'BetaD.rs', 'BetaV.rs', 'BetaW.rs',           # covariate effects
+  'EpsilonI.rsI', 'EpsilonT.rsI', 'EpsilonT.rsA', # random effects
+  'SigmaI.rsI', 'SigmaT.rsI', 'SigmaT.rsA')       # random effects
 
 # select MCMC settings
 if(testRun){

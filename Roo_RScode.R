@@ -30,13 +30,13 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 setequal(1:17, unique(rsData$year)) # should be TRUE
 
 # create Nimble lists
-myData <-  list(rs   = rsData$survS1,
-                id   = rsData$id,
-                year = rsData$year,
-                age  = rsData$age-2, # SO THAT AGE STARTS AT 1
-                dens = enData$dens,
-                veg  = enData$veg,
-                win  = enData$win)
+myData <-  list(rs    = rsData$survS1,
+                id    = rsData$id,
+                year  = rsData$year,
+                age.R = rsData$age.R,
+                dens  = enData$dens,
+                veg   = enData$veg,
+                win   = enData$win)
 
 myConst <- list(nRS   = rsData$nRS,
                 nID.R  = rsData$nID.R,
@@ -55,6 +55,11 @@ myCode = nimbleCode({
   
   #### Likelihood & constraints ####
   # individual rs function
+  Mu.rsI[age[1]] <- 0
+  Mu.rsI[age[2]] <- 0
+  Mu.rsA[1] <- 0
+  Mu.rsA[2] <- 0
+  
   for(x in 1:nRS){
     rs[x] ~ dbern(rsI[x])
     logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
@@ -80,7 +85,7 @@ myCode = nimbleCode({
     
   ##### Priors ####
   # priors for fixed effects
-  for(a in 1:nAge){
+  for(a in 3:nAge){
     Mu.rsI[a] ~ dunif(0, 1)
     Mu.rsA[a] ~ dunif(0, 1)
   }
@@ -109,85 +114,70 @@ myCode = nimbleCode({
 
 ## Assemble --------------------------------------------------------------------
 
-# to serialize
-# create Nimble function
-paraNimble <- function(mySeed, myCode, myConst, myData,
-                       rsData = rsData, enData = enData, testRun){
-  
-  library(nimble)
-  set.seed(mySeed)
-  
-  nRS = myConst$nRS
-  nID.R = myConst$nID.R
-  nYear = myConst$nYear
-  nAge = myConst$nAge
-  
-  # assign initial values
-  source("simulateInits.R")
-  myInits <- simulateInits(nRS = nRS, nID.S = 0, nID.R = nID.R, nYear = nYear, nAge = nAge,
-                           age = myData$age, dens = myData$dens, veg = myData$veg, win = myData$win)
-                           # nNoVeg = myConst$nNoVeg, nNoWin = myConst$nNoWin
-  
-  # assemble model
-  myMod <- nimbleModel(code = myCode,
-                       data = myData,
-                       constants = myConst,
-                       inits = myInits
-                       )
-  
-  # select parameters to monitor
-  params = c(# RS model
-             "Mu.rsI", "Mu.rsA",
-             # "Beta.dens", "Beta.veg", "Beta.win",
-             "EpsilonI.rsI", "EpsilonT.rsI", "EpsilonT.rsA",
-             "SigmaI.rsI", "SigmaT.rsI", "SigmaT.rsA"
+nchains   <- 3
+seedMod   <- 1:nchains
+seedInits <- 1
+
+# assign initial values
+source("simulateInits.R")
+set.seed(seedInits)
+myInits <- list()
+for(c in 1:nchains){
+  myInits[[c]] <- simulateInits(
+    nRS = rsData$nRS,
+    # nID.S = myConst$nID.S,
+    nID.R = myConst$nID.R,
+    nYear = myConst$nYear,
+    nAge = myConst$nAge,
+    nAgeC = myConst$nAgeC,
+    
+    age.R = myData$age.R,
+    dens = myData$dens,
+    veg = myData$veg,
+    win = myData$win,
+    
+    # nNoAge = myConst$nNoAge,
+    # nNoDens = myConst$nNoDens,
+    nNoVeg = myConst$nNoVeg,
+    nNoWin = myConst$nNoWin
   )
-  
-  # MCMC settings
-  if(testRun){
-    niter   <- 10
-    nburnin <- 0
-    nthin   <- 1
-  }else{
-    niter   <- 10000
-    nburnin <- 6000
-    nthin   <- 1
-  }
-  
-  cModel <- compileNimble(myMod)
-  myMCMC <- buildMCMC(cModel, monitors = params)
-  cmyMCMC <- compileNimble(myMCMC, project = myMod)
-  samples <- runMCMC(cmyMCMC,
-                     niter = niter,
-                     nburnin = nburnin,
-                     thin = nthin,
-                     setSeed = mySeed,
-                     samplesAsCodaMCMC = T,
-                     summary = T)
-  
-  return(samples)
+}
+
+# select parameters to monitor
+params = c("Mu.rsI", "Mu.rsA",
+           # "Beta.dens", "Beta.veg", "Beta.win",
+           "EpsilonI.rsI", "EpsilonT.rsI", "EpsilonT.rsA",
+           "SigmaI.rsI", "SigmaT.rsI", "SigmaT.rsA"
+)
+
+# select MCMC settings
+if(testRun){
+  niter   <- 10
+  nburnin <- 0
+  nthin   <- 1
+}else{
+  niter   <- 10000
+  nburnin <- 6000
+  nthin   <- 1
 }
 
 
 ## Run model -------------------------------------------------------------------
 
-# serialized
-mySeed <- 1:3
-nchains <- 3
-
-start.t <- Sys.time()
-this_cluster <- makeCluster(3)
-samples <- parLapply(X = 1:3,
-                     cl = this_cluster,
-                     fun = paraNimble,
-                     myCode = myCode,
-                     myConst = myConst,
-                     myData = myData,
-                     testRun = testRun)
-
-beep(sound = 2)
-stopCluster(this_cluster)
-dur = now() - start.t; dur
+start <- Sys.time()
+samples <- nimbleMCMC(code = myCode,
+                      data = myData,
+                      constants = myConst,
+                      inits = myInits,
+                      monitors = params,
+                      niter = niter,
+                      nburnin = nburnin,
+                      nchains = nchains,
+                      thin = nthin,
+                      samplesAsCodaMCMC = T,
+                      setSeed = seedMod)
+dur <- Sys.time() - start; dur
+beep(2)
 
 library(MCMCvis)
 out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()

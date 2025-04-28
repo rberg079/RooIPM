@@ -1,14 +1,15 @@
 #' Simulate initial values for IPM
 #'
-#' @param n integer. Number of events in the reproductive success model. n = 0 by default.
+#' @param nRS integer. Number of events in the reproductive success model. nRS = 0 by default.
 #' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
 #' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
-#' @param dens vector of yearly population density data.
-#' @param veg vector of yearly available vegetation data.
-#' @param win vector of yearly winter severity data.
+#' @param age.R vector of length nRS of age of individuals in the analysis.
+#' @param dens vector of lenth nYear of population density data.
+#' @param veg vector of lenth nYear of available vegetation data.
+#' @param win vector of lenth nYear of winter severity data.
 #' @param nNoAge integer. Number of individuals of unknown age in the analysis. nNoAge = 0 by default.
 #' @param nNoDens integer. Number of years when population density is unknown. nNoDens = 0 by default.
 #' @param nNoVeg integer. Number of years when available vegetation is unknown. nNoVeg = 0 by default.
@@ -19,7 +20,7 @@
 #'
 #' @examples
 
-simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nAgeC = 5,
+simulateInits <- function(nRS = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nAgeC = 5,
                           age.R, dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # # for testing purposes
@@ -41,7 +42,7 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
   # 
-  # n <- rsData$n
+  # nRS <- rsData$nRS
   # nID.S <- svData$nID
   # nID.R <- rsData$nID
   # nYear <- 17
@@ -51,7 +52,7 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
   # veg <- enData$veg
   # win <- enData$win
   # nNoAge <- svData$nNoAge
-  # nNoDens <- enData$N.noDens
+  # nNoDens <- enData$nNoDens
   # nNoVeg <- enData$nNoVeg
   # nNoWin <- enData$nNoWin
   
@@ -143,8 +144,8 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
   Mu.rsI <- runif(nAge, 0, 1)
   Mu.rsA <- runif(nAge, 0, 1)
   
-  rsI <- numeric(n)
-  for (x in 1:n) {
+  rsI <- numeric(nRS)
+  for (x in 1:nRS) {
     rsI[x] <- plogis(
       qlogis(Mu.rsI[age.R[x]]) +
         # BetaD.rs * dens[year[x]] +
@@ -178,8 +179,8 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
   # svPY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
   
   # TODO: DISCUSS NEW svPY HERE AS WELL!!
-  for(a in 3:(nAge+2)){
-    svPY[a, 1:(nYear-1)] <- rsA[a-2, 1:(nYear-1)] # age.R in RS model is age-2!
+  for(a in 3:(nAge)){
+    svPY[a, 1:(nYear-1)] <- rsA[a, 1:(nYear-1)]
   }
   
   # Survival of YAFs
@@ -201,7 +202,7 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
     svAD[a, 1:(nYear-1)] <- sv[4, 1:(nYear-1)]
   }
   
-  for(a in 10:(nAge+2)){
+  for(a in 10:nAge){
     svAD[a, 1:(nYear-1)] <- sv[5, 1:(nYear-1)]
   }
   
@@ -228,23 +229,23 @@ simulateInits <- function(n = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 17, nA
   nAD     <- matrix(0, nrow = nAge+2, ncol = nYear); nAD
   nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-8)); nAD
   
-  nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:(nAge+2),1]),
+  nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:nAge,1]),
               rep(NA, times = nYear-1)); nTOT
   
   # TODO: DISCUSS NEW svPY HERE AS WELL!!
   for (t in 1:(nYear-1)){
-    # nYAF[t+1]   <- rbinom(1, sum(nAD[3:(nAge+2), t]), b[t] * svPY[t])
+    # nYAF[t+1]   <- rbinom(1, sum(nAD[3:nAge, t]), b[t] * svPY[t])
     nYAF[t+1]   <- rbinom(1,
-                          sum(nAD[3:(nAge+2), t]), 
-                          sum(b[t] * svPY[3:(nAge+2), t] * nAD[3:(nAge+2), t]) / sum(nAD[3:(nAge+2), t]))
+                          sum(nAD[3:nAge, t]), 
+                          sum(b[t] * svPY[3:nAge, t] * nAD[3:nAge, t]) / sum(nAD[3:nAge, t]))
     
     nSA[1, t+1] <- rbinom(1, nYAF[t], svYAF[t])
     nSA[2, t+1] <- rbinom(1, nSA[1, t], svSA[1, t])
     nAD[3, t+1] <- rbinom(1, nSA[2, t], svSA[2, t])
-    for (a in 4:(nAge+2)){
+    for (a in 4:nAge){
       nAD[a, t+1] <- rbinom(1, nAD[a-1, t], svAD[a-1, t])
     }
-    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
+    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
   }
   
   
