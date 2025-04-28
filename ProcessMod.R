@@ -39,13 +39,13 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 state = svData$state,
-                age.S = svData$age,
+                age.S = svData$age.S,
                 ageC = svData$ageC,
                 
                 R = rsData$survS1,
                 id.R = rsData$id,
                 year.R = rsData$year,
-                age.R = rsData$age,
+                age.R = rsData$age.R,
                 
                 dens = enData$dens,
                 veg = enData$veg,
@@ -84,9 +84,9 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    # nR = rsData$nR,
+    nR = rsData$nR,
     nID.S = myConst$nID.S,
-    # nID.R = myConst$nID.R,
+    nID.R = myConst$nID.R,
     nYear = myConst$nYear,
     nAge = myConst$nAge,
     nAgeC = myConst$nAgeC,
@@ -94,12 +94,12 @@ for(c in 1:nchains){
     age.R = myData$age.R,
     dens = myData$dens,
     veg = myData$veg,
-    # win = myData$win,
+    win = myData$win,
     
     nNoAge = myConst$nNoAge,
     # nNoDens = myConst$nNoDens,
     nNoVeg = myConst$nNoVeg,
-    # nNoWin = myConst$nNoWin
+    nNoWin = myConst$nNoWin
     )
 }
 

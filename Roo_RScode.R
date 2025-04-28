@@ -178,7 +178,7 @@ dur <- Sys.time() - start; dur
 beep(2)
 
 library(MCMCvis)
-out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()
+out.mcmc <- as.mcmc.list(samples)
 
 MCMCsummary(out.mcmc,
             params = c('Mu.Ri', 'Mu.Ra', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'),

@@ -67,10 +67,10 @@ writeCode <- function(){
   library(lubridate)
   library(nimble)
   
-  # check that all years are represented in RS data
-  if(setequal(1:17, unique(myData$year.R)) == FALSE){
-    stop("Some years not represented in rsData.")
-  }
+  # # check that all years are represented in RS data
+  # if(setequal(1:17, unique(myData$year.R)) == FALSE){
+  #   stop("Some years not represented in rsData.")
+  # }
   
   
   ## Model ---------------------------------------------------------------------
@@ -84,19 +84,18 @@ writeCode <- function(){
     nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:nAge, 1])
     
     for(t in 1:(nYear-1)){
-      for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(B[t] * Ra[a, t], nAD[a, t]) # TODO: THINK ABOUT TIMING OF AGES IN RS MODEL!
-      }
-      
+      # survival & birthdays
       nSA[1, t+1] ~ dbin(sYAF[t], nYAF[t])
       nSA[2, t+1] ~ dbin(sSA[1, t], nSA[1, t])
-
       nAD[3, t+1] ~ dbin(sSA[2, t], nSA[2, t])
-
       for(a in 4:nAge){
         nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       }
-      nYAF[t+1] <- sum(nYAFa[3:nAge, t])
+      # then reproduction
+      for(a in 3:nAge){
+        nYAFa[a, t+1] ~ dbin(B[t+1] * Ra[a, t+1], nAD[a, t+1])
+      }
+      nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
       nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
     }
     
@@ -105,8 +104,12 @@ writeCode <- function(){
     
     # TODO LONG-TERM:
     # name params as so directly in CJS model
+    for(t in 1:nYear){
+      B[t] ~ dunif(0.5, 1)
+    }
+    
     for(t in 1:(nYear-1)){
-      B[t]       ~ dunif(0.5, 1)
+      # B[t]       ~ dunif(0.5, 1)
       sYAF[t]   <- S[1, t]
       sSA[1, t] <- S[2, t]
       sSA[2, t] <- S[2, t]
@@ -128,7 +131,7 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     #### Likelihood ####
-    for(i in 1:nIDs){
+    for(i in 1:nID.S){
       for(t in (first[i] + 1):last[i]){
         # state process
         state[i, t] ~ dbern(Mu.Sp[i, t])

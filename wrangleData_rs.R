@@ -16,7 +16,7 @@
 wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
                            known.age = FALSE, cum.surv = TRUE,
                            surv.sep1 = FALSE, surv.sep2 = FALSE){
-  
+
   # # for testing purposes
   # rs.data = "data/RSmainRB_Mar25.xlsx"
   # obs.data = "data/PromObs_2008-2019.xlsx"
@@ -249,11 +249,11 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   year <- as.integer(factor(rs$Year))
 
   # age by default is age in Sept when PY would be first caught
-  # we rather need age before breeding & survival period of PY... OR NOT?
-  age.R  <- as.integer(rs$Age-1) # ... hence -1 here, OR NOT?
+  # we rather need age before breeding & survival period of PY
+  age.R  <- as.integer(rs$Age) # ... hence -1 here... OR NOT!
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  nRS   <- length(id)
+  nR    <- length(id)
   nID.R <- length(unique(id))
   nYear <- length(unique(year))
   nAge  <- max(age.R)
@@ -276,7 +276,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # ratio <- scale(rs$Ratio)
   # pratio <- scale(rs$PRatio)
   
-  return(list(nRS = nRS,
+  return(list(nR = nR,
               nID.R = nID.R,
               nYear = nYear,
               nAge = nAge,
