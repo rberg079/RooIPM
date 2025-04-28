@@ -247,8 +247,10 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   id   <- as.integer(rs$ID)
   id   <- match(id, sort(unique(id)))
   year <- as.integer(factor(rs$Year))
-  
-  age.R  <- as.integer(rs$Age)
+
+  # age by default is age in Sept when PY would be first caught
+  # we rather need age before breeding & survival period of PY... OR NOT?
+  age.R  <- as.integer(rs$Age-1) # ... hence -1 here, OR NOT?
   ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
   nRS   <- length(id)

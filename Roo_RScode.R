@@ -30,7 +30,7 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 setequal(1:17, unique(rsData$year)) # should be TRUE
 
 # create Nimble lists
-myData <-  list(rs    = rsData$survS1,
+myData <-  list(R     = rsData$survS1,
                 id    = rsData$id,
                 year  = rsData$year,
                 age.R = rsData$age.R,
@@ -38,7 +38,7 @@ myData <-  list(rs    = rsData$survS1,
                 veg   = enData$veg,
                 win   = enData$win)
 
-myConst <- list(nRS   = rsData$nRS,
+myConst <- list(nR   = rsData$nR,
                 nID.R  = rsData$nID.R,
                 nYear = rsData$nYear,
                 nAge  = rsData$nAge,
@@ -55,59 +55,57 @@ myCode = nimbleCode({
   
   #### Likelihood & constraints ####
   # individual rs function
-  Mu.rsI[age[1]] <- 0
-  Mu.rsI[age[2]] <- 0
-  Mu.rsA[1] <- 0
-  Mu.rsA[2] <- 0
+  Mu.Ri[1:2] <- 0
+  Mu.Ra[1:2] <- 0
   
-  for(x in 1:nRS){
-    rs[x] ~ dbern(rsI[x])
-    logit(rsI[x]) <- logit(Mu.rsI[age[x]]) +
+  for(x in 1:nR){
+    rs[x] ~ dbern(Ri[x])
+    logit(Ri[x]) <- logit(Mu.Ri[age[x]]) +
       # BetaD.rs * dens[year[x]] +
       # BetaV.rs * veg[year[x]] +
       # BetaW.rs * win[year[x]] +
-      EpsilonI.rsI[id[x]] +
-      EpsilonT.rsI[year[x]]
+      EpsilonI.Ri[id[x]] +
+      EpsilonT.Ri[year[x]]
   }
   
   # age-specific rs function
   # use parameters estimated from individual data above
-  # to predict age-specific reproductive success (rsA) here!
+  # to predict age-specific reproductive success (Ra) here!
   for(a in 1:nAge){
     for(t in 1:nYear){
-      logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes svPY!
+      logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra becomes svPY!
         # BetaD.rs * dens[t] +
         # BetaV.rs * veg[t] +
         # BetaW.rs * win[t] +
-        EpsilonT.rsA[t]
+        EpsilonT.Ra[t]
     }
   }
     
   ##### Priors ####
   # priors for fixed effects
   for(a in 3:nAge){
-    Mu.rsI[a] ~ dunif(0, 1)
-    Mu.rsA[a] ~ dunif(0, 1)
+    Mu.Ri[a] ~ dunif(0, 1)
+    Mu.Ra[a] ~ dunif(0, 1)
   }
   
-  # Beta.dens ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-  # Beta.veg  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-  # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+  # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+  # BetaV.R  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+  # BetaW.R  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
   
   # priors for random effects
   for(i in 1:nID.R){
-    EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
+    EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
   }
   
   for(t in 1:nYear){
-    EpsilonT.rsI[t] ~ dnorm(0, sd = SigmaT.rsI)
-    EpsilonT.rsA[t] ~ dnorm(0, sd = SigmaT.rsA)
+    EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
+    EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
   }
   
   # priors for sigma
-  SigmaI.rsI ~ dunif(0, 100)
-  SigmaT.rsI ~ dunif(0, 100)
-  SigmaT.rsA ~ dunif(0, 100)
+  SigmaI.Ri ~ dunif(0, 100)
+  SigmaT.Ri ~ dunif(0, 100)
+  SigmaT.Ra ~ dunif(0, 100)
   
 })
 
@@ -124,7 +122,7 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    nRS = rsData$nRS,
+    nR = rsData$nR,
     # nID.S = myConst$nID.S,
     nID.R = myConst$nID.R,
     nYear = myConst$nYear,
@@ -144,10 +142,10 @@ for(c in 1:nchains){
 }
 
 # select parameters to monitor
-params = c("Mu.rsI", "Mu.rsA",
-           # "Beta.dens", "Beta.veg", "Beta.win",
-           "EpsilonI.rsI", "EpsilonT.rsI", "EpsilonT.rsA",
-           "SigmaI.rsI", "SigmaT.rsI", "SigmaT.rsA"
+params = c("Mu.Ri", "Mu.Ra",
+           # "BetaD.R", "BetaV.R", "BetaW.R",
+           "EpsilonI.Ri", "EpsilonT.Ri", "EpsilonT.Ra",
+           "SigmaI.Ri", "SigmaT.Ri", "SigmaT.Ra"
 )
 
 # select MCMC settings
@@ -183,6 +181,6 @@ library(MCMCvis)
 out.mcmc <- samples %>% map(~as.mcmc(.$samples)) %>% as.mcmc.list()
 
 MCMCsummary(out.mcmc,
-            params = c('Mu.rsI', 'Mu.rsA', 'SigmaI.rsI', 'SigmaT.rsI', 'SigmaT.rsA'),
+            params = c('Mu.Ri', 'Mu.Ra', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'),
             n.eff = TRUE, round = 2)
 

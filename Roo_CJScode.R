@@ -37,7 +37,7 @@ myData  <- list(obs = svData$obs,
                 veg = enData$veg,
                 vegE = enData$vegE)
 
-myConst <- list(nID.sv = svData$nID.sv,
+myConst <- list(nID.S = svData$nID.S,
                 nYear = svData$nYear,
                 nAgeC = svData$nAgeC,
                 noAge = svData$noAge,
@@ -63,20 +63,20 @@ testRun <- TRUE # or FALSE
 myCode = nimbleCode({
   
   #### Likelihood ####
-  for(i in 1:nID.sv){
+  for(i in 1:nID.S){
     for(t in (first[i] + 1):last[i]){
       # state process
-      state[i, t] ~ dbern(Mu.sp[i, t])
-      Mu.sp[i, t] <- sv[i, t-1] * state[i, t-1]
+      state[i, t] ~ dbern(Mu.Sp[i, t])
+      Mu.Sp[i, t] <- sv[i, t-1] * state[i, t-1]
       # observation process
-      obs[i, t] ~ dbern(Mu.op[i, t])
-      Mu.op[i, t] <- ob[i, t] * state[i, t]
+      obs[i, t] ~ dbern(Mu.Op[i, t])
+      Mu.Op[i, t] <- O[i, t] * state[i, t]
     }
   }
   
   #### Constraints ####
   # survival function
-  for(i in 1:nID.sv){                               
+  for(i in 1:nID.S){                               
     for(t in first[i]:(last[i]-1)){
       logit(sv[i, t]) <- BetaA.sv[ageC[age[i, t]]] +
         BetaD.sv[ageC[age[i, t]]] * dens.hat[t] +
@@ -108,10 +108,10 @@ myCode = nimbleCode({
   
   # observation function
   for(t in 1:nYear){
-    for(i in 1:nID.sv){
-      logit(ob[i, t]) <- logit(Mu.ob) + Epsilon.ob[t]
+    for(i in 1:nID.S){
+      logit(O[i, t]) <- logit(Mu.O) + Epsilon.O[t]
     }
-    Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
+    Epsilon.O[t] ~ dnorm(0, sd = Sigma.O)
   }
   
   #### Priors ####
@@ -142,121 +142,84 @@ myCode = nimbleCode({
   Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
   
   # observation
-  Mu.ob ~ dunif(0.01, 0.99) # or dunif(0, 1)
-  Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
+  Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
+  Sigma.O ~ dunif(0.01, 10) # or dunif(0, 10)
   
 })
 
 
 ## Assemble --------------------------------------------------------------------
 
-# create Nimble function
-paraNimble <- function(mySeed, myCode, myConst, myData, testRun){
-  
-  library(nimble)
-  library(coda)
-  
-  set.seed(mySeed)
-  
-  nID.sv = myConst$nID.sv
-  nYear = myConst$nYear
-  nAgeC = myConst$nAgeC
-  nNoAge = myConst$nNoAge
-  nNoVeg = myConst$nNoVeg
-  
-  noAge = myConst$noAge
-  first = myConst$first
-  last = myConst$last 
-  
-  age = myData$age
-  veg = myData$veg
-  dens = myData$dens
-  
-  # assign initial values
-  myInits <- function(i){
-    l = list(
-      ageM = sample(3:8, size = nNoAge, replace = T),
-      
-      BetaA.sv = rnorm(nAgeC, 0, 1),
-      BetaV.sv = rnorm(nAgeC, 0, 1),
-      BetaD.sv = rnorm(nAgeC, 0, 1),
-      # BetaDV.sv = rnorm(nAgeC, 0, 1),
-      
-      veg.hat = ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg),
-      dens.hat = ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens),
-      
-      ob <- matrix(runif(nID.sv * nYear, 0.1, 0.9), nrow = nID.sv, ncol = nYear),
-      
-      Mu.ob = runif(1, 0.1, 0.9),
-      Epsilon.ob = rnorm(nYear, 0, 0.2),
-      Sigma.ob = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
-      
-      Xi.sv = rnorm(nAgeC, 1, 0.1),
-      Epsilon.sv = matrix(rnorm((nYear-1)*nAgeC, 0, 0.1), ncol = nAgeC, nrow = nYear-1)
-    )
-    Tau.sv = diag(nAgeC) + rnorm(nAgeC^2, 0, 0.1)
-    l$Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
-    return(l)
-  }
-  
-  # assemble model
-  myMod <- nimbleModel(code = myCode,
-                       data = myData,
-                       constants = myConst,
-                       inits = myInits())
-  
-  # select parameters to monitor
-  params = c('Epsilon.ob', 'Sigma.ob', 'state', 'ageM',
-             'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
-             'dens.hat', 'veg.hat', 'densE', 'vegE',
-             'Gamma.sv', 'Xi.sv', 'Sigma.sv')
-  
-  # select MCMC settings
-  if(testRun){
-    niter   <- 10
-    nburnin <- 0
-    nthin   <- 1
-  }else{
-    niter   <- 10000
-    nburnin <- 6000
-    nthin   <- 1
-  }
-  
-  cModel <- compileNimble(myMod)
-  myMCMC <- buildMCMC(cModel, monitors = params, enableWAIC = T)
-  cmyMCMC <- compileNimble(myMCMC, project = myMod)
-  samples <- runMCMC(cmyMCMC,
-                     niter = niter,
-                     nburnin = nburnin,
-                     thin = nthin,
-                     setSeed = mySeed,
-                     samplesAsCodaMCMC = T,
-                     summary = T,
-                     WAIC = T)
-  
-  return(samples)
+nchains   <- 3
+seedMod   <- 1:nchains
+seedInits <- 1
+
+# assign initial values
+# source("simulateInits.R")
+# set.seed(seedInits)
+myInits <- list()
+for(c in 1:nchains){
+  myInits[[c]] <- list(
+    ageM = sample(3:8, size = myConst$nNoAge, replace = T),
+    
+    BetaA.sv = rnorm(myConst$nAgeC, 0, 1),
+    BetaV.sv = rnorm(myConst$nAgeC, 0, 1),
+    BetaD.sv = rnorm(myConst$nAgeC, 0, 1),
+    # BetaDV.sv = rnorm(myConst$nAgeC, 0, 1),
+    
+    veg.hat = ifelse(is.na(myData$veg), rnorm(length(myData$veg), 0, .1), myData$veg),
+    dens.hat = ifelse(is.na(myData$dens), rnorm(length(myData$dens), 0, .1), myData$dens),
+    
+    O <- matrix(runif(myConst$nID.S * myConst$nYear, 0.1, 0.9),
+                 nrow = myConst$nID.S, ncol = myConst$nYear),
+    
+    Mu.O = runif(1, 0.1, 0.9),
+    Epsilon.O = rnorm(myConst$nYear, 0, 0.2),
+    Sigma.O = runif(1, 0.01, 2), # or rnorm(1, 0.2, 0.1)
+    
+    Xi.sv = rnorm(myConst$nAgeC, 1, 0.1),
+    Epsilon.sv = matrix(rnorm((myConst$nYear-1)*myConst$nAgeC, 0, 0.1),
+                        ncol = myConst$nAgeC, nrow = myConst$nYear-1),
+    
+    Tau.sv = diag(myConst$nAgeC) + rnorm(myConst$nAgeC^2, 0, 0.1),
+    Tau.sv = inverse((Tau.sv + t(Tau.sv))/2) # may be a typo?
+  )
+}
+
+# select parameters to monitor
+params = c('Epsilon.O', 'Sigma.O', 'state', 'ageM',
+           'BetaA.sv', 'BetaD.sv', 'BetaV.sv', # 'BetaDV.sv',
+           'dens.hat', 'veg.hat', 'densE', 'vegE',
+           'Gamma.sv', 'Xi.sv', 'Sigma.sv')
+
+# select MCMC settings
+if(testRun){
+  niter   <- 10
+  nburnin <- 0
+  nthin   <- 1
+}else{
+  niter   <- 10000
+  nburnin <- 6000
+  nthin   <- 1
 }
 
 
 ## Run model -------------------------------------------------------------------
 
-mySeed <- 1:3
-nchains <- 3
-
-start.t <- Sys.time()
-this_cluster <- makeCluster(nchains)
-samples <- parLapply(cl = this_cluster,
-                     X = 1:nchains,
-                     fun = paraNimble,
-                     myCode = myCode,
-                     myConst = myConst,
-                     myData = myData,
-                     testRun = testRun)
-
-beep(sound = 2)
-stopCluster(this_cluster)
-dur = now() - start.t
-dur
+start <- Sys.time()
+samples <- nimbleMCMC(code = myCode,
+                      data = myData,
+                      constants = myConst,
+                      inits = myInits,
+                      monitors = params,
+                      niter = niter,
+                      nburnin = nburnin,
+                      nchains = nchains,
+                      thin = nthin,
+                      samplesAsCodaMCMC = T,
+                      setSeed = seedMod)
+dur <- Sys.time() - start; dur
+beep(2)
 
 # reformat output
 out.mcmc <- samples %>% map(~ as.mcmc(.x$samples)) %>% as.mcmc.list()
@@ -278,7 +241,7 @@ summary(out.mcmc) # cannot handle any NAs
 library(MCMCvis)
 library(corrplot)
 MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 3)
-MCMCsummary(out.mcmc, params = c('Epsilon.ob','Sigma.ob'), n.eff = TRUE, round = 3)
+MCMCsummary(out.mcmc, params = c('Epsilon.O','Sigma.O'), n.eff = TRUE, round = 3)
 MCMCsummary(out.mcmc, params = c('Sigma.sv'), n.eff = TRUE, round = 3)
 MCMCsummary(out.mcmc, params = c('ageM'), n.eff = TRUE, round = 3)
 
@@ -293,8 +256,8 @@ plot(out.mcmc[, paste0('BetaV.sv[',1:nAgeC,']')])
 plot(out.mcmc[, paste0('BetaD.sv[',1:nAgeC,']')])
 plot(out.mcmc[, paste0('BetaDV.sv[',1:nAgeC,']')])
 
-plot(out.mcmc[, paste0('Epsilon.ob[',1:nYear,']')])
-plot(out.mcmc[, 'Sigma.ob'])
+plot(out.mcmc[, paste0('Epsilon.O[',1:nYear,']')])
+plot(out.mcmc[, 'Sigma.O'])
 
 plot(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 plot(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
@@ -305,8 +268,8 @@ plot(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
 # gelman.diag(out.mcmc[, paste0('BetaD.sv[',1:nAgeC,']')])
 # gelman.diag(out.mcmc[, paste0('BetaDV.sv[',1:nAgeC,']')])
 # 
-# gelman.diag(out.mcmc[, paste0('Epsilon.ob[',1:nYear,']')])
-# gelman.diag(out.mcmc[, 'Sigma.ob'])
+# gelman.diag(out.mcmc[, paste0('Epsilon.O[',1:nYear,']')])
+# gelman.diag(out.mcmc[, 'Sigma.O'])
 # 
 # gelman.diag(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 # gelman.diag(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
@@ -317,8 +280,8 @@ plot(out.mcmc[, paste0('ageM[',1:nNoAge,']')])
 # effectiveSize(out.mcmc[, paste0('BetaD.sv[',1:nAgeC,']')])
 # effectiveSize(out.mcmc[, paste0('BetaDV.sv[',1:nAgeC,']')])
 # 
-# effectiveSize(out.mcmc[, paste0('Epsilon.ob[',1:nYear,']')])
-# effectiveSize(out.mcmc[, 'Sigma.ob'])
+# effectiveSize(out.mcmc[, paste0('Epsilon.O[',1:nYear,']')])
+# effectiveSize(out.mcmc[, 'Sigma.O'])
 # 
 # effectiveSize(out.mcmc[, paste0('Sigma.sv[',1:nAgeC,', ',1:nAgeC,']')])
 # effectiveSize(out.mcmc[, paste0('ageM[',1:nNoAge,']')])

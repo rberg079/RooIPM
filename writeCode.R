@@ -10,12 +10,12 @@ writeCode <- function(){
   
   ## Parameters ------------------------------------------------------------------
   
-  # n = number of events in the reproductive success dataset
-  # nIDs = number of unique kangaroos in the survival dataset
-  # nIDr = number of unique kangaroos in the reproductive success dataset
-  # nYear = number of years in the dataset
-  # nAge = number of ages in the analysis (3 through 19 years old, so 17 ages)
-  # nAgeC = number of age classes in the analysis (not used so far in RS analysis)
+  # nR = number of events in the reproductive success dataset (was N)
+  # nID.S = number of unique kangaroos in the survival dataset (was nind)
+  # nID.R = number of unique kangaroos in the reproductive success dataset (was N.id)
+  # nYear = number of years in the dataset (was ntimes or N.year)
+  # nAge = number of ages or maximum age in the analysis
+  # nAgeC = number of age classes in the analysis
   
   # nNoAge = number of individuals for which age is unknown
   # nNoDens = number of years for which population density is unknown
@@ -27,37 +27,37 @@ writeCode <- function(){
   # nAD = number of adults (3 through 20 years old) in the population
   # nTOT = number of female kangaroos from YAF age onwards in the population
   
-  # b = breeding rate, or proportion of females producing a jellybean
-  # svPY = survival of jellybeans to pouch exit (or to the 1st of Sept around that time)
-  # svYAF = survival of young-at-foot to the 1st of Sept when they are 1 year old
-  # svSA = survival of 1 or 2 year-olds to the following 1st of Sept when they are 2 or 3
-  # svAD = survival of adult females of any given age from one 1st of Sept to the next
-  # sv = survival of each age class considered in the Cormack-Jolly-Seber model
+  # B = breeding rate, or proportion of females producing a jellybean
+  # sPY = survival of jellybeans to pouch exit (or to the 1st of Sept around that time)
+  # sYAF = survival of young-at-foot to the 1st of Sept when they are 1 year old
+  # sSA = survival of 1 or 2 year-olds to the following 1st of Sept when they are 2 or 3
+  # sAD = survival of adult females of any given age from one 1st of Sept to the next
+  # S = survival of each age class considered in the Cormack-Jolly-Seber model
   
-  # Mu.sp = mean latent state for CJS model (was mu1)
-  # Mu.op = mean latent observation for CJS model (was mu2)
+  # Mu.Sp = mean latent state for CJS model (was mu1)
+  # Mu.Op = mean latent observation for CJS model (was mu2)
   
-  # BetaA.sv = covariate effect of age (A) on survival (sv) (was B.age)
-  # BetaD.sv = covariate effect of density (D) on survival (sv) (was B.dens)
-  # BetaV.sv = covariate effect of vegetation (V) on survival (sv) (was B.veg)
-  # BetaDV.sv = covariate effect of interacting density & vegetation (DV) on survival (sv) (was B.densVeg)
-  # BetaVR.sv = covariate effect of vegetation per capita, or kangaroo (VR) on survival (sv) (was B.vegRoo)
+  # BetaA.S = covariate effect of age (A) on survival (s) (was B.age)
+  # BetaD.S = covariate effect of density (D) on survival (s) (was B.dens)
+  # BetaV.S = covariate effect of vegetation (V) on survival (s) (was B.veg)
+  # BetaDV.S = covariate effect of interacting density & vegetation (DV) on survival (s) (was B.densVeg)
+  # BetaVR.S = covariate effect of vegetation per capita, or kangaroo (VR) on survival (s) (was B.vegRoo)
   
   # dens.hat = "true" yearly population density, from which the observed value was hypothetically sampled
   # veg.hat = "true" yearly available vegetation, from which the observed value was hypothetically sampled
   # noAge = indexes of individuals who are of unknown age
   # ageM = estimated ages of unknown-aged individuals
   
-  # Gamma.sv = correlated random effect of year on probability of survival (was gamma)
-  # Xi.sv = scaling factor for how big the random effect variation is per age class (was xi)
-  # Epsilon.sv = raw random effect sampled from a multivariate normal with precision Tau.sv (was eps.raw)
-  # Tau.sv = precision matrix (inverse of covariance) describing variance & correlation among age classes (was Tau.raw)
-  # Sigma.sv = covariance matrix (inverse of precision) describing variance & covariance among age classes (was Sigma.raw)
+  # Gamma.S = correlated random effect of year on probability of survival (was gamma)
+  # Xi.S = scaling factor for how big the random effect variation is per age class (was xi)
+  # Epsilon.S = raw random effect sampled from a multivariate normal with precision Tau.S (was eps.raw)
+  # Tau.S = precision matrix (inverse of covariance) describing variance & correlation among age classes (was Tau.raw)
+  # Sigma.S = covariance matrix (inverse of precision) describing variance & covariance among age classes (was Sigma.raw)
   
-  # ob = probability of observation in each year considered in the Cormack-Jolly-Seber model (was p)
-  # Mu.ob = mean probability of observation (was mu.p)
-  # Epsilon.ob = random effect of year on prob. of observation (was year.p)
-  # Sigma.ob = standard deviation of effect of year on prob. of observation (was sd.p)
+  # O = probability of observation in each year considered in the Cormack-Jolly-Seber model (was p)
+  # Mu.O = mean probability of observation (was mu.p)
+  # Epsilon.O = random effect of year on prob. of observation (was year.p)
+  # Sigma.O = standard deviation of effect of year on prob. of observation (was sd.p)
   
   
   ## Set up --------------------------------------------------------------------
@@ -81,54 +81,46 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     nAD[1:2, 1:nYear] <- 0
-    nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:(nAge+2), 1])
+    nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:nAge, 1])
     
     for(t in 1:(nYear-1)){
-      # nYAF[t+1] ~ dbin(b[t] * svPY[t], sum(nAD[3:(nAge+2), t]))
-      
-      # TODO: DISCUSS THIS NEW BIT WITH CHLOE
-      # my attempt at adding dependence of svPY on mom's age!
-      nYAF[t+1] ~ dbin(
-        sum(b[t] * svPY[3:(nAge+2), t] * nAD[3:(nAge+2), t]) / sum(nAD[3:(nAge+2), t]),
-        sum(nAD[3:(nAge+2), t])
-      )
-
-      nSA[1, t+1] ~ dbin(svYAF[t], nYAF[t])
-      nSA[2, t+1] ~ dbin(svSA[1, t], nSA[1, t])
-
-      nAD[3, t+1] ~ dbin(svSA[2, t], nSA[2, t])
-
-      for(a in 4:(nAge+2)){
-        nAD[a, t+1] ~ dbin(svAD[a, t], nAD[a, t])
+      for(a in 3:nAge){
+        nYAFa[a, t+1] ~ dbin(B[t] * Ra[a, t], nAD[a, t]) # TODO: THINK ABOUT TIMING OF AGES IN RS MODEL!
       }
-      nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:(nAge+2), t+1])
+      
+      nSA[1, t+1] ~ dbin(sYAF[t], nYAF[t])
+      nSA[2, t+1] ~ dbin(sSA[1, t], nSA[1, t])
+
+      nAD[3, t+1] ~ dbin(sSA[2, t], nSA[2, t])
+
+      for(a in 4:nAge){
+        nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
+      }
+      nYAF[t+1] <- sum(nYAFa[3:nAge, t])
+      nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
     }
     
     # priors
-    svAD[1:2, 1:(nYear-1)] <- 0
+    sAD[1:2, 1:(nYear-1)] <- 0
     
+    # TODO LONG-TERM:
+    # name params as so directly in CJS model
     for(t in 1:(nYear-1)){
-      b[t]       ~ dunif(0.5, 1)
-      # svPY[t]    ~ dunif(0.1, 1)
-      svYAF[t]   <- sv[1, t]
-      svSA[1, t] <- sv[2, t]
-      svSA[2, t] <- sv[2, t]
-      
-      # TODO: DISCUSS NEW svPY HERE AS WELL!!
-      for(a in 3:(nAge+2)){
-        svPY[a, t] <- rsA[a-2, t] # age.R in RS model is age-2!
-      }
+      B[t]       ~ dunif(0.5, 1)
+      sYAF[t]   <- S[1, t]
+      sSA[1, t] <- S[2, t]
+      sSA[2, t] <- S[2, t]
       
       for(a in 3:6){ # prime-aged
-        svAD[a, t] <- sv[3, t]
+        sAD[a, t] <- S[3, t]
       }
       
       for(a in 7:9){ # pre-senescent
-        svAD[a, t] <- sv[4, t]
+        sAD[a, t] <- S[4, t]
       }
       
-      for(a in 10:(nAge+2)){ # senescent
-        svAD[a, t] <- sv[5, t]
+      for(a in 10:nAge){ # senescent
+        sAD[a, t] <- S[5, t]
       }
     }
     
@@ -139,12 +131,12 @@ writeCode <- function(){
     for(i in 1:nIDs){
       for(t in (first[i] + 1):last[i]){
         # state process
-        state[i, t] ~ dbern(Mu.sp[i, t])
-        Mu.sp[i, t] <- sv[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
+        state[i, t] ~ dbern(Mu.Sp[i, t])
+        Mu.Sp[i, t] <- S[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
         
         # observation process
-        obs[i, t] ~ dbern(Mu.op[i, t])
-        Mu.op[i, t] <- ob[t] * state[i, t]
+        obs[i, t] ~ dbern(Mu.Op[i, t])
+        Mu.Op[i, t] <- O[t] * state[i, t]
       }
     }
     
@@ -152,12 +144,12 @@ writeCode <- function(){
     # survival function
     for(a in 1:nAgeC){                               
       for(t in 1:(nYear-1)){
-        logit(sv[a, t]) <- BetaA.sv[a] +
-          BetaD.sv[a] * dens.hat[t] +
-          BetaV.sv[a] * veg.hat[t] +
-          # BetaDV.sv[a] * (dens.hat[t] * veg.hat[t]) +
-          # BetaVR.sv[a] * (veg.hat[t] / dens.hat[t]) +
-          Gamma.sv[t, a]
+        logit(S[a, t]) <- BetaA.S[a] +
+          BetaD.S[a] * dens.hat[t] +
+          BetaV.S[a] * veg.hat[t] +
+          # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
+          # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
+          Gamma.S[t, a]
       }
     }
     
@@ -182,95 +174,95 @@ writeCode <- function(){
     
     # observation function
     for(t in 1:nYear){
-      logit(ob[t]) <- logit(Mu.ob) + Epsilon.ob[t]
-      Epsilon.ob[t] ~ dnorm(0, sd = Sigma.ob)
+      logit(O[t]) <- logit(Mu.O) + Epsilon.O[t]
+      Epsilon.O[t] ~ dnorm(0, sd = Sigma.O)
     }
     
     #### Priors ####
     # for fixed effects
     for(a in 1:nAgeC){
-      BetaA.sv[a] ~ dnorm(0, sd = 2)
-      BetaD.sv[a] ~ dnorm(0, sd = 2)
-      BetaV.sv[a] ~ dnorm(0, sd = 2)
-      # BetaDV.sv[a] ~ dnorm(0, sd = 2)
+      BetaA.S[a] ~ dnorm(0, sd = 2)
+      BetaD.S[a] ~ dnorm(0, sd = 2)
+      BetaV.S[a] ~ dnorm(0, sd = 2)
+      # BetaDV.S[a] ~ dnorm(0, sd = 2)
     }
     
     # for random effects
     # variance-covariance matrix
     for(i in 1:nAgeC){
       zero[i] <- 0
-      Xi.sv[i] ~ dunif(0, 2)
+      Xi.S[i] ~ dunif(0, 2)
     }
     
     for(t in 1:(nYear-1)){
-      Epsilon.sv[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.sv[1:nAgeC, 1:nAgeC])
+      Epsilon.S[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.S[1:nAgeC, 1:nAgeC])
       for(i in 1:nAgeC){
-        Gamma.sv[t, i] <- Xi.sv[i] * Epsilon.sv[t, i]
+        Gamma.S[t, i] <- Xi.S[i] * Epsilon.S[t, i]
       }
     }
     
     # precision matrix
-    Tau.sv[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
-    Sigma.sv[1:nAgeC, 1:nAgeC] <- inverse(Tau.sv[1:nAgeC, 1:nAgeC])
+    Tau.S[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
+    Sigma.S[1:nAgeC, 1:nAgeC] <- inverse(Tau.S[1:nAgeC, 1:nAgeC])
     
     # observation
-    Mu.ob ~ dunif(0.01, 0.99) # or dunif(0, 1)
-    Sigma.ob ~ dunif(0.01, 10) # or dunif(0, 10)
+    Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
+    Sigma.O ~ dunif(0.01, 10) # or dunif(0, 10)
     
     
     ## REPRODUCTIVE SUCCESS MODEL
     ## -------------------------------------------------------------------------
     
     #### Likelihood & constraints ####
-    # individual rs function
-    for(x in 1:nRS){
-      rs[x] ~ dbern(rsI[x])
-      logit(rsI[x]) <- logit(Mu.rsI[age.R[x]]) +
-        # BetaD.rs * dens[year.R[x]] +
-        # BetaV.rs * veg[year.R[x]] +
-        # BetaW.rs * win[year.R[x]] +
-        EpsilonI.rsI[id.R[x]] +
-        EpsilonT.rsI[year.R[x]]
+    # individual RS function
+    for(x in 1:nR){
+      R[x] ~ dbern(Ri[x])
+      logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
+        # BetaD.R * dens[year.R[x]] +
+        # BetaV.R * veg[year.R[x]] +
+        # BetaW.R * win[year.R[x]] +
+        EpsilonI.Ri[id.R[x]] +
+        EpsilonT.Ri[year.R[x]]
     }
     
-    # age-specific rs function
+    # age-specific RS function
     # use parameters estimated from individual data above
-    # to predict age-specific reproductive success (rsA) here!
+    # to predict age-specific reproductive success (Ra) here!
     for(a in 1:nAge){
       for(t in 1:nYear){
-        logit(rsA[a, t]) <- logit(Mu.rsA[a]) + # rsA becomes svPY!
-          # BetaD.rs * dens[t] +
-          # BetaV.rs * veg[t] +
-          # BetaW.rs * win[t] +
-          EpsilonT.rsA[t]
+        logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
+          # BetaD.R * dens[t] +
+          # BetaV.R * veg[t] +
+          # BetaW.R * win[t] +
+          EpsilonT.Ra[t]
       }
     }
     
     ##### Priors ####
     # priors for fixed effects
     for(a in 1:nAge){
-      Mu.rsI[a] ~ dunif(0, 1)
-      Mu.rsA[a] ~ dunif(0, 1)
+      Mu.Ri[a] ~ dunif(0, 1)
+      Mu.Ra[a] ~ dunif(0, 1)
     }
     
-    # Beta.dens ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # Beta.veg  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # Beta.win  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # BetaV.R  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # BetaW.R  ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
     
     # priors for random effects
     for(i in 1:nID.R){
-      EpsilonI.rsI[i] ~ dnorm(0, sd = SigmaI.rsI)
+      EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
     }
     
     for(t in 1:nYear){
-      EpsilonT.rsI[t] ~ dnorm(0, sd = SigmaT.rsI)
-      EpsilonT.rsA[t] ~ dnorm(0, sd = SigmaT.rsA)
+      EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
+      EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
     }
     
     # priors for sigma
-    SigmaI.rsI ~ dunif(0, 100)
-    SigmaT.rsI ~ dunif(0, 100)
-    SigmaT.rsA ~ dunif(0, 100)
+    SigmaI.Ri ~ dunif(0, 100)
+    SigmaT.Ri ~ dunif(0, 100)
+    SigmaT.Ra ~ dunif(0, 100)
     
   }) # nimbleCode
   

@@ -42,10 +42,10 @@ myData  <- list(obs = svData$obs,
                 age.S = svData$age,
                 ageC = svData$ageC,
                 
-                rs = rsData$survS1,
+                R = rsData$survS1,
                 id.R = rsData$id,
                 year.R = rsData$year,
-                age.R = rsData$age-2,
+                age.R = rsData$age,
                 
                 dens = enData$dens,
                 veg = enData$veg,
@@ -53,7 +53,7 @@ myData  <- list(obs = svData$obs,
                 densE = enData$densE,
                 vegE = enData$vegE)
 
-myConst <- list(nRS = rsData$nRS,
+myConst <- list(nR = rsData$nR,
                 nID.S = svData$nID,
                 nID.R = rsData$nID,
                 nYear = rsData$nYear,
@@ -84,7 +84,7 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    # nRS = rsData$nRS,
+    # nR = rsData$nR,
     nID.S = myConst$nID.S,
     # nID.R = myConst$nID.R,
     nYear = myConst$nYear,
@@ -106,14 +106,14 @@ for(c in 1:nchains){
 # select parameters to monitors
 params = c(
   # Population model
-  'sv', 'b', 'svPY', 'svYAF', 'svSA', 'svAD', # yearly vital rates
+  'S', 'B', 'sPY', 'sYAF', 'sSA', 'sAD', # yearly vital rates
   'nYAF', 'nSA', 'nAD', 'nTOT',               # population sizes
   
   # Survival model
   'dens.hat', 'veg.hat', # 'ageM',            # latent states
-  'BetaA.sv', 'BetaD.sv', 'BetaV.sv',         # covariate effects
-  'Mu.ob', 'Epsilon.ob', 'Sigma.ob',          # observation parameters
-  'Gamma.sv', 'Xi.sv', 'Sigma.sv',            # random effects
+  'BetaA.S', 'BetaD.S', 'BetaV.S',         # covariate effects
+  'Mu.O', 'Epsilon.O', 'Sigma.O',          # observation parameters
+  'Gamma.S', 'Xi.S', 'Sigma.S',            # random effects
   
   # Reproductive success model
   "Mu.rsI", "Mu.rsA",                             # mean reproductive success
@@ -177,21 +177,21 @@ library(scales)
 # }
 
 # summaries
-MCMCsummary(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Mu.ob', 'Epsilon.ob', 'Sigma.ob'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Sigma.sv'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('sv', 'b', 'svPY'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('S', 'B', 'sPY'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
 # chainplots
-MCMCtrace(out.mcmc, params = c('BetaA.sv', 'BetaD.sv', 'BetaV.sv'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Epsilon.ob', 'Sigma.ob'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Sigma.sv'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Epsilon.O', 'Sigma.O'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('sv', 'b', 'svPY'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('svYAF', 'svSA', 'svAD'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('S', 'B', 'sPY'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 
 
@@ -266,19 +266,19 @@ corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
                map(as.data.frame) %>% bind_rows(), use = 'p'))
 
 # check random effects among demographic rates
-# check variance-correlation matrix, with Sigma.sv on diagonal
+# check variance-correlation matrix, with Sigma.S on diagonal
 varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
 
 for(i in 1:myConst$nAgeC){
-  varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.sv[', i,']')]*
-    sqrt(out.dat[, paste0('Sigma.sv[', i,', ', i,']')])
+  varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.S[', i,']')]*
+    sqrt(out.dat[, paste0('Sigma.S[', i,', ', i,']')])
 }
 
 for(j in 1:(myConst$nAgeC-1)){
   for(i in (j+1):myConst$nAgeC){
-    varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.sv[', i, ', ', j, ']')])/
-      sqrt(out.dat[, paste0('Sigma.sv[', j, ', ', j, ']')]*
-             out.dat[, paste0('Sigma.sv[', i, ', ', i, ']')])
+    varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.S[', i, ', ', j, ']')])/
+      sqrt(out.dat[, paste0('Sigma.S[', j, ', ', j, ']')]*
+             out.dat[, paste0('Sigma.S[', i, ', ', i, ']')])
   }
 }
 
@@ -288,23 +288,23 @@ round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
 
 # calculate survival probabilities
 df <- expand.grid(age = 1:22, year = 1:16)
-sv.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
+S.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){
-  sv.pred[i, ] <- out.dat[, paste0('BetaA.sv[', myData$ageC[df$age[i]], ']')] +
-    out.dat[, paste0('Gamma.sv[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
+  S.pred[i, ] <- out.dat[, paste0('BetaA.S[', myData$ageC[df$age[i]], ']')] +
+    out.dat[, paste0('Gamma.S[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
   df$ageC[i] <- myData$ageC[df$age[i]]
 }
 
-df$sv = inv.logit(apply(sv.pred, 1, mean))
-df$svLCI = inv.logit(apply(sv.pred, 1, quantile, 0.025))
-df$svUCI = inv.logit(apply(sv.pred, 1, quantile, 0.975))
+df$S = inv.logit(apply(S.pred, 1, mean))
+df$sLCI = inv.logit(apply(S.pred, 1, quantile, 0.025))
+df$sUCI = inv.logit(apply(S.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
   mutate(ageC = as.factor(ageC)) %>% 
-  ggplot(aes(x = year, y = sv)) +
-  geom_ribbon(aes(ymin = svLCI, ymax = svUCI, fill = ageC), alpha = 0.2) +
+  ggplot(aes(x = year, y = S)) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.2) +
   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
   labs(x = "Year", y = "Survival", fill = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +
