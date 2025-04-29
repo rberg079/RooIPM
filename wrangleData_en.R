@@ -12,19 +12,25 @@
 
 wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
+  # # for testing purposes
+  # dens.data = "data/WPNP_Methods_Results_January2025.xlsx"
+  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
+  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
+  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  
   
   ## Set up --------------------------------------------------------------------
   
   # load libraries
   library(readxl)
-  library(lubridate)
+  suppressPackageStartupMessages(library(lubridate))
   suppressPackageStartupMessages(library(tidyverse))
   
   # load data
   density <- read_excel(dens.data)
-  biomass <- read_excel(veg.data)
-  weather <- read_excel(wea.data)
-  wind <- read_csv(wind.data, skip = 13)
+  biomass <- suppressMessages(read_excel(veg.data))
+  weather <- suppressWarnings(read_excel(wea.data))
+  wind <- read_csv(wind.data, skip = 13, show_col_types = F)
   
   
   ## Density data --------------------------------------------------------------
@@ -57,7 +63,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   ## Biomass data --------------------------------------------------------------
   
-  biomass <- biomass %>% 
+  biomass <- suppressWarnings(biomass %>% 
     rename(Veg = "DW Pal in") %>% 
     select(ID, Day, Month, Year, Veg) %>% 
     mutate(Veg = as.numeric(Veg)*4000, # convert to g/m^2
@@ -74,7 +80,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
            NextYr = as.numeric(Year) +1,
            SeasYr = ifelse(Month == 12,
                            paste(Season, NextYr, sep = ""),
-                           paste(Season, Year, sep = "")))
+                           paste(Season, Year, sep = ""))))
   
   # calculate daily vegetation growth per exclosure
   biomass <- biomass %>%
@@ -97,7 +103,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   ## Weather data --------------------------------------------------------------
   
-  weather <- weather %>% 
+  weather <- suppressWarnings(weather %>% 
     select(Year, Month, Day, Rain) %>% 
     mutate(Date = ymd(paste(Year, Month, Day, sep = "-")),
            Month = month(Date),
@@ -112,7 +118,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
                            paste(Season, NextYr, sep = ""),
                            paste(Season, Year, sep = ""))) %>%
     filter(Date > "2007-07-31" & Date < "2025-03-01") %>%
-    select(Date, Year, Month, Day, SeasYr, Rain)
+    select(Date, Year, Month, Day, SeasYr, Rain))
   
   
   ## Wind data -----------------------------------------------------------------
@@ -129,19 +135,19 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   ## Join it all ---------------------------------------------------------------
   
   env <- weather %>% 
-    left_join(biomass) %>% 
-    left_join(density) %>%
+    left_join(biomass, by = "Date") %>% 
+    left_join(density, by = "SeasYr") %>%
     fill(Veg, .direction = "up") %>%
     fill(VegSE, .direction = "up") %>% 
     select(Date, Year, Month, Day, SeasYr,
            Dens, DensSE, Veg, VegSE, Rain) %>% 
     mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
-    left_join(wind)
+    left_join(wind, by = c("Date", "Year", "Month", "Day"))
   
   # calculate Nixon-Smith Chill Index (BOM working paper, 1972)
   # C = (11.7 + 3.1(wind^0.5))(40 - T) + 481 + 418(1 - e^-0.04*R)
-  env <- env %>% 
+  env <- suppressWarnings(env %>% 
     mutate(Chill = ((11.7 + 3.1*(sqrt(Gusts)))*(40 - Min)) +
              418 + (418*(1 - exp(-0.04*Rain))),
            Warn.18 = ifelse(Chill >= 1000, 1, 0)) %>%  # 0.82 percentile
@@ -152,7 +158,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE, Warns.18)
+    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE, Warns.18))
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -194,8 +200,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   # join & calculate vegetation per capita
   env <- dens %>% 
-    left_join(veg) %>% 
-    left_join(win) %>% 
+    left_join(veg, by = "Year") %>% 
+    left_join(win, by = "Year") %>% 
     mutate(VegRoo = Veg / Dens,
            VegRooSE = abs(VegRoo)*sqrt((VegSE / Veg)^2+(DensSE / Dens)^2))
   

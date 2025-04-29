@@ -25,7 +25,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   # load data
   surv <- read_excel(surv.data, sheet = surv.sheet)
-  yafs <- read_excel(yafs.data)
+  yafs <- suppressWarnings(read_excel(yafs.data))
   
   # clean up
   surv <- surv %>% 
@@ -190,13 +190,13 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   }))
   
   # create first & last
-  state <- state %>% 
+  state <- suppressWarnings(state %>% 
     mutate(HRDead = replace_na(HRDead, 0)) %>%
     rowwise() %>% 
     mutate(first = min(which(c_across(4:20) == 1)),
            last = min(which(c_across(4:20) == 0)),
            last = ifelse(HRDead == 1, last-1, last),
-           last = ifelse(last == Inf, ncol(obs), last))
+           last = ifelse(last == Inf, ncol(obs), last)))
   
   # save first & last in id dataframe
   id <- state %>% select(ID, Dead, HRDead, first, last)
@@ -245,7 +245,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   # remove inds who were only in the dataset 1 year
   noInfo <- id$first == id$last
-  length(which(noInfo))
+  # length(which(noInfo))
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
