@@ -16,7 +16,7 @@
 #'
 #' @examples
 
-compareModels <- function(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008, maxYear,
+compareModels <- function(nAge = 18, nAgeC = 5, nYear = 17, minYear = 2008, maxYear,
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
   # # for testing purposes

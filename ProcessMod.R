@@ -106,17 +106,17 @@ for(c in 1:nchains){
 # select parameters to monitors
 params = c(
   # Population model
-  'S', 'B', 'sYAF', 'sSA', 'sAD', # yearly vital rates
-  'nYAF', 'nSA', 'nAD', 'nTOT',               # population sizes
+  'S', 'B', 'sYAF', 'sSA', 'sAD',              # yearly vital rates
+  'nYAF', 'nSA', 'nAD', 'nTOT',                # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat', # 'ageM',            # latent states
-  'BetaA.S', 'BetaD.S', 'BetaV.S',         # covariate effects
-  'Mu.O', 'Epsilon.O', 'Sigma.O',          # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S',            # random effects
+  'dens.hat', 'veg.hat', # 'ageM',             # latent states
+  'BetaA.S', 'BetaD.S', 'BetaV.S',             # covariate effects
+  'Mu.O', 'Epsilon.O', 'Sigma.O',              # observation parameters
+  'Gamma.S', 'Xi.S', 'Sigma.S',                # random effects
   
   # Reproductive success model
-  "Mu.Ri", "Mu.Ra",                             # mean reproductive success
+  "Mu.Ri", "Mu.Ra",                            # mean reproductive success
   # 'BetaD.R', 'BetaV.R', 'BetaW.R',           # covariate effects
   'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', # random effects
   'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra')       # random effects
