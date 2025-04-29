@@ -2,9 +2,9 @@
 #'
 #' @param nAge integer. Maximum age to consider in the analysis. nAge = 22 by default.
 #' @param nAgeC integer. Number of age classes to consider in the analysis. nAgeC = 5 by default.
-#' @param ntimes integer. Number of years to consider in the analysis. ntimes = 17 by default.
+#' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
-#' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + ntimes - 1 by default.
+#' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
 #' @param modelNames character vector. User-defined names for models to compare. 
 #' @param plotFolder character string. Path to the folder in which to store comparison plots.
@@ -16,8 +16,20 @@
 #'
 #' @examples
 
-compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, maxYear,
+compareModels <- function(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008, maxYear,
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
+  
+  # # for testing purposes
+  # nAge = 18
+  # nAgeC = 5
+  # nYear = 17
+  # minYear = 2008
+  # maxYear <- minYear + nYear - 1
+  # postPaths = "results/IPM_CJS.rds"
+  # modelNames = c("IPM/CJS")
+  # plotFolder = "figures"
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
@@ -40,7 +52,7 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
   
   # set maxYear if not provided
   if(missing(maxYear)){
-    maxYear <- minYear + ntimes - 1
+    maxYear <- minYear + nYear - 1
   }
   
   # count number of models
@@ -88,20 +100,20 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
     rename("Parameter" = "X1", "Idx1" = "X2", "Idx2" = "X3") %>%
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
-           YearIdx = case_when(grepl('^Sigma\\.raw\\[|^xi\\[', Parameter) ~ NA_real_,
-                               !is.na(Idx2) & !grepl('gamma', Parameter) ~ Idx2,
-                               !is.na(Idx1) & grepl('gamma', Parameter) ~ Idx1,
+           YearIdx = case_when(grepl('^Sigma\\.S\\[|^Xi\\.S\\[', Parameter) ~ NA_real_,
+                               !is.na(Idx2) & !grepl('^Gamma\\.S\\[', Parameter) ~ Idx2,
+                               !is.na(Idx1) & grepl('^Gamma\\.S\\[', Parameter) ~ Idx1,
                                !is.na(Idx1) & !grepl('B', Parameter) ~ Idx1),
-           AgeIdx = case_when(grepl('^Sigma\\.raw\\[|^xi\\[', Parameter) ~ Idx1,
-                              !is.na(Idx2) & !grepl('gamma', Parameter) ~ Idx1,
-                              !is.na(Idx2) & grepl('gamma', Parameter) ~ Idx2,
-                              is.na(Idx2) & grepl('B', Parameter) ~ Idx1),
+           AgeIdx = case_when(grepl('^Sigma\\.S\\[|^Xi\\.S\\[', Parameter) ~ Idx1,
+                              !is.na(Idx2) & !grepl('^Gamma\\.S\\[', Parameter) ~ Idx1,
+                              !is.na(Idx2) & grepl('^Gamma\\.S\\[', Parameter) ~ Idx2,
+                              is.na(Idx2) & grepl('Beta', Parameter) ~ Idx1),
            Year = YearIdx + minYear - 1,
-           Age = case_when(grepl('^SA\\[|^AD\\[|^s\\.SA\\[|^s\\.AD\\[', Parameter) ~ AgeIdx,
-                           grepl('^YAF\\[|^s\\.YAF\\[', Parameter) ~ 1,
-                           grepl('^s\\.PY\\[', Parameter) ~ 0,
+           Age = case_when(grepl('^nSA\\[|^nAD\\[|^sSA\\[|^sAD\\[', Parameter) ~ AgeIdx,
+                           grepl('^nYAF\\[|^sYAF\\[', Parameter) ~ 1,
+                           grepl('^sPY\\[', Parameter) ~ 0,
                            TRUE ~ NA_real_),
-           AgeClass = ifelse(grepl('^B\\.age\\[|^B\\.dens\\[|^B\\.veg\\[|^s\\[', Parameter), AgeIdx, NA),
+           AgeClass = ifelse(grepl('^BetaA\\.S\\[|^BetaD\\.S\\[|^BetaV\\.S\\[|^S\\[', Parameter), AgeIdx, NA),
            ParamName = word(Parameter, 1, sep = "\\["))
   
   sum.dat <- sum.dat %>%
@@ -112,49 +124,49 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJSbetas = c(paste0('B.age[', 1:nAgeC, ']'),
-                 paste0('B.dens[', 1:nAgeC, ']'),
-                 paste0('B.veg[', 1:nAgeC, ']')),
+    CJSbetas = c(paste0('BetaA.S[', 1:nAgeC, ']'),
+                 paste0('BetaD.S[', 1:nAgeC, ']'),
+                 paste0('BetaV.S[', 1:nAgeC, ']')),
     
-    CJScovar = c(paste0('Sigma.raw[', 1:nAgeC, ', ', 1:nAgeC, ']')),
-                 # expand.grid(t = 1:(ntimes - 1), a = 1:nAgeC) %>%
-                 #   mutate(param = paste0('gamma[', t, ', ', a, ']')) %>%
+    CJScovar = c(paste0('Sigma.S[', 1:nAgeC, ', ', 1:nAgeC, ']')),
+                 # expand.grid(t = 1:(nYear - 1), a = 1:nAgeC) %>%
+                 #   mutate(param = paste0('Gamma.S[', t, ', ', a, ']')) %>%
                  #   pull(param),
-                 # paste0('xi[', 1:nAgeC, ']')),
+                 # paste0('Xi.S[', 1:nAgeC, ']')),
     
-    CJSobs   = c('mean.p', 'sd.p',
-                 paste0('year.p[', 1:ntimes, ']')),
+    CJSobs   = c('Mu.O', 'Sigma.O',
+                 paste0('Epsilon.O[', 1:nYear, ']')),
     
-    CJSenv   = c(paste0('dens.hat[', 1:(ntimes-1), ']'),
-                 paste0('veg.hat[', 1:(ntimes-1), ']')),
+    CJSenv   = c(paste0('dens.hat[', 1:(nYear-1), ']'),
+                 paste0('veg.hat[', 1:(nYear-1), ']')),
     
     CJSsurv  = c(expand.grid(a = 1:nAgeC, t = c(1, 5, 9, 13)) %>% 
-                   mutate(param = paste0('s[', a, ', ', t, ']')) %>% 
+                   mutate(param = paste0('S[', a, ', ', t, ']')) %>% 
                    pull(param)),
     
-    rates    = c(paste0('b[', 1:(ntimes-1), ']'),
-                 paste0('s.PY[', 1:(ntimes-1), ']'))
-                 # paste0('s.YAF[', 1:(ntimes-1), ']'),
-                 # expand.grid(a = 1:2, t = 1:(ntimes-1)) %>% 
-                 #   mutate(param = paste0('s.SA[', a, ', ', t, ']')) %>% 
+    rates    = c(paste0('B[', 1:(nYear-1), ']'),
+                 paste0('sPY[', 1:(nYear-1), ']'))
+                 # paste0('sYAF[', 1:(nYear-1), ']'),
+                 # expand.grid(a = 1:2, t = 1:(nYear-1)) %>% 
+                 #   mutate(param = paste0('sSA[', a, ', ', t, ']')) %>% 
                  #   pull(param),
-                 # expand.grid(a = 1:nAge, t = 1:(ntimes-1)) %>% 
-                 #   mutate(param = paste0('s.AD[', a, ', ', t, ']')) %>% 
+                 # expand.grid(a = 1:nAge, t = 1:(nYear-1)) %>% 
+                 #   mutate(param = paste0('sAD[', a, ', ', t, ']')) %>% 
                  #   pull(param)),
     
-    # popsizes = c(paste0('YAF[', 1:ntimes, ']'),
-    #              expand.grid(a = 1:2, t = 1:(ntimes-1)) %>% 
-    #                mutate(param = paste0('SA[', a, ', ', t, ']')) %>% 
+    # popsizes = c(paste0('nYAF[', 1:nYear, ']'),
+    #              expand.grid(a = 1:2, t = 1:(nYear-1)) %>% 
+    #                mutate(param = paste0('nSA[', a, ', ', t, ']')) %>% 
     #                pull(param),
-    #              expand.grid(a = 1:nAge, t = 1:(ntimes-1)) %>% 
-    #                mutate(param = paste0('AD[', a, ', ', t, ']')) %>% 
+    #              expand.grid(a = 1:nAge, t = 1:(nYear-1)) %>% 
+    #                mutate(param = paste0('nAD[', a, ', ', t, ']')) %>% 
     #                pull(param),
-    #              paste0('Ntot[', 1:ntimes, ']'))
+    #              paste0('nTOT[', 1:nYear, ']'))
     )
   
   # set parameters for plotting time series of posterior summaries
   plotTS.rates <- list(
-    ParamNames = c('b', 's.PY', 's.YAF', 's.SA', 's.AD'),
+    ParamNames = c('B', 'sPY', 'sYAF', 'sSA', 'sAD'),
     ParamLabels = c('Breeding rate',
                     'Survival to pouch exit',
                     'Survival of young-at-foot (0 yrs)',
@@ -162,7 +174,7 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
                     'Survival of adults (3+ yrs)'))
   
   plotTS.pops <- list(
-    ParamNames = c('YAF', 'SA', 'AD', 'Ntot'),
+    ParamNames = c('nYAF', 'nSA', 'nAD', 'nTOT'),
     ParamLabels = c('# of young-at-foot', '# of subadults',
                     '# of adults', 'Total # of females'))
   
@@ -237,7 +249,7 @@ compareModels <- function(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008, max
   }
 }
 
-# test <- compareModels(nAge = 22, nAgeC = 5, ntimes = 17, minYear = 2008,
+# test <- compareModels(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008,
 #                       postPaths = "results/IPM_CJS.rds", modelNames = c("IPM/CJS"),
 #                       plotFolder = "figures", returnSumData = TRUE)
 
