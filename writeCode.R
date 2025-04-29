@@ -93,7 +93,7 @@ writeCode <- function(){
       }
       # then reproduction
       for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(B[t+1] * Ra[a, t+1], nAD[a, t+1])
+        nYAFa[a, t+1] ~ dbin(B[t] * Ra[a-1, t], nAD[a-1, t])
       }
       nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
       nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
@@ -102,14 +102,8 @@ writeCode <- function(){
     # priors
     sAD[1:2, 1:(nYear-1)] <- 0
     
-    # TODO LONG-TERM:
-    # name params as so directly in CJS model
-    for(t in 1:nYear){
-      B[t] ~ dunif(0.5, 1)
-    }
-    
     for(t in 1:(nYear-1)){
-      # B[t]       ~ dunif(0.5, 1)
+      B[t]       ~ dunif(0.5, 1)
       sYAF[t]   <- S[1, t]
       sSA[1, t] <- S[2, t]
       sSA[2, t] <- S[2, t]
@@ -218,6 +212,9 @@ writeCode <- function(){
     
     #### Likelihood & constraints ####
     # individual RS function
+    Mu.Ri[1:2] <- 0
+    Mu.Ra[1:2] <- 0
+    
     for(x in 1:nR){
       R[x] ~ dbern(Ri[x])
       logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
@@ -232,7 +229,7 @@ writeCode <- function(){
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
     for(a in 1:nAge){
-      for(t in 1:nYear){
+      for(t in 1:(nYear-1)){
         logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
           # BetaD.R * dens[t] +
           # BetaV.R * veg[t] +
@@ -243,7 +240,7 @@ writeCode <- function(){
     
     ##### Priors ####
     # priors for fixed effects
-    for(a in 1:nAge){
+    for(a in 3:nAge){
       Mu.Ri[a] ~ dunif(0, 1)
       Mu.Ra[a] ~ dunif(0, 1)
     }
@@ -257,7 +254,7 @@ writeCode <- function(){
       EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
     }
     
-    for(t in 1:nYear){
+    for(t in 1:(nYear-1)){
       EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
       EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
     }

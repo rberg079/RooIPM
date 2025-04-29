@@ -17,8 +17,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   # load libraries
   library(readxl)
-  library(tidyverse)
   library(lubridate)
+  suppressPackageStartupMessages(library(tidyverse))
   
   # load data
   density <- read_excel(dens.data)

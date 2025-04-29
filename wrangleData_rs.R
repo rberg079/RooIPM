@@ -29,14 +29,14 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   # load libraries
   library(readxl)
-  library(tidyverse)
+  suppressPackageStartupMessages(library(tidyverse))
   
   # load data
-  rs <- read_excel(rs.data)
+  rs <- suppressWarnings(read_excel(rs.data))
   # obs <- read_excel(obs.data)
   
   # clean up
-  rs <- rs %>% 
+  rs <- suppressWarnings(rs %>% 
     select(ID, Age, Year, Capture, Exclude, Weight, Leg, Teeth, 
            Repro, Parturition, PYid, SurvLPY, SurvWN, SurvNov1, SurvNov2,
            PYLastObs, Dead, HRDead) %>% 
@@ -46,6 +46,10 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
            # remove first born of "twins", often dropped at March capture
            PYid != 308 & PYid != 340 & PYid != 672 & PYid != 885 & PYid != 900 &
            PYid != 891 & PYid != 912 & PYid != 1023 & PYid != 1106 | is.na(PYid)) %>% 
+    # subtract 1 to Year & Age so reproductive attempts are associated with the year
+    # in which they began rather than with the cohort year the young is born into
+    # so this is all aligned with survival & environmental data
+    mutate(Year = Year-1, Age = Age-1) %>% 
     rename(Mass = Weight) %>% 
     mutate(Mass = as.numeric(Mass),
            # limit to morphometric data collected during the main field season
@@ -87,7 +91,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
              is.na(SurvSep2) & PYLastObs > as.Date(paste0(Year+1, "-09-01")) ~ 1,
              is.na(SurvSep2) & PYLastObs < as.Date(paste0(Year+1, "-09-01")) ~ 0,
              is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
-             TRUE ~ SurvSep2))
+             TRUE ~ SurvSep2)))
   
   # limit to females of known age or not
   if(known.age){
@@ -98,7 +102,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   ## Calculate individual covariates -------------------------------------------
 
   # age class & birthdate
-  rs <- rs %>% 
+  rs <- suppressWarnings(rs %>% 
     mutate(Age = as.numeric(Age),
            AgeC = case_when(Age == 0 ~ 1,             # yaf
                             between(Age, 1, 2) ~ 2,   # subadult
@@ -110,7 +114,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
            CohortDay = as.numeric(difftime(Parturition, CohortStart, units = "days")) + 1,
            PYLastObs = case_when(is.na(PYLastObs) ~ NA_Date_,
                                  TRUE ~ as.Date(paste0("01-", PYLastObs),
-                                                format = "%d-%m-%Y") %m+% months(1) - days(1)))
+                                                format = "%d-%m-%Y") %m+% months(1) - days(1))))
   
   # # condition & mass gain
   # tmp <- rs %>%
@@ -244,14 +248,15 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   ## Return (mostly) scaled data -----------------------------------------------
   
+  # TEMPORARY
+  rs <- rs %>% filter(Year > 2007)
+  
   id   <- as.integer(rs$ID)
   id   <- match(id, sort(unique(id)))
   year <- as.integer(factor(rs$Year))
-
-  # age by default is age in Sept when PY would be first caught
-  # we rather need age before breeding & survival period of PY
-  age.R  <- as.integer(rs$Age) # ... hence -1 here... OR NOT!
-  ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
+  
+  age.R <- as.integer(rs$Age) # now age in Sept before breeding season!
+  ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
   nR    <- length(id)
   nID.R <- length(unique(id))

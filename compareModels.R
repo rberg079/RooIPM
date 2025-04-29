@@ -19,17 +19,17 @@
 compareModels <- function(nAge = 22, nAgeC = 5, nYear = 17, minYear = 2008, maxYear,
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # for testing purposes
-  nAge = 17
-  nAgeC = 5
-  nYear = 17
-  minYear = 2008
-  maxYear <- minYear + nYear - 1
-  postPaths = "results/IPM_CJS.rds"
-  modelNames = c("IPM/CJS")
-  plotFolder = "figures"
-  returnSumData = TRUE
-  nModels <- length(modelNames)
+  # # for testing purposes
+  # nAge = 18
+  # nAgeC = 5
+  # nYear = 17
+  # minYear = 2008
+  # maxYear <- minYear + nYear - 1
+  # postPaths = "results/IPM_CJS.rds"
+  # modelNames = c("IPM/CJS")
+  # plotFolder = "figures"
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------

@@ -56,7 +56,7 @@ myData  <- list(obs = svData$obs,
 myConst <- list(nR = rsData$nR,
                 nID.S = svData$nID,
                 nID.R = rsData$nID,
-                nYear = rsData$nYear,
+                nYear = svData$nYear,
                 nAge = rsData$nAge,
                 nAgeC = rsData$nAgeC,
                 noAge = svData$noAge,
@@ -106,7 +106,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params = c(
   # Population model
-  'S', 'B', 'sPY', 'sYAF', 'sSA', 'sAD', # yearly vital rates
+  'S', 'B', 'sYAF', 'sSA', 'sAD', # yearly vital rates
   'nYAF', 'nSA', 'nAD', 'nTOT',               # population sizes
   
   # Survival model
@@ -116,10 +116,10 @@ params = c(
   'Gamma.S', 'Xi.S', 'Sigma.S',            # random effects
   
   # Reproductive success model
-  "Mu.rsI", "Mu.rsA",                             # mean reproductive success
-  # 'BetaD.rs', 'BetaV.rs', 'BetaW.rs',           # covariate effects
-  'EpsilonI.rsI', 'EpsilonT.rsI', 'EpsilonT.rsA', # random effects
-  'SigmaI.rsI', 'SigmaT.rsI', 'SigmaT.rsA')       # random effects
+  "Mu.Ri", "Mu.Ra",                             # mean reproductive success
+  # 'BetaD.R', 'BetaV.R', 'BetaW.R',           # covariate effects
+  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', # random effects
+  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra')       # random effects
 
 # select MCMC settings
 if(testRun){
@@ -181,7 +181,7 @@ MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE,
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('S', 'B', 'sPY'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('S', 'B'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
@@ -190,7 +190,7 @@ MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Epsilon.O', 'Sigma.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('S', 'B', 'sPY'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('S', 'B'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 
@@ -208,7 +208,7 @@ out.mat <- as.matrix(samples)
 table.params <- c(
   paste0('nYAF[', 1:nYear, ']'),
   paste0('nSA[', rep(1:2, each = nYear), ', ', rep(1:nYear, times = 2), ']'),
-  paste0('nAD[', rep(1:(nAge+2), each = nYear), ', ', rep(1:nYear, times = (nAge+2)), ']'))
+  paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'))
 
 # table.params <- list(
 #   nYAF = c(paste0('nYAF[', 1:nYear, ']')),

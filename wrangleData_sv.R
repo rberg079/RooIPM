@@ -11,12 +11,17 @@
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
+  # # for testing purposes
+  # surv.data = "data/PromSurvivalOct24.xlsx"
+  # yafs.data = "data/RSmainRB_Mar25.xlsx"
+  # surv.sheet = "YEARLY SURV"
+  
   
   ## Set up --------------------------------------------------------------------
   
   # load libraries
   library(readxl)
-  library(tidyverse)
+  suppressPackageStartupMessages(library(tidyverse))
   
   # load data
   surv <- read_excel(surv.data, sheet = surv.sheet)
@@ -96,13 +101,13 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # add yafs_old
   year_cols <- 2:18
   
-  for (i in 1:nrow(yafs_old)) {
+  for(i in 1:nrow(yafs_old)) {
     id <- yafs_old$ID[i]
     obs_row <- which(obs$ID == id)
     
-    if (length(obs_row) == 1) {
-      for (j in year_cols) {
-        if (!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
+    if(length(obs_row) == 1) {
+      for(j in year_cols) {
+        if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
           obs[obs_row, j] <- 1
         }
       }
@@ -138,13 +143,13 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # add yafs_old
   year_cols <- 2:18
   
-  for (i in 1:nrow(yafs_old)) {
+  for(i in 1:nrow(yafs_old)) {
     who <- yafs_old$ID[i]
     state_row <- which(state$ID == who)
     
-    if (length(state_row) == 1) {
-      for (j in year_cols) {
-        if (!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
+    if(length(state_row) == 1) {
+      for(j in year_cols) {
+        if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
           state[state_row, j] <- 1
         }
       }
@@ -178,7 +183,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   # roos that were missed one year but seen the next were alive
   state[, 4:20] <- t(apply(state[, 4:20], 1, function(row) {
     ones <- which(row == 1)
-    if (length(ones) >= 2) {
+    if(length(ones) >= 2) {
       row[min(ones):max(ones)] <- 1
     }
     return(row)
@@ -251,7 +256,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   nYear <- ncol(state)
   
   nAgeC  <- max(ageC, na.rm = T)
-  noAge   <- which(is.na(age[,ncol(age)]))
+  noAge   <- which(is.na(age.S[,ncol(age)]))
   nNoAge <- length(noAge)
   
   first <- as.numeric(id$first[!noInfo])

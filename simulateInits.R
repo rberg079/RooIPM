@@ -20,12 +20,12 @@
 #'
 #' @examples
 
-simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, nAgeC = 5,
+simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, nAgeC = 5,
                           age.R, dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
   
   # # for testing purposes
-  # library(tidyverse)
   # library(readxl)
+  # suppressPackageStartupMessages(library(tidyverse))
   # 
   # source("wrangleData_en.R")
   # enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
@@ -46,7 +46,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # nID.S <- svData$nID
   # nID.R <- rsData$nID
   # nYear <- 17
-  # nAge <- 19
+  # nAge <- 18
   # nAgeC <- 5
   # age.R <- rsData$age.R
   # dens <- enData$dens
@@ -118,8 +118,8 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   
   ## Reproductive success model
   EpsilonI.Ri <- rnorm(nID.R, 0, 1)
-  EpsilonT.Ri <- rnorm(nYear, 0, 1)
-  EpsilonT.Ra <- rnorm(nYear, 0, 1)
+  EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
+  EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
   
   SigmaI.Ri <- runif(1, 0, 10)
   SigmaT.Ri <- runif(1, 0, 10)
@@ -161,9 +161,9 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     )
   }
   
-  Ra <- matrix(0, nrow = nAge, ncol = nYear)
+  Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
   for(a in 1:nAge) {
-    for(t in 1:nYear) {
+    for(t in 1:(nYear-1)) {
       Ra[a, t] <- plogis(
         qlogis(Mu.Ra[a]) +
           # BetaD.rs * dens[t] +
@@ -176,7 +176,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   
   ## Population model
   # breeding rate
-  B <- runif(nYear, 0.5, 1) # raw means span 0.58-0.92
+  B <- runif(nYear-1, 0.5, 1) # raw means span 0.58-0.92
   
   # survival of PYs
   # to 1st Sept 1 when they become YAFs
@@ -221,17 +221,17 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  nYAF    <- c(5*5, rep(NA, times = nYear-1))
-  nYAFa   <- matrix(0, nrow = nAge, ncol = nYear)
+  nYAF    <- c(5*5, rep(NA, times = nYear-1)); nYAF
+  nYAFa   <- matrix(0, nrow = nAge, ncol = nYear); nYAFa
   
   nSA     <- matrix(NA, nrow = 2, ncol = nYear)
-  nSA[,1] <- c(6*5, 5*5)
+  nSA[,1] <- c(6*5, 5*5); nSA
   
   nAD     <- matrix(0, nrow = nAge, ncol = nYear)
-  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-10))
+  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-10)); nAD
   
   nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:nAge,1]),
-              rep(NA, times = nYear-1))
+              rep(NA, times = nYear-1)); nTOT
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
@@ -243,11 +243,17 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     }
     # then reproduction
     for(a in 3:nAge){
-      nYAFa[a, t+1] <- rbinom(1, nAD[a, t+1], B[t+1] * Ra[a, t+1])
+      nYAFa[a, t+1] <- rbinom(1, nAD[a-1, t], B[t] * Ra[a-1, t])
     }
     nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
     nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
   }
+  
+  # nYAF
+  # nYAFa
+  # nSA
+  # nAD
+  # nTOT
   
   
   ## Assemble myinits list -----------------------------------------------------
@@ -284,6 +290,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
               S = S,
               Mu.Ri = Mu.Ri,
               Mu.Ra = Mu.Ra,
+              Ri = Ri,
               
               B = B,
               Ra = Ra,
