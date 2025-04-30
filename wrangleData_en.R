@@ -12,11 +12,11 @@
 
 wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
-  # # for testing purposes
-  # dens.data = "data/WPNP_Methods_Results_January2025.xlsx"
-  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
-  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
-  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  # for testing purposes
+  dens.data = "data/abundanceData_Proteus.csv"
+  veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
+  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
+  wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
   
   
   ## Set up --------------------------------------------------------------------
@@ -27,7 +27,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   suppressPackageStartupMessages(library(tidyverse))
   
   # load data
-  density <- read_excel(dens.data)
+  density <- read_csv(dens.data, show_col_types = F)
   biomass <- suppressMessages(read_excel(veg.data))
   weather <- suppressWarnings(read_excel(wea.data))
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
@@ -35,30 +35,15 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   ## Density data --------------------------------------------------------------
   
-  density <- density %>%
-    rename(Date = "Month / year",
-           Dens = "Mean density",
-           DensLCI = "L 95% CI density",
-           DensUCI = "U 95% CI density",
-           Area = "Area sampled (ha)") %>% 
-    mutate(Date = ymd(Date),
-           Year = year(Date),
-           Month = month(Date),
-           Season = case_when(Month <= 2  ~ "Sum",  # Jan & Feb
-                              Month <= 5  ~ "Aut",  # Mar to May
-                              Month <= 8  ~ "Win",  # Jun to Aug
-                              Month <= 11 ~ "Spr",  # Sep to Nov
-                              Month == 12 ~ "Sum",  # Dec
-                              TRUE ~ NA_character_),
-           NextYr = Year +1,
-           SeasYr = ifelse(Month == 12,
-                           paste(Season, NextYr, sep = ""),
-                           paste(Season, Year, sep = ""))) %>% 
-    filter(Date > "2008-11-30" & Date < "2025-03-01") %>% 
-    # approximate sem using CIs (G. Pigeon's code)
-    mutate(SE = (DensUCI-DensLCI)/(qnorm(0.975)*2),
-           DensSE = SE/sd(Dens, na.rm = T)) %>%
-    select(SeasYr, Dens, DensSE)
+  density <- density %>% 
+    rename(Ab = "N",
+           AbE = "SD",
+           Dens = "D",
+           DensE = "SD_D") %>% 
+    mutate(NextYr = Year +1,
+           SeasYr = paste0(substr(Season, 1, 3), Year)) %>% 
+    select(SeasYr, Ab, AbE, Dens, DensE) %>% 
+    filter(!is.na(Ab))
   
   
   ## Biomass data --------------------------------------------------------------
@@ -140,7 +125,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
     fill(Veg, .direction = "up") %>%
     fill(VegSE, .direction = "up") %>% 
     select(Date, Year, Month, Day, SeasYr,
-           Dens, DensSE, Veg, VegSE, Rain) %>% 
+           Ab, AbE, Dens, DensE, Veg, VegSE, Rain) %>% # DensSE
     mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
     left_join(wind, by = c("Date", "Year", "Month", "Day"))
@@ -158,7 +143,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, Dens, DensSE, Veg, VegSE, Warns.18))
+    distinct(Date, Year, Month, Day, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18)) # DensSE
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -169,14 +154,14 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
-    filter(!is.na(Dens)) %>% 
-    distinct(Year, Dens, DensSE) %>% 
-    mutate(DensSE = DensSE^2) %>% 
-    group_by(Year) %>% 
-    mutate(Dens = mean(Dens),
-           DensSE = sqrt(sum(DensSE)) / 5) %>% 
+    filter(!is.na(Ab)) %>% 
+    group_by(Year) %>%
+    summarise(Ab = mean(Ab),
+              AbE = sqrt(sum(AbE^2)/n()),
+              Dens = mean(Dens),
+              DensE = sqrt(sum(DensE^2)/n())) %>% 
     ungroup() %>% 
-    distinct(Year, Dens, DensSE)
+    distinct(Year, Ab, AbE, Dens, DensE)
   
   veg <- env %>% 
     filter(!is.na(Veg)) %>% 
@@ -203,17 +188,19 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
     left_join(veg, by = "Year") %>% 
     left_join(win, by = "Year") %>% 
     mutate(VegRoo = Veg / Dens,
-           VegRooSE = abs(VegRoo)*sqrt((VegSE / Veg)^2+(DensSE / Dens)^2))
+           VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) # DensSE
   
   
   ## Return scaled data --------------------------------------------------------
   
   year <- seq(from = 1, to = 17, by = 1)
   
+  ab   <- as.numeric(scale(env$Ab))
   dens <- as.numeric(scale(env$Dens))
   veg  <- as.numeric(scale(env$Veg))
   
-  densE <- as.numeric(ifelse(is.na(env$DensSE), 2, env$DensSE/sd(env$Dens, na.rm = T)))
+  abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE/sd(env$Ab, na.rm = T)))
+  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T))) # DensSE
   vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
   
   win <- as.numeric(scale(env$Win))
@@ -223,8 +210,10 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   nNoWin  <- sum(is.na(win))
   
   return(list(year = year,
+              ab = ab,
               dens = dens,
               veg = veg,
+              abE = abE,
               densE = densE,
               vegE = vegE,
               win = win,
@@ -233,10 +222,4 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
               nNoWin = nNoWin))
   
 }
-
-# test <- wrangleData_env(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
-#                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-#                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-#                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
-# test
 

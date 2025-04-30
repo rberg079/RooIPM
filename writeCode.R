@@ -93,7 +93,7 @@ writeCode <- function(){
       }
       # then reproduction
       for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(B[t] * Ra[a-1, t], nAD[a-1, t])
+        nYAFa[a, t+1] ~ dbin(B[t] * 0.5 * Ra[a-1, t], nAD[a-1, t]) # 0.5 assuming even sex ratio at birth (nYAF becomes number of female YAFs)
       }
       nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
       nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
@@ -120,6 +120,17 @@ writeCode <- function(){
         sAD[a, t] <- S[5, t]
       }
     }
+    
+    
+    ## ABUNDANCE MODEL
+    ## -------------------------------------------------------------------------
+    
+    # TODO: ADD NEW PARAMETERS TO LIST ABOVE
+    #### Likelihood ####
+    for(t in 1:nYear){
+      Ab[t] ~ dnorm(nTOT[t] / PropF[t], sd = AbE[t]) # PropF = proportion of roos observed that are F at that time
+    }
+    
     
     ## SURVIVAL MODEL (CJS)
     ## -------------------------------------------------------------------------

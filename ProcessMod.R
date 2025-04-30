@@ -22,7 +22,7 @@ registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
-enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
@@ -47,9 +47,11 @@ myData  <- list(obs = svData$obs,
                 year.R = rsData$year,
                 age.R = rsData$age.R,
                 
+                ab = enData$ab,
                 dens = enData$dens,
                 veg = enData$veg,
                 win = enData$win,
+                abE = enData$abE,
                 densE = enData$densE,
                 vegE = enData$vegE)
 
