@@ -25,7 +25,9 @@ source("wrangleData_en.R")
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
+                         obs.data  = "data/PromObs_2008-2019.xlsx",
+                         list      = "data/PromlistAllOct24.xlsx")
 
 source("wrangleData_sv.R")
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
@@ -51,6 +53,7 @@ myData  <- list(obs = svData$obs,
                 dens = enData$dens,
                 veg = enData$veg,
                 win = enData$win,
+                propF = enData$propF,
                 abE = enData$abE,
                 densE = enData$densE,
                 vegE = enData$vegE)
@@ -63,8 +66,10 @@ myConst <- list(nR = rsData$nR,
                 nAgeC = rsData$nAgeC,
                 noAge = svData$noAge,
                 nNoAge = svData$nNoAge,
+                nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
-                nNoWin = enData$nNoWin,
+                # nNoWin = enData$nNoWin,
+                nNoProp = enData$nNoProp,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
@@ -92,16 +97,14 @@ for(c in 1:nchains){
     nYear = myConst$nYear,
     nAge = myConst$nAge,
     nAgeC = myConst$nAgeC,
-    
+    id.R = myData$id.R,
+    year.R = myData$year.R,
     age.R = myData$age.R,
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
-    
-    nNoAge = myConst$nNoAge,
-    # nNoDens = myConst$nNoDens,
-    nNoVeg = myConst$nNoVeg,
-    nNoWin = myConst$nNoWin
+    propF = myData$propF,
+    nNoAge = myConst$nNoAge
     )
 }
 
@@ -152,6 +155,10 @@ samples <- nimbleMCMC(code = myCode,
 dur <- Sys.time() - start; dur
 beep(2)
 
+# [Note] This model is not fully initialized. This is not an error.
+# To see which variables are not initialized, use model$initializeInfo().
+# For more information on model initialization, see help(modelInitialization).
+
 # MCMC output
 out.mcmc <- as.mcmc.list(samples)
 
@@ -167,6 +174,10 @@ library(MCMCvis)
 library(corrplot)
 library(ggplot2)
 library(scales)
+
+# load results
+# fit <- read_rds('results/IPM_CJS.rds')
+# out.mcmc <- fit$out.mcmc
 
 # summary(out.mcmc) # cannot handle NAs
 

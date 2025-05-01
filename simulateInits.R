@@ -6,14 +6,13 @@
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
-#' @param age.R vector of length nR of age of individuals in the analysis.
+#' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
+#' @param year.R vector of length nR of years in the reproductive success analysis.
+#' @param age.R vector of length nR of age of individuals in the reproductive success analysis.
 #' @param dens vector of lenth nYear of population density data.
 #' @param veg vector of lenth nYear of available vegetation data.
 #' @param win vector of lenth nYear of winter severity data.
 #' @param nNoAge integer. Number of individuals of unknown age in the analysis. nNoAge = 0 by default.
-#' @param nNoDens integer. Number of years when population density is unknown. nNoDens = 0 by default.
-#' @param nNoVeg integer. Number of years when available vegetation is unknown. nNoVeg = 0 by default.
-#' @param nNoWin integer. Number of years when winter severity is unknown. nNoWin = 0 by default.
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
@@ -21,17 +20,19 @@
 #' @examples
 
 simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, nAgeC = 5,
-                          age.R, dens, veg, win, nNoAge = 0, nNoDens = 0, nNoVeg = 0, nNoWin = 0){
+                          id.R, year.R, age.R, dens, veg, win, propF, nNoAge = 0){
   
   # # for testing purposes
   # library(readxl)
   # suppressPackageStartupMessages(library(tidyverse))
   # 
   # source("wrangleData_en.R")
-  # enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2025.xlsx",
+  # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
   #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
   #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv")
+  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
+  #                          obs.data  = "data/PromObs_2008-2019.xlsx",
+  #                          list      = "data/PromlistAllOct24.xlsx")
   # 
   # source("wrangleData_rs.R")
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
@@ -48,14 +49,14 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # nYear <- 17
   # nAge <- 18
   # nAgeC <- 5
+  # id.R <- rsData$id
+  # year.R <- rsData$year
   # age.R <- rsData$age.R
   # dens <- enData$dens
   # veg <- enData$veg
   # win <- enData$win
+  # propF <- enData$propF
   # nNoAge <- svData$nNoAge
-  # nNoDens <- enData$nNoDens
-  # nNoVeg <- enData$nNoVeg
-  # nNoWin <- enData$nNoWin
   
   if(missing(age.R)){
     age.R <- integer(nR)
@@ -65,15 +66,15 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   ## Simulate latent states for input data -------------------------------------
   
   ## Survival model
-  # true environment
-  # dens.hat <- ifelse(is.na(dens), rnorm(length(dens), 0, .1), dens)
-  # veg.hat  <- ifelse(is.na(veg), rnorm(length(veg), 0, .1), veg)
-  
-  dens.hat <- rnorm(nYear-1, 0, 1)
-  veg.hat <- rnorm(nYear-1, 0, 1)
-  
-  # unobserved ages
+  # missing values
   ageM <- sample(3:8, size = nNoAge, replace = T)
+  dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
+  veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
+  propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
+  
+  # true environment
+  dens.hat <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
+  veg.hat  <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
   
   # latent states
   Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
@@ -83,7 +84,11 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   ## Simulate vital rate covariate effects -------------------------------------
   
   ## Survival model
-  BetaA.S <- rnorm(nAgeC, 0, 1)
+  BetaA.S <- c(rnorm(1, 0.6, 0.2),
+               rnorm(1, 2.3, 0.2),
+               rnorm(1, 2.8, 0.2),
+               rnorm(1, 2.4, 0.2),
+               rnorm(1, 1.0, 0.2))
   BetaD.S <- rnorm(nAgeC, 0, 1)
   BetaV.S <- rnorm(nAgeC, 0, 1)
   # BetaDV.S <- rnorm(nAgeC, 0, 1)
@@ -156,8 +161,8 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
         # BetaD.rs * dens[year[x]] +
         # BetaV.rs * veg[year[x]] +
         # BetaW.rs * win[year[x]] +
-        EpsilonI.Ri[x] +
-        EpsilonT.Ri[x]
+        EpsilonI.Ri[id.R[x]] +
+        EpsilonT.Ri[year.R[x]]
     )
   }
   
@@ -178,16 +183,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # breeding rate
   B <- runif(nYear-1, 0.5, 1) # raw means span 0.58-0.92
   
-  # survival of PYs
-  # to 1st Sept 1 when they become YAFs
-  # sPY <- runif(nYear-1, 0.1, 1) # raw means span 0.24-0.95
-  
-  # Survival of YAFs
-  # to 2nd Sept 1 when they become SA1s
+  # Survival of YAFs to 2nd Sept 1 when they become SA1s
   sYAF <- S[1, 1:(nYear-1)] # raw means span 0.01-0.88
   
   # Survival of SA1s to SA2 & SA2 to AD3
-  # 2nd age class in our published CJS model
   sSA <- rbind(S[2, 1:(nYear-1)], S[2, 1:(nYear-1)])
   
   # Survival of all ADs
@@ -245,15 +244,15 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
     for(a in 3:nAge){
       nYAFa[a, t+1] <- rbinom(1, nAD[a-1, t], B[t] * Ra[a-1, t])
     }
-    nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
+    # nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
+    nYAF[t+1] <- ifelse(sum(nYAFa[3:nAge, t+1]) < 4, 4, sum(nYAFa[3:nAge, t+1]))
     nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
   }
   
-  # nYAF
-  # nYAFa
-  # nSA
-  # nAD
-  # nTOT
+  ab <- pmax((nTOT / pmax(propF, .01)) + rnorm(length(nTOT), 0, 2), 1)
+  # pmax(propF, 0.01) returns 0.01 if propF falls below it
+  # pmax(..., 1) returns 1 if ab falls below it
+  # so propF is at least 1% & ab at least 1
   
   
   ## Assemble myinits list -----------------------------------------------------

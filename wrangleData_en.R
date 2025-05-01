@@ -4,19 +4,22 @@
 #' @param veg.data path to xlsx file of vegetation data to use. As of Apr 2025: "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx".
 #' @param wea.data path to xlsx file of weather data to use. As of Apr 2025: "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx".
 #' @param wind.data path to csv file of wind data to use. As of Apr 2025: "data/POWER_Point_Daily_20080101_20241231_10M.csv".
+#' @param obs.data path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2019.xlsx"
 #'
-#' @returns a list containing year, veg, dens, vegE, densE, nNoVeg, & nNoDens.
+#' @returns a list containing year, ab, dens, veg, win, abE, densE, vegE, nNoDens, nNoVeg, & nNoWin.
 #' @export
 #'
 #' @examples
 
-wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
+wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list){
   
-  # for testing purposes
-  dens.data = "data/abundanceData_Proteus.csv"
-  veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
-  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
-  wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  # # for testing purposes
+  # dens.data = "data/abundanceData_Proteus.csv"
+  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
+  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
+  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  # obs.data = "data/PromObs_2008-2019.xlsx"
+  # list = "data/PromlistAllOct24.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -31,6 +34,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   biomass <- suppressMessages(read_excel(veg.data))
   weather <- suppressWarnings(read_excel(wea.data))
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
+  obs <- suppressWarnings(read_excel(obs.data))
+  list <- suppressMessages(read_excel(list))
   
   
   ## Density data --------------------------------------------------------------
@@ -117,6 +122,23 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
     select(-PRECTOTCORR)
   
   
+  ## Observation data ----------------------------------------------------------
+  
+  list <- list %>% 
+    rename(ID = "I.D.") %>% 
+    select(ID, Sex) %>% 
+    filter(Sex == "F" | Sex == "M") %>% 
+    mutate(Sex = ifelse(Sex == "F", 1, 0))
+    
+  obs <- obs %>% 
+    select(Date, Year, Month, Day, ID) %>% 
+    mutate(Day = yday(Date)) %>% 
+    filter(between(Day, 213, 304)) %>% 
+    left_join(list, by = "ID") %>% 
+    group_by(Year) %>% 
+    summarise(PropF = mean(Sex == 1, na.rm = T), .groups = "drop")
+  
+  
   ## Join it all ---------------------------------------------------------------
   
   env <- weather %>% 
@@ -143,7 +165,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18)) # DensSE
+    distinct(Date, Year, Month, Day, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18))
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -185,41 +207,46 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data){
   
   # join & calculate vegetation per capita
   env <- dens %>% 
+    rbind(c(2024, NA, NA, NA, NA)) %>% 
     left_join(veg, by = "Year") %>% 
     left_join(win, by = "Year") %>% 
     mutate(VegRoo = Veg / Dens,
-           VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) # DensSE
+           VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) %>% 
+    left_join(obs, by = "Year")
   
   
   ## Return scaled data --------------------------------------------------------
   
   year <- seq(from = 1, to = 17, by = 1)
   
-  ab   <- as.numeric(scale(env$Ab))
+  ab   <- as.numeric(env$Ab)
   dens <- as.numeric(scale(env$Dens))
   veg  <- as.numeric(scale(env$Veg))
+  win <- as.numeric(scale(env$Win))
+  propF <- as.numeric(env$PropF)
   
   abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE/sd(env$Ab, na.rm = T)))
-  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T))) # DensSE
+  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T)))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
-  
-  win <- as.numeric(scale(env$Win))
   
   nNoDens <- sum(is.na(dens))
   nNoVeg  <- sum(is.na(veg))
   nNoWin  <- sum(is.na(win))
+  nNoProp <- sum(is.na(propF))
   
   return(list(year = year,
               ab = ab,
               dens = dens,
               veg = veg,
+              win = win,
+              propF = propF,
               abE = abE,
               densE = densE,
               vegE = vegE,
-              win = win,
               nNoDens = nNoDens,
               nNoVeg = nNoVeg,
-              nNoWin = nNoWin))
+              nNoWin = nNoWin,
+              nNoProp = nNoProp))
   
 }
 

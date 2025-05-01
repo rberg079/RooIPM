@@ -93,9 +93,10 @@ writeCode <- function(){
       }
       # then reproduction
       for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(B[t] * 0.5 * Ra[a-1, t], nAD[a-1, t]) # 0.5 assuming even sex ratio at birth (nYAF becomes number of female YAFs)
+        # assuming even sex ratio at birth
+        nYAFa[a, t+1] ~ dbin(B[t] * 0.5 * Ra[a-1, t], nAD[a-1, t])
       }
-      nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
+      nYAF[t+1] <- sum(nYAFa[3:nAge, t+1]) # number of female YAFs
       nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
     }
     
@@ -128,7 +129,11 @@ writeCode <- function(){
     # TODO: ADD NEW PARAMETERS TO LIST ABOVE
     #### Likelihood ####
     for(t in 1:nYear){
-      Ab[t] ~ dnorm(nTOT[t] / PropF[t], sd = AbE[t]) # PropF = proportion of roos observed that are F at that time
+      ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
+    }
+    
+    for(p in 1:nNoProp){
+      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
     }
     
     
@@ -168,7 +173,12 @@ writeCode <- function(){
     
     for(m in 1:nNoVeg){
       # veg[m] <- 0
-      vegM[m] ~ dnorm(0, sd = 2)
+      veg[m] ~ dnorm(0, sd = 2)
+    }
+    
+    for(n in 1:nNoDens){
+      # dens[n] <- 0
+      dens[n] ~ dnorm(0, sd = 2)
     }
     
     # estimate missing ages
