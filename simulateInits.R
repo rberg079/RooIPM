@@ -151,8 +151,8 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
 
   ## Reproductive success model
   # age-specific reproductive success
-  Mu.Ri <- runif(nAge, 0, 1)
-  Mu.Ra <- runif(nAge, 0, 1)
+  Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
+  Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
   
   Ri <- numeric(nR)
   for(x in 1:nR) {
@@ -180,27 +180,26 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   }
   
   ## Population model
-  # breeding rate
+  # breeding rate (or creation of a jellybean which will be detected)
   B <- runif(nYear-1, 0.5, 1) # raw means span 0.58-0.92
   
-  # Survival of YAFs to 2nd Sept 1 when they become SA1s
+  # survival of YAFs to 2nd Sept 1 when they become SA1s
   sYAF <- S[1, 1:(nYear-1)] # raw means span 0.01-0.88
   
-  # Survival of SA1s to SA2 & SA2 to AD3
-  sSA <- rbind(S[2, 1:(nYear-1)], S[2, 1:(nYear-1)])
+  # survival of SA1s to SA2 (now AD2)
+  sSA <- S[2, 1:(nYear-1)]
   
-  # Survival of all ADs
+  # survival of all ADs
   sAD <- matrix(0, nrow = nAge, ncol = nYear-1)
+  sAD[2, 1:(nYear-1)] <- S[2, 1:(nYear-1)]
   
-  for(a in 3:6){
+  for(a in 3:6){ # prime-aged
     sAD[a, 1:(nYear-1)] <- S[3, 1:(nYear-1)]
   }
-  
-  for(a in 7:9){
+  for(a in 7:9){ # pre-senescent
     sAD[a, 1:(nYear-1)] <- S[4, 1:(nYear-1)]
   }
-  
-  for(a in 10:nAge){
+  for(a in 10:nAge){ # senescent
     sAD[a, 1:(nYear-1)] <- S[5, 1:(nYear-1)]
   }
   
@@ -220,46 +219,54 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  nYAF    <- c(5*5, rep(NA, times = nYear-1)); nYAF
-  nYAFa   <- matrix(0, nrow = nAge, ncol = nYear); nYAFa
+  nYAF  <- c(5*5, rep(NA, times = nYear-1)); nYAF
+  nYAFa <- matrix(1, nrow = nAge, ncol = nYear)
+  nYAFa[1:2,] <- 0; nYAFa
   
-  nSA     <- matrix(NA, nrow = 2, ncol = nYear)
-  nSA[,1] <- c(6*5, 5*5); nSA
+  nSA <- c(6*5, rep(NA, times = nYear-1)); nSA
   
   nAD     <- matrix(0, nrow = nAge, ncol = nYear)
-  nAD[,1] <- c(0, 0, rep(2*5, times = 8), rep(1*5, times = nAge-10)); nAD
+  nAD[,1] <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10)); nAD
   
-  nTOT   <- c(nYAF[1] + sum(nSA[1:2,1]) + sum(nAD[3:nAge,1]),
-              rep(NA, times = nYear-1)); nTOT
+  nTOT <- c(nYAF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1)); nTOT
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
-    nSA[1, t+1] <- rbinom(1, nYAF[t], sYAF[t])
-    nSA[2, t+1] <- rbinom(1, nSA[1, t], sSA[1, t])
-    nAD[3, t+1] <- rbinom(1, nSA[2, t], sSA[2, t])
-    for(a in 4:nAge){
-      nAD[a, t+1] <- rbinom(1, nAD[a-1, t], sAD[a-1, t])
+    nSA[t+1] <- pmax(10, rbinom(1, nYAF[t], sYAF[t]))
+    nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
+    for(a in 3:nAge){
+      nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
     }
     # then reproduction
     for(a in 3:nAge){
-      nYAFa[a, t+1] <- rbinom(1, nAD[a-1, t], B[t] * Ra[a-1, t])
+      nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * B[t] * Ra[a-1, t]))
     }
     # nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
-    nYAF[t+1] <- ifelse(sum(nYAFa[3:nAge, t+1]) < 4, 4, sum(nYAFa[3:nAge, t+1]))
-    nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
+    nYAF[t+1] <- sum(nYAFa[3:nAge, t + 1])
+    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[3:nAge, t+1])
   }
   
-  ab <- pmax((nTOT / pmax(propF, .01)) + rnorm(length(nTOT), 0, 2), 1)
+  ab <- round(pmax((nTOT / pmax(propF, .01)) + rnorm(length(nTOT), 0, 2), 1))
   # pmax(propF, 0.01) returns 0.01 if propF falls below it
   # pmax(..., 1) returns 1 if ab falls below it
   # so propF is at least 1% & ab at least 1
   
+  # nYAF
+  # nYAFa
+  # nSA
+  # nAD
+  # nTOT
+  # ab
+  
   
   ## Assemble myinits list -----------------------------------------------------
   
-  return(list(dens.hat = dens.hat,
+  return(list(ageM = ageM,
+              dens = dens,
+              veg = veg,
+              propF = propF,
+              dens.hat = dens.hat,
               veg.hat = veg.hat,
-              ageM = ageM,
               
               Mu.Sp = Mu.Sp,
               Mu.Op = Mu.Op,
@@ -273,11 +280,6 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               Gamma.S = Gamma.S,
               Tau.S = Tau.S,
               
-              O = O,
-              Mu.O = Mu.O,
-              Epsilon.O = Epsilon.O,
-              Sigma.O = Sigma.O,
-              
               EpsilonI.Ri = EpsilonI.Ri,
               EpsilonT.Ri = EpsilonT.Ri,
               EpsilonT.Ra = EpsilonT.Ra,
@@ -290,17 +292,24 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               Mu.Ri = Mu.Ri,
               Mu.Ra = Mu.Ra,
               Ri = Ri,
+              Ra = Ra,
               
               B = B,
-              Ra = Ra,
               sYAF = sYAF,
               sSA = sSA,
               sAD = sAD,
               
+              O = O,
+              Mu.O = Mu.O,
+              Epsilon.O = Epsilon.O,
+              Sigma.O = Sigma.O,
+              
               nYAF = nYAF,
+              nYAFa = nYAFa,
               nSA = nSA,
               nAD = nAD,
-              nTOT = nTOT
+              nTOT = nTOT,
+              ab = ab
               ))
   
 }

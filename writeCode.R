@@ -80,43 +80,38 @@ writeCode <- function(){
     ## POPULATION MODEL
     ## -------------------------------------------------------------------------
     
-    nAD[1:2, 1:nYear] <- 0
-    nTOT[1] <- nYAF[1] + sum(nSA[1:2, 1]) + sum(nAD[3:nAge, 1])
+    nAD[1, 1:nYear] <- 0
+    nTOT[1] <- nYAF[1] + nSA[1] + sum(nAD[2:nAge, 1])
     
     for(t in 1:(nYear-1)){
       # survival & birthdays
-      nSA[1, t+1] ~ dbin(sYAF[t], nYAF[t])
-      nSA[2, t+1] ~ dbin(sSA[1, t], nSA[1, t])
-      nAD[3, t+1] ~ dbin(sSA[2, t], nSA[2, t])
-      for(a in 4:nAge){
+      nSA[t+1] ~ dbin(sYAF[t], nYAF[t])
+      nAD[2, t+1] ~ dbin(sSA[t], nSA[t])
+      for(a in 3:nAge){
         nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       }
       # then reproduction
       for(a in 3:nAge){
         # assuming even sex ratio at birth
-        nYAFa[a, t+1] ~ dbin(B[t] * 0.5 * Ra[a-1, t], nAD[a-1, t])
+        nYAFa[a, t+1] ~ dbin(0.5 * B[t] * Ra[a-1, t], nAD[a-1, t])
       }
       nYAF[t+1] <- sum(nYAFa[3:nAge, t+1]) # number of female YAFs
-      nTOT[t+1] <- nYAF[t+1] + sum(nSA[1:2, t+1]) + sum(nAD[3:nAge, t+1])
+      nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
     
     # priors
-    sAD[1:2, 1:(nYear-1)] <- 0
-    
     for(t in 1:(nYear-1)){
-      B[t]       ~ dunif(0.5, 1)
+      B[t]      ~ dunif(0.5, 1)
       sYAF[t]   <- S[1, t]
-      sSA[1, t] <- S[2, t]
-      sSA[2, t] <- S[2, t]
-      
+      sSA[t]    <- S[2, t]
+      sAD[1, t] <- 0 # don't exist
+      sAD[2, t] <- S[2, t]
       for(a in 3:6){ # prime-aged
         sAD[a, t] <- S[3, t]
       }
-      
       for(a in 7:9){ # pre-senescent
         sAD[a, t] <- S[4, t]
       }
-      
       for(a in 10:nAge){ # senescent
         sAD[a, t] <- S[5, t]
       }
@@ -233,8 +228,8 @@ writeCode <- function(){
     
     #### Likelihood & constraints ####
     # individual RS function
-    Mu.Ri[1:2] <- 0
-    Mu.Ra[1:2] <- 0
+    Mu.Ri[1] <- 0
+    Mu.Ra[1] <- 0
     
     for(x in 1:nR){
       R[x] ~ dbern(Ri[x])
@@ -261,7 +256,7 @@ writeCode <- function(){
     
     ##### Priors ####
     # priors for fixed effects
-    for(a in 3:nAge){
+    for(a in 2:nAge){
       Mu.Ri[a] ~ dunif(0, 1)
       Mu.Ra[a] ~ dunif(0, 1)
     }
