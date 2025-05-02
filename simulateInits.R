@@ -125,10 +125,12 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   EpsilonI.Ri <- rnorm(nID.R, 0, 1)
   EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
   EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
+  EpsilonT.Bt <- rnorm(nYear-1, 0, 1)
   
   SigmaI.Ri <- runif(1, 0, 10)
   SigmaT.Ri <- runif(1, 0, 10)
   SigmaT.Ra <- runif(1, 0, 10)
+  SigmaT.Bt <- runif(1, 0, 10)
 
   
   ## Simulate yearly vital rates -----------------------------------------------
@@ -151,8 +153,14 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
 
   ## Reproductive success model
   # age-specific reproductive success
+  Mu.Bt <- runif(1, 0.4, 1)
   Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
   Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
+  
+  Bt <- numeric(nYear-1)
+  for(t in 1:(nYear-1)){
+    Bt[t] <- plogis(qlogis(Mu.Bt) + EpsilonT.Bt[t])
+  }
   
   Ri <- numeric(nR)
   for(x in 1:nR) {
@@ -180,9 +188,6 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   }
   
   ## Population model
-  # breeding rate (or creation of a jellybean which will be detected)
-  B <- runif(nYear-1, 0.5, 1) # raw means span 0.58-0.92
-  
   # survival of YAFs to 2nd Sept 1 when they become SA1s
   sYAF <- S[1, 1:(nYear-1)] # raw means span 0.01-0.88
   
@@ -239,7 +244,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
     }
     # then reproduction
     for(a in 3:nAge){
-      nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * B[t] * Ra[a-1, t]))
+      nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * Ra[a-1, t]))
     }
     # nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
     nYAF[t+1] <- sum(nYAFa[3:nAge, t + 1])
@@ -283,18 +288,21 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               EpsilonI.Ri = EpsilonI.Ri,
               EpsilonT.Ri = EpsilonT.Ri,
               EpsilonT.Ra = EpsilonT.Ra,
+              EpsilonT.Bt = EpsilonT.Bt,
               
               SigmaI.Ri = SigmaI.Ri,
               SigmaT.Ri = SigmaT.Ri,
               SigmaT.Ra = SigmaT.Ra,
+              SigmaT.Bt = SigmaT.Bt,
               
-              S = S,
+              Mu.Bt = Mu.Bt,
               Mu.Ri = Mu.Ri,
               Mu.Ra = Mu.Ra,
+              Bt = Bt,
               Ri = Ri,
               Ra = Ra,
               
-              B = B,
+              S = S,
               sYAF = sYAF,
               sSA = sSA,
               sAD = sAD,

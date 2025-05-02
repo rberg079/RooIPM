@@ -231,6 +231,14 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
            SurvLPY = ifelse(!is.na(SurvLPY) & SurvLPY == 2, NA, SurvLPY),
            SurvWN = ifelse(!is.na(SurvWN) & SurvWN == 2, NA, SurvWN))
   
+  # if cum.surv is FALSE
+  # we are interested in birth rate as well
+  # & therefore want to remove NAs from Repro
+  if(cum.surv){
+  }else{
+    rs <- rs %>% filter(!is.na(Repro))
+  }
+  
   # if surv.sep1 is TRUE
   # we are interested in survival to first September
   # & therefore want to remove NAs from SurvSep1
@@ -271,6 +279,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # prs <- rs$PRS          # unscaled!
   # xmed <- scale(rs$xMed)
   
+  B <- rs$Repro
   surv7 <- rs$SurvLPY
   surv21 <- rs$SurvWN
   survS1 <- rs$SurvSep1
@@ -290,27 +299,12 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
               year = year,
               age.R = age.R,
               ageC = ageC,
-              # teeth = teeth,
-              # leg = leg,
-              # mass = mass,
-              # cond = cond,
-              # prs = prs,
-              # xmed = xmed,
+              B = B,
               surv7 = surv7,
               surv21 = surv21,
               survS1 = survS1,
               survS2 = survS2
-              # mcond = mcond,
-              # pprime = pprime,
-              # ratio = ratio,
-              # pratio = pratio
               ))
   
 }
-
-# test <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-#                        obs.data = "data/PromObs_2008-2019.xlsx",
-#                        prime = c(3:12), known.age = TRUE, cum.surv = TRUE,
-#                        surv.sep1 = TRUE, surv.sep2 = FALSE)
-# test
 

@@ -187,8 +187,8 @@ writeCode <- function(){
     
     # observation function
     for(t in 1:nYear){
-      logit(O[t]) <- logit(Mu.O) + Epsilon.O[t]
       Epsilon.O[t] ~ dnorm(0, sd = Sigma.O)
+      logit(O[t]) <- logit(Mu.O) + Epsilon.O[t]
     }
     
     #### Priors ####

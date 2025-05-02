@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 
 # load packages
 library(tidyverse)
@@ -36,7 +36,7 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
 source("wrangleData_rs.R")
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
-                         known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+                         known.age = TRUE, cum.surv = FALSE)
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -44,6 +44,7 @@ myData  <- list(obs = svData$obs,
                 age.S = svData$age.S,
                 ageC = svData$ageC,
                 
+                B = rsData$B,
                 R = rsData$survS1,
                 id.R = rsData$id,
                 year.R = rsData$year,
@@ -111,7 +112,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params = c(
   # Population model
-  'S', 'B', 'sYAF', 'sSA', 'sAD',              # yearly vital rates
+  'S', 'B', 'Ra', 'sYAF', 'sSA', 'sAD',        # yearly vital rates
   'nYAF', 'nSA', 'nAD', 'nTOT',                # population sizes
   
   # Survival model
@@ -164,7 +165,7 @@ out.mcmc <- as.mcmc.list(samples)
 
 # save output
 fit <- list(model = myCode, out.mcmc = out.mcmc, dur = dur)
-# write_rds(fit, 'results/IPM_CJS.rds', compress = 'xz')
+write_rds(fit, 'results/IPM_CJS_RS_AB.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -194,7 +195,8 @@ MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE,
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('S', 'B'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('S', 'B', 'Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 
@@ -204,7 +206,7 @@ MCMCtrace(out.mcmc, params = c('Epsilon.O', 'Sigma.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('S', 'B'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 
 
@@ -220,7 +222,7 @@ out.mat <- as.matrix(samples)
 # parameters to include
 table.params <- c(
   paste0('nYAF[', 1:nYear, ']'),
-  paste0('nSA[', rep(1:2, each = nYear), ', ', rep(1:nYear, times = 2), ']'),
+  paste0('nSA[', 1:nYear, ']'),
   paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'))
 
 # table.params <- list(
