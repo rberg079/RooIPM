@@ -22,7 +22,6 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # obs.data = "data/PromObs_2008-2019.xlsx"
   # known.age = TRUE
   # cum.surv = TRUE
-  # surv.sep1 = TRUE
   
   
   ## Set up --------------------------------------------------------------------
@@ -259,16 +258,16 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   # TEMPORARY
   rs <- rs %>% filter(Year > 2007)
   
-  id   <- as.integer(rs$ID)
-  id   <- match(id, sort(unique(id)))
-  year <- as.integer(factor(rs$Year))
+  id.R   <- as.integer(rs$ID)
+  id.R   <- match(id.R, sort(unique(id.R)))
+  year.R <- as.integer(factor(rs$Year))
   
   age.R <- as.integer(rs$Age) # now age in Sept before breeding season!
   ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  nR    <- length(id)
-  nID.R <- length(unique(id))
-  nYear <- length(unique(year))
+  nR    <- length(id.R)
+  nID.R <- length(unique(id.R))
+  nYear <- length(unique(year.R))
   nAge  <- max(age.R)
   nAgeC <- max(ageC)
   
@@ -295,8 +294,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
               nYear = nYear,
               nAge = nAge,
               nAgeC = nAgeC,
-              id = id,
-              year = year,
+              id.R = id.R,
+              year.R = year.R,
               age.R = age.R,
               ageC = ageC,
               B = B,

@@ -47,7 +47,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # nID.S <- svData$nID
   # nID.R <- rsData$nID
   # nYear <- 17
-  # nAge <- 18
+  # nAge <- 19
   # nAgeC <- 5
   # id.R <- rsData$id
   # year.R <- rsData$year

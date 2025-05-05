@@ -46,8 +46,8 @@ myData  <- list(obs = svData$obs,
                 
                 B = rsData$B,
                 R = rsData$survS1,
-                id.R = rsData$id,
-                year.R = rsData$year,
+                id.R = rsData$id.R,
+                year.R = rsData$year.R,
                 age.R = rsData$age.R,
                 
                 ab = enData$ab,

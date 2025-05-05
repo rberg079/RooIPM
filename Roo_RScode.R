@@ -9,10 +9,10 @@ library(lubridate)
 library(beepr)
 library(coda)
 library(nimble)
-library(foreach)
-library(parallel)
-library(doParallel)
-registerDoParallel(3)
+# library(foreach)
+# library(parallel)
+# library(doParallel)
+# registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
@@ -28,14 +28,14 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
 
-# check that all years are represented
-setequal(1:17, unique(rsData$year)) # should be TRUE
+# # check that all years are represented
+# setequal(1:17, unique(rsData$year)) # should be TRUE
 
 # create Nimble lists
 myData <-  list(B      = rsData$B,
                 R      = rsData$survS1,
-                id.R   = rsData$id,
-                year.R = rsData$year,
+                id.R   = rsData$id.R,
+                year.R = rsData$year.R,
                 age.R  = rsData$age.R,
                 dens   = enData$dens,
                 veg    = enData$veg,
@@ -43,7 +43,7 @@ myData <-  list(B      = rsData$B,
 
 myConst <- list(nR     = rsData$nR,
                 nID.R  = rsData$nID.R,
-                nYear  = rsData$nYear,
+                nYear  = 17,
                 nAge   = rsData$nAge,
                 nAgeC  = rsData$nAgeC)
 # TODO: deal with missing environment
@@ -139,13 +139,11 @@ for(c in 1:nchains){
     nAgeC = myConst$nAgeC,
     id.R = myData$id.R,
     year.R = myData$year.R,
-    age.R = myData$age.R
-    # dens = myData$dens,
-    # veg = myData$veg,
-    # win = myData$win,
-    # nNoDens = myConst$nNoDens,
-    # nNoVeg = myConst$nNoVeg,
-    # nNoWin = myConst$nNoWin
+    age.R = myData$age.R,
+    dens = enData$dens,
+    veg = enData$veg,
+    win = enData$win,
+    propF = enData$propF
   )
 }
 
@@ -189,6 +187,6 @@ library(MCMCvis)
 out.mcmc <- as.mcmc.list(samples)
 
 MCMCsummary(out.mcmc,
-            params = c('Mu.Ri', 'Mu.Ra', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'),
+            params = c('Mu.Bt', 'Mu.Ri', 'Mu.Ra', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'),
             n.eff = TRUE, round = 2)
 
