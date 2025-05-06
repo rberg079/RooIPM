@@ -60,7 +60,7 @@ writeCode <- function(){
   # Epsilon.O = random effect of year on prob. of observation (was year.p)
   # Sigma.O = standard deviation of effect of year on probability of observation (was sd.p)
   
-  # Mu.Bt = mean breeding rate, or probability of a female producing a jellybean
+  # Mu.B = mean breeding rate, or probability of a female producing a jellybean
   # Mu.Ri = mean probability of successfully turning a jellybean into a YAF, from individual-based model
   # Mu.Ra = mean probability of successfully turning a jellybean into a YAF, from age-class-based model
   
@@ -71,12 +71,12 @@ writeCode <- function(){
   # EpsilonI.Ri = random effect of mother's identity (I) on individual reproductive success (Ri)
   # EpsilonT.Ri = random effect of year (T) on individual reproductive success (Ri)
   # EpsilonT.Ra = random effect of year (T) on age-specific reproductive success (Ra)
-  # EpsilonT.Bt = random effect of year (T) on breeding rate (Bt)
+  # EpsilonT.B = random effect of year (T) on breeding rate (Bt)
   
   # SigmaI.Ri = standard deviation of effect of mother's identity (I) on individual reproductive success (Ri)
   # SigmaT.Ri = standard deviation of effect of year (T) on individual reproductive success (Ri)
   # SigmaT.Ra = standard deviation of effect of year (T) on age-specific reproductive success (Ra)
-  # SigmaT.Bt = standard deviation of effect of year (T) on breeding rate (Bt)
+  # SigmaT.B = standard deviation of effect of year (T) on breeding rate (Bt)
   
   # ab = yearly abundance in number of kangaroos, supplied for most years with 1-2 NAs
   # propF = yearly proportion of observations representing females, supplied up to 2019
@@ -88,11 +88,6 @@ writeCode <- function(){
   library(tidyverse)
   library(lubridate)
   library(nimble)
-  
-  # # check that all years are represented in RS data
-  # if(setequal(1:17, unique(myData$year.R)) == FALSE){
-  #   stop("Some years not represented in rsData.")
-  # }
   
   
   ## Model ---------------------------------------------------------------------
@@ -252,66 +247,71 @@ writeCode <- function(){
     ## REPRODUCTIVE SUCCESS MODEL
     ## -------------------------------------------------------------------------
     
-    # #### Likelihood & constraints ####
-    # # yearly birth rate
-    # for(t in 1:(nYear-1)){
-    #   B[t] ~ dbern(Bt[t])
-    #   logit(Bt[t]) <- logit(Mu.Bt) + EpsilonT.Bt[t]
-    # }
-    # 
-    # # individual RS function
-    # Mu.Ri[1] <- 0
-    # for(x in 1:nR){
-    #   R[x] ~ dbern(Ri[x])
-    #   logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
-    #     # BetaD.R * dens[year.R[x]] +
-    #     # BetaV.R * veg[year.R[x]] +
-    #     # BetaW.R * win[year.R[x]] +
-    #     EpsilonI.Ri[id.R[x]] +
-    #     EpsilonT.Ri[year.R[x]]
-    # }
-    # 
-    # # age-specific RS function
-    # # use parameters estimated from individual data above
-    # # to predict age-specific reproductive success (Ra) here!
-    # Mu.Ra[1] <- 0
-    # for(a in 1:nAge){
-    #   for(t in 1:(nYear-1)){
-    #     logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
-    #       # BetaD.R * dens[t] +
-    #       # BetaV.R * veg[t] +
-    #       # BetaW.R * win[t] +
-    #       EpsilonT.Ra[t]
-    #   }
-    # }
-    # 
-    # ##### Priors ####
-    # # priors for fixed effects
-    # for(a in 2:nAge){
-    #   Mu.Ri[a] ~ dunif(0, 1)
-    #   Mu.Ra[a] ~ dunif(0, 1)
-    # }
-    # 
-    # # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # # BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # # BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # 
-    # # priors for random effects
-    # for(i in 1:nID.R){
-    #   EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
-    # }
-    # 
-    # for(t in 1:(nYear-1)){
-    #   EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
-    #   EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
-    #   EpsilonT.Bt[t] ~ dnorm(0, sd = SigmaT.Bt)
-    # }
-    # 
-    # # priors for sigma
-    # SigmaI.Ri ~ dunif(0, 100)
-    # SigmaT.Ri ~ dunif(0, 100)
-    # SigmaT.Ra ~ dunif(0, 100)
-    # SigmaT.Bt ~ dunif(0, 100)
+    #### Likelihood & constraints ####
+    # yearly birth rate
+    for(x in 1:nR){
+      B[x] ~ dbern(Bi[x])
+      logit(Bi[x]) <- logit(Mu.B) +
+        EpsilonT.B[year.R[x]]
+    }
+    
+    for(t in 1:(nYear-1)){
+      logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
+    }
+    
+    # individual RS function
+    Mu.Ri[1] <- 0
+    for(x in 1:nR){
+      R[x] ~ dbern(Ri[x])
+      logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
+        # BetaD.R * dens[year.R[x]] +
+        # BetaV.R * veg[year.R[x]] +
+        # BetaW.R * win[year.R[x]] +
+        EpsilonI.Ri[id.R[x]] +
+        EpsilonT.Ri[year.R[x]]
+    }
+
+    # age-specific RS function
+    # use parameters estimated from individual data above
+    # to predict age-specific reproductive success (Ra) here!
+    Mu.Ra[1] <- 0
+    for(a in 1:nAge){
+      for(t in 1:(nYear-1)){
+        logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
+          # BetaD.R * dens[t] +
+          # BetaV.R * veg[t] +
+          # BetaW.R * win[t] +
+          EpsilonT.Ra[t]
+      }
+    }
+
+    ##### Priors ####
+    # priors for fixed effects
+    for(a in 2:nAge){
+      Mu.Ri[a] ~ dunif(0, 1)
+      Mu.Ra[a] ~ dunif(0, 1)
+    }
+
+    # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    # BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+
+    # priors for random effects
+    for(i in 1:nID.R){
+      EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
+    }
+
+    for(t in 1:(nYear-1)){
+      EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
+      EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
+      EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
+    }
+
+    # priors for sigma
+    SigmaI.Ri ~ dunif(0, 100)
+    SigmaT.Ri ~ dunif(0, 100)
+    SigmaT.Ra ~ dunif(0, 100)
+    SigmaT.B ~ dunif(0, 100)
     
   }) # nimbleCode
   

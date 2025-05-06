@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- T
 
 # load packages
 library(tidyverse)
@@ -118,10 +118,10 @@ params = c(
   'Gamma.S', 'Xi.S', 'Sigma.S',                               # random effects
   
   # Reproductive success model
-  'Mu.Bt', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
+  'Mu.B', 'Mu.Ri', 'Mu.Ra',                                   # mean reproductive success
   # 'BetaD.R', 'BetaV.R', 'BetaW.R',                          # covariate effects
-  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.Bt', # random effects
-  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt')         # random effects
+  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B',  # random effects
+  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B')          # random effects
   
   # Abundance model
   # 'ab', 'propF'
@@ -129,13 +129,13 @@ params = c(
 
 # select MCMC settings
 if(testRun){
-  niter   <- 10
-  nburnin <- 0
   nthin   <- 1
+  nburnin <- 0
+  niter   <- 10
 }else{
-  niter   <- 40000
-  nburnin <- 32000
-  nthin   <- 8
+  nthin   <- 4
+  nburnin <- 20000
+  niter   <- nburnin + 1000*nthin
 }
 
 
@@ -155,10 +155,6 @@ samples <- nimbleMCMC(code = myCode,
                       setSeed = seedMod)
 dur <- Sys.time() - start; dur
 beep(2)
-
-# [Note] This model is not fully initialized. This is not an error.
-# To see which variables are not initialized, use model$initializeInfo().
-# For more information on model initialization, see help(modelInitialization).
 
 # MCMC output
 out.mcmc <- as.mcmc.list(samples)
@@ -198,7 +194,7 @@ MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
@@ -211,7 +207,7 @@ MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)

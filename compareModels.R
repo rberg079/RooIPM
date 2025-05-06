@@ -142,8 +142,8 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
 
     RSranEF = c(paste0('EpsilonT.Ri[', c(1, 5, 9, 13), ']'),
                 paste0('EpsilonT.Ra[', c(1, 5, 9, 13), ']'),
-                paste0('EpsilonT.Bt[', c(1, 5, 9, 13), ']'),
-                'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt'),
+                paste0('EpsilonT.B[', c(1, 5, 9, 13), ']'),
+                'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'),
     
     RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
     

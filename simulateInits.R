@@ -126,12 +126,12 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   EpsilonI.Ri <- rnorm(nID.R, 0, 1)
   EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
   EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
-  EpsilonT.Bt <- rnorm(nYear-1, 0, 1)
+  EpsilonT.B <- rnorm(nYear-1, 0, 1)
   
   SigmaI.Ri <- runif(1, 0, 10)
   SigmaT.Ri <- runif(1, 0, 10)
   SigmaT.Ra <- runif(1, 0, 10)
-  SigmaT.Bt <- runif(1, 0, 10)
+  SigmaT.B <- runif(1, 0, 10)
 
   
   ## Simulate yearly vital rates -----------------------------------------------
@@ -154,25 +154,30 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
 
   ## Reproductive success model
   # age-specific reproductive success
-  Mu.Bt <- runif(1, 0.4, 1)
+  Mu.B <- runif(1, 0.4, 1)
   Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
   Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
   
+  Bi <- numeric(nR)
+  for(x in 1:nR){
+    Bi[x] <- plogis(
+      qlogis(Mu.B) + EpsilonT.B[year.R[x]])
+  }
+  
   Bt <- numeric(nYear-1)
   for(t in 1:(nYear-1)){
-    Bt[t] <- plogis(qlogis(Mu.Bt) + EpsilonT.Bt[t])
+    Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
   }
   
   Ri <- numeric(nR)
-  for(x in 1:nR) {
+  for(x in 1:nR){
     Ri[x] <- plogis(
       qlogis(Mu.Ri[age.R[x]]) +
         BetaD.R * dens[year.R[x]] +
         BetaV.R * veg[year.R[x]] +
         BetaW.R * win[year.R[x]] +
         EpsilonI.Ri[id.R[x]] +
-        EpsilonT.Ri[year.R[x]]
-    )
+        EpsilonT.Ri[year.R[x]])
   }
   
   Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
@@ -183,8 +188,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
           BetaD.R * dens[t] +
           BetaV.R * veg[t] +
           BetaW.R * win[t] +
-          EpsilonT.Ra[t]
-      )
+          EpsilonT.Ra[t])
     }
   }
   
@@ -293,17 +297,17 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               EpsilonI.Ri = EpsilonI.Ri,
               EpsilonT.Ri = EpsilonT.Ri,
               EpsilonT.Ra = EpsilonT.Ra,
-              EpsilonT.Bt = EpsilonT.Bt,
+              EpsilonT.B = EpsilonT.B,
               
               SigmaI.Ri = SigmaI.Ri,
               SigmaT.Ri = SigmaT.Ri,
               SigmaT.Ra = SigmaT.Ra,
-              SigmaT.Bt = SigmaT.Bt,
+              SigmaT.B = SigmaT.B,
               
-              Mu.Bt = Mu.Bt,
+              Mu.B = Mu.B,
               Mu.Ri = Mu.Ri,
               Mu.Ra = Mu.Ra,
-              Bt = Bt,
+              Bi = Bi,
               Ri = Ri,
               Ra = Ra,
               
