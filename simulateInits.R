@@ -94,10 +94,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   BetaV.S <- rnorm(nAgeC, 0, 1)
   # BetaDV.S <- rnorm(nAgeC, 0, 1)
   
-  ## Reproductive success model
-  BetaD.R <- rnorm(1, 0, 1)
-  BetaV.R <- rnorm(1, 0, 1)
-  BetaW.R <- rnorm(1, 0, 1)
+  # ## Reproductive success model
+  # BetaD.R <- rnorm(1, 0, 1)
+  # BetaV.R <- rnorm(1, 0, 1)
+  # BetaW.R <- rnorm(1, 0, 1)
   
   
   ## Simulate vital rate random effects ----------------------------------------
@@ -122,16 +122,16 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   Tau.S <- matrix(Tau.S, nrow = nAgeC)
   Tau.S <- (Tau.S + t(Tau.S)) / 2
   
-  ## Reproductive success model
-  EpsilonI.Ri <- rnorm(nID.R, 0, 1)
-  EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
-  EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
-  EpsilonT.B <- rnorm(nYear-1, 0, 1)
-  
-  SigmaI.Ri <- runif(1, 0, 10)
-  SigmaT.Ri <- runif(1, 0, 10)
-  SigmaT.Ra <- runif(1, 0, 10)
-  SigmaT.B <- runif(1, 0, 10)
+  # ## Reproductive success model
+  # EpsilonI.Ri <- rnorm(nID.R, 0, 1)
+  # EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
+  # EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
+  # EpsilonT.B <- rnorm(nYear-1, 0, 1)
+  # 
+  # SigmaI.Ri <- runif(1, 0, 10)
+  # SigmaT.Ri <- runif(1, 0, 10)
+  # SigmaT.Ra <- runif(1, 0, 10)
+  # SigmaT.B <- runif(1, 0, 10)
 
   
   ## Simulate yearly vital rates -----------------------------------------------
@@ -153,44 +153,49 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   }
 
   ## Reproductive success model
-  # age-specific reproductive success
-  Mu.B <- runif(1, 0.4, 1)
-  Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
-  Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
+  # # age-specific reproductive success
+  # Mu.B <- runif(1, 0.4, 1)
+  # Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
+  # Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
+  # 
+  # Bi <- numeric(nR)
+  # for(x in 1:nR){
+  #   Bi[x] <- plogis(
+  #     qlogis(Mu.B) + EpsilonT.B[year.R[x]])
+  # }
+  # 
+  # Bt <- numeric(nYear-1)
+  # for(t in 1:(nYear-1)){
+  #   Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
+  # }
+  # 
+  # Ri <- numeric(nR)
+  # for(x in 1:nR){
+  #   Ri[x] <- plogis(
+  #     qlogis(Mu.Ri[age.R[x]]) +
+  #       BetaD.R * dens[year.R[x]] +
+  #       BetaV.R * veg[year.R[x]] +
+  #       BetaW.R * win[year.R[x]] +
+  #       EpsilonI.Ri[id.R[x]] +
+  #       EpsilonT.Ri[year.R[x]])
+  # }
+  # 
+  # Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
+  # for(a in 1:nAge) {
+  #   for(t in 1:(nYear-1)) {
+  #     Ra[a, t] <- plogis(
+  #       qlogis(Mu.Ra[a]) +
+  #         BetaD.R * dens[t] +
+  #         BetaV.R * veg[t] +
+  #         BetaW.R * win[t] +
+  #         EpsilonT.Ra[t])
+  #   }
+  # }
   
-  Bi <- numeric(nR)
-  for(x in 1:nR){
-    Bi[x] <- plogis(
-      qlogis(Mu.B) + EpsilonT.B[year.R[x]])
-  }
+  Ra <- matrix(runif(nAge*(nYear-1), 0.1, 1),
+               nrow = nAge, ncol = nYear-1)
   
-  Bt <- numeric(nYear-1)
-  for(t in 1:(nYear-1)){
-    Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
-  }
-  
-  Ri <- numeric(nR)
-  for(x in 1:nR){
-    Ri[x] <- plogis(
-      qlogis(Mu.Ri[age.R[x]]) +
-        BetaD.R * dens[year.R[x]] +
-        BetaV.R * veg[year.R[x]] +
-        BetaW.R * win[year.R[x]] +
-        EpsilonI.Ri[id.R[x]] +
-        EpsilonT.Ri[year.R[x]])
-  }
-  
-  Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
-  for(a in 1:nAge) {
-    for(t in 1:(nYear-1)) {
-      Ra[a, t] <- plogis(
-        qlogis(Mu.Ra[a]) +
-          BetaD.R * dens[t] +
-          BetaV.R * veg[t] +
-          BetaW.R * win[t] +
-          EpsilonT.Ra[t])
-    }
-  }
+  Bt <- runif(nYear-1, 0.5, 1)
   
   ## Population model
   # survival of YAFs to 2nd Sept 1 when they become SA1s
@@ -278,31 +283,32 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               BetaA.S = BetaA.S,
               BetaD.S = BetaD.S,
               BetaV.S = BetaV.S,
-              BetaD.R = BetaD.R,
-              BetaV.R = BetaV.R,
-              BetaW.R = BetaW.R,
+              # BetaD.R = BetaD.R,
+              # BetaV.R = BetaV.R,
+              # BetaW.R = BetaW.R,
               
               Xi.S = Xi.S,
               Epsilon.S = Epsilon.S,
               Gamma.S = Gamma.S,
               Tau.S = Tau.S,
               
-              EpsilonI.Ri = EpsilonI.Ri,
-              EpsilonT.Ri = EpsilonT.Ri,
-              EpsilonT.Ra = EpsilonT.Ra,
-              EpsilonT.B = EpsilonT.B,
+              # EpsilonI.Ri = EpsilonI.Ri,
+              # EpsilonT.Ri = EpsilonT.Ri,
+              # EpsilonT.Ra = EpsilonT.Ra,
+              # EpsilonT.B = EpsilonT.B,
+              # 
+              # SigmaI.Ri = SigmaI.Ri,
+              # SigmaT.Ri = SigmaT.Ri,
+              # SigmaT.Ra = SigmaT.Ra,
+              # SigmaT.B = SigmaT.B,
               
-              SigmaI.Ri = SigmaI.Ri,
-              SigmaT.Ri = SigmaT.Ri,
-              SigmaT.Ra = SigmaT.Ra,
-              SigmaT.B = SigmaT.B,
-              
-              Mu.B = Mu.B,
-              Mu.Ri = Mu.Ri,
-              Mu.Ra = Mu.Ra,
-              Bi = Bi,
-              Ri = Ri,
+              # Mu.B = Mu.B,
+              # Mu.Ri = Mu.Ri,
+              # Mu.Ra = Mu.Ra,
+              # Bi = Bi,
+              # Ri = Ri,
               Ra = Ra,
+              Bt = Bt,
               
               S = S,
               sYAF = sYAF,

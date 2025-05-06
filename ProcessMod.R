@@ -117,13 +117,13 @@ params = c(
   'dens.hat', 'veg.hat', # 'ageM',                           # latent states
   'BetaA.S', 'BetaD.S', 'BetaV.S',                           # covariate effects
   'Mu.O', 'Epsilon.O', 'Sigma.O',                            # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S',                              # random effects
+  'Gamma.S', 'Xi.S', 'Sigma.S'                              # random effects
   
-  # Reproductive success model
-  'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
-  # 'BetaD.R', 'BetaV.R', 'BetaW.R',                           # covariate effects
-  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B', # random effects
-  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'          # random effects
+  # # Reproductive success model
+  # 'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
+  # # 'BetaD.R', 'BetaV.R', 'BetaW.R',                           # covariate effects
+  # 'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B', # random effects
+  # 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'          # random effects
   
   # # Abundance model
   # 'ab', 'propF'
@@ -211,7 +211,7 @@ beep(2)
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RS.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -269,8 +269,8 @@ nAgeC <- myConst$nAgeC
 
 source('compareModels.R')
 compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
-              postPaths = c("results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds"),
-              modelNames = c("CJSen/RSen", "CJSen/RSen/AB"), plotFolder = c("figures/AB"),
+              postPaths = c("results/IPM_CJSen_RS.rds", "results/IPM_CJSen_RSen.rds"),
+              modelNames = c("CJSen/RS", "CJSen/RSen"), plotFolder = c("figures/RSen"),
               returnSumData = TRUE)
 
 
