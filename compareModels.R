@@ -25,20 +25,18 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
   # nYear = 17
   # nNoProp = 5
   # minYear = 2008
-  # maxYear <- minYear + nYear - 1
-  # postPaths = "results/IPM_CJS_RS.rds"
-  # modelNames = c("IPM/CJS/RS")
-  # plotFolder = "figures"
+  # maxYear = minYear + nYear - 1
+  # postPaths = c("results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds")
+  # modelNames = c("CJSen/RSen", "CJSen/RSen/AB")
+  # plotFolder = c("figures/AB")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
-  
 
   ## Set up --------------------------------------------------------------------
 
   library(coda)
-  library(tidyverse)
-  library(data.table)
-  # library(paletteer)
+  suppressPackageStartupMessages(library(tidyverse))
+  suppressPackageStartupMessages(library(data.table))
   library(NatParksPalettes)
   
   # check that models are specified correctly
@@ -66,7 +64,7 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
   for(i in 1:nModels){
     
     # read in RDS as mcmc.list
-    post <- readRDS(postPaths[i])$out.mcmc
+    post <- readRDS(postPaths[i])
     
     # convert to matrix then data.table
     samples <- do.call(rbind, lapply(post, as.matrix))
