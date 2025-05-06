@@ -138,14 +138,14 @@ writeCode <- function(){
     ## ABUNDANCE MODEL
     ## -------------------------------------------------------------------------
     
-    # #### Likelihood ####
-    # for(t in 1:nYear){
-    #   ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
-    # }
-    # 
-    # for(p in 1:nNoProp){
-    #   propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
-    # }
+    #### Likelihood ####
+    for(t in 1:nYear){
+      ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
+    }
+
+    for(p in 1:nNoProp){
+      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+    }
     
     
     ## SURVIVAL MODEL (CJS)
@@ -192,19 +192,19 @@ writeCode <- function(){
       dens[m] ~ dnorm(0, sd = 2)
     }
     
-    # for(m in 1:nNoWin){
-    #   # win[m] <- 0
-    #   win[m] ~ dnorm(0, sd = 2)
-    # }
-    
-    # estimate missing ages
-    for(i in 1:nNoAge){
-      ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
-      age.S[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
-      for(t in (first[noAge[i]]+1):nYear){
-        age.S[noAge[i], t] <- age.S[noAge[i], t-1] + 1
-      }
+    for(m in 1:nNoWin){
+      # win[m] <- 0
+      win[m] ~ dnorm(0, sd = 2)
     }
+    
+    # # estimate missing ages
+    # for(i in 1:nNoAge){
+    #   ageM[i] ~ T(dnegbin(0.25,1.6), 3, 20)
+    #   age.S[noAge[i], first[noAge[i]]] <- round(ageM[i]) + 1
+    #   for(t in (first[noAge[i]]+1):nYear){
+    #     age.S[noAge[i], t] <- age.S[noAge[i], t-1] + 1
+    #   }
+    # }
     
     # observation function
     for(t in 1:nYear){
@@ -264,9 +264,9 @@ writeCode <- function(){
     for(x in 1:nR){
       R[x] ~ dbern(Ri[x])
       logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
-        # BetaD.R * dens[year.R[x]] +
-        # BetaV.R * veg[year.R[x]] +
-        # BetaW.R * win[year.R[x]] +
+        BetaD.R * dens[year.R[x]] +
+        BetaV.R * veg[year.R[x]] +
+        BetaW.R * win[year.R[x]] +
         EpsilonI.Ri[id.R[x]] +
         EpsilonT.Ri[year.R[x]]
     }
@@ -278,9 +278,9 @@ writeCode <- function(){
     for(a in 1:nAge){
       for(t in 1:(nYear-1)){
         logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
-          # BetaD.R * dens[t] +
-          # BetaV.R * veg[t] +
-          # BetaW.R * win[t] +
+          BetaD.R * dens[t] +
+          BetaV.R * veg[t] +
+          BetaW.R * win[t] +
           EpsilonT.Ra[t]
       }
     }
@@ -292,9 +292,9 @@ writeCode <- function(){
       Mu.Ra[a] ~ dunif(0, 1)
     }
 
-    # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
 
     # priors for random effects
     for(i in 1:nID.R){

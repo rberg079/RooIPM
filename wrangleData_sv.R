@@ -9,7 +9,7 @@
 #'
 #' @examples
 
-wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
+wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV", known.age = FALSE){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalOct24.xlsx"
@@ -39,6 +39,11 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
       get(sub("\\d{4}", as.integer(gsub("\\D", "", cur_column())) + 1, cur_column()))), 1, .x))) %>%
     select(ID, Sex, Dead, in2008, matches("^in20\\d{2}$"), -in2025, matches("^Age\\d{2}")) %>%
     filter(Sex == 2, ID != 1180, ID != 1183)  # females!
+  
+  if(known.age){
+    surv <- surv %>% mutate(across(starts_with("Age"), ~ na_if(., "A")))
+    surv <- surv %>% filter(!if_all(starts_with("Age"), is.na))
+  }
   
   
   ## Sort YAF survival data from RS file ---------------------------------------
@@ -249,7 +254,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV"){
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
-  age.S <- unname(as.matrix(age[!noInfo,])+1) # SO AGE STARTS AT 1
+  age.S <- unname(as.matrix(age[!noInfo,])+1) # so age starts at 1 rather than 0
   ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
   nID.S <- nrow(state)

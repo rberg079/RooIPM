@@ -67,7 +67,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   
   ## Survival model
   # missing values
-  ageM <- sample(3:8, size = nNoAge, replace = T)
+  # ageM <- sample(3:8, size = nNoAge, replace = T)
   dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
   win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
@@ -261,17 +261,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # pmax(..., 1) returns 1 if ab falls below it
   # so propF is at least 1% & ab at least 1
   
-  # nYAF
-  # nYAFa
-  # nSA
-  # nAD
-  # nTOT
-  # ab
-  
   
   ## Assemble myinits list -----------------------------------------------------
   
-  return(list(ageM = ageM,
+  return(list(# ageM = ageM,
               dens = dens,
               veg = veg,
               win = win,

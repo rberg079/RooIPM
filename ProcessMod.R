@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- T
+testRun <- F
 
 # load packages
 library(tidyverse)
@@ -27,7 +27,8 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
 
 source("wrangleData_sv.R")
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-                         yafs.data = "data/RSmainRB_Mar25.xlsx")
+                         yafs.data = "data/RSmainRB_Mar25.xlsx",
+                         known.age = TRUE)
 
 source("wrangleData_rs.R")
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
@@ -46,9 +47,9 @@ myData  <- list(obs = svData$obs,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
                 
-                # ab = enData$ab,
-                # abE = enData$abE,
-                # propF = enData$propF,
+                ab = enData$ab,
+                abE = enData$abE,
+                propF = enData$propF,
                 dens = enData$dens,
                 densE = enData$densE,
                 veg = enData$veg,
@@ -61,12 +62,12 @@ myConst <- list(nR = rsData$nR,
                 nYear = svData$nYear,
                 nAge = rsData$nAge,
                 nAgeC = rsData$nAgeC,
-                noAge = svData$noAge,
-                nNoAge = svData$nNoAge,
+                # noAge = svData$noAge,
+                # nNoAge = svData$nNoAge,
                 nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
-                # nNoProp = enData$nNoProp,
+                nNoProp = enData$nNoProp,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
@@ -100,8 +101,8 @@ for(c in 1:nchains){
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
-    propF = myData$propF,
-    nNoAge = myConst$nNoAge
+    propF = myData$propF
+    # nNoAge = myConst$nNoAge
     )
 }
 
@@ -121,11 +122,11 @@ params = c(
   'Mu.B', 'Mu.Ri', 'Mu.Ra',                                   # mean reproductive success
   # 'BetaD.R', 'BetaV.R', 'BetaW.R',                          # covariate effects
   'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B',  # random effects
-  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B')          # random effects
+  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B',          # random effects
   
   # Abundance model
-  # 'ab', 'propF'
-  # )
+  'ab', 'propF'
+  )
 
 # select MCMC settings
 if(testRun){
@@ -134,7 +135,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 20000
+  nburnin <- 4000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -161,7 +162,7 @@ out.mcmc <- as.mcmc.list(samples)
 
 # save output
 fit <- list(model = myCode, out.mcmc = out.mcmc, dur = dur)
-write_rds(fit, 'results/IPM_CJS.rds', compress = 'xz')
+write_rds(fit, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
