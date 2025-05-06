@@ -15,10 +15,6 @@ library(here)
 library(boot)
 library(coda)
 library(nimble)
-library(foreach)
-library(parallel)
-library(doParallel)
-registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
@@ -50,14 +46,14 @@ myData  <- list(obs = svData$obs,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
                 
-                ab = enData$ab,
+                # ab = enData$ab,
+                # abE = enData$abE,
+                # propF = enData$propF,
                 dens = enData$dens,
-                veg = enData$veg,
-                win = enData$win,
-                propF = enData$propF,
-                abE = enData$abE,
                 densE = enData$densE,
-                vegE = enData$vegE)
+                veg = enData$veg,
+                vegE = enData$vegE,
+                win = enData$win)
 
 myConst <- list(nR = rsData$nR,
                 nID.S = svData$nID,
@@ -69,8 +65,8 @@ myConst <- list(nR = rsData$nR,
                 nNoAge = svData$nNoAge,
                 nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
-                # nNoWin = enData$nNoWin,
-                nNoProp = enData$nNoProp,
+                nNoWin = enData$nNoWin,
+                # nNoProp = enData$nNoProp,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
@@ -112,20 +108,24 @@ for(c in 1:nchains){
 # select parameters to monitors
 params = c(
   # Population model
-  'S', 'B', 'Ra', 'sYAF', 'sSA', 'sAD',        # yearly vital rates
-  'nYAF', 'nSA', 'nAD', 'nTOT',                # population sizes
+  'S', 'Bt', 'Ra', 'sYAF', 'sSA', 'sAD',                      # yearly vital rates
+  'nYAF', 'nSA', 'nAD', 'nTOT',                               # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat', # 'ageM',             # latent states
-  'BetaA.S', 'BetaD.S', 'BetaV.S',             # covariate effects
-  'Mu.O', 'Epsilon.O', 'Sigma.O',              # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S',                # random effects
+  'dens.hat', 'veg.hat', # 'ageM',                            # latent states
+  'BetaA.S', 'BetaD.S', 'BetaV.S',                            # covariate effects
+  'Mu.O', 'Epsilon.O', 'Sigma.O',                             # observation parameters
+  'Gamma.S', 'Xi.S', 'Sigma.S',                               # random effects
   
   # Reproductive success model
-  "Mu.Ri", "Mu.Ra",                            # mean reproductive success
-  # 'BetaD.R', 'BetaV.R', 'BetaW.R',           # covariate effects
-  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', # random effects
-  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra')       # random effects
+  'Mu.Bt', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
+  # 'BetaD.R', 'BetaV.R', 'BetaW.R',                          # covariate effects
+  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.Bt', # random effects
+  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt')         # random effects
+  
+  # Abundance model
+  # 'ab', 'propF'
+  # )
 
 # select MCMC settings
 if(testRun){
@@ -133,9 +133,9 @@ if(testRun){
   nburnin <- 0
   nthin   <- 1
 }else{
-  niter   <- 10000
-  nburnin <- 6000
-  nthin   <- 1
+  niter   <- 40000
+  nburnin <- 32000
+  nthin   <- 8
 }
 
 
@@ -165,7 +165,7 @@ out.mcmc <- as.mcmc.list(samples)
 
 # save output
 fit <- list(model = myCode, out.mcmc = out.mcmc, dur = dur)
-write_rds(fit, 'results/IPM_CJS_RS_AB.rds', compress = 'xz')
+write_rds(fit, 'results/IPM_CJS.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -191,30 +191,46 @@ library(scales)
 # }
 
 # summaries
+MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('Mu.Ra'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('S', 'B', 'Ra'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt'), n.eff = TRUE, round = 2)
+
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
 
 # chainplots
+MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Epsilon.O', 'Sigma.O'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('S', 'B'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('sYAF', 'sSA', 'sAD'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.Bt'), pdf = FALSE)
+
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)
 
 
-## Plot population model -------------------------------------------------------
+## Compare model outputs -------------------------------------------------------
 
 nYear <- myConst$nYear
 nAge  <- myConst$nAge
 nAgeC <- myConst$nAgeC
+
+source("compareModels.R")
+compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
+              postPaths = c("results/IPM_CJS_RS.rds", "results/IPM_CJS_RSen.rds"),
+              modelNames = c("IPM/CJS/RS", "IPM/CJS/RSen"), plotFolder = c("figures/RSen"),
+              returnSumData = TRUE)
+
+
+## Plot population model -------------------------------------------------------
 
 # posterior samples
 out.mat <- as.matrix(samples)
@@ -223,7 +239,8 @@ out.mat <- as.matrix(samples)
 table.params <- c(
   paste0('nYAF[', 1:nYear, ']'),
   paste0('nSA[', 1:nYear, ']'),
-  paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'))
+  paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'),
+  paste0('nTOT[', 1:nYear, ']'))
 
 # table.params <- list(
 #   nYAF = c(paste0('nYAF[', 1:nYear, ']')),
@@ -241,15 +258,15 @@ for(i in 1:length(table.params)){
 }
 
 # plot results
-# nTOT <- grep("^nTOT\\[", colnames(samples)); nTOT
 # nYAF <- grep("^nYAF\\[", colnames(samples)); nYAF
 # nSA <- grep("^nSA\\[", colnames(samples)); nSA
 # nAD <- grep("^nAD\\[", colnames(samples)); nAD
+# nTOT <- grep("^nTOT\\[", colnames(samples)); nTOT
 
-nTOT <- grep("^nTOT\\[", colnames(out.mcmc[[1]])); nTOT
 nYAF <- grep("^nYAF\\[", colnames(out.mcmc[[1]])); nYAF
 nSA <- grep("^nSA\\[", colnames(out.mcmc[[1]])); nSA
 nAD <- grep("^nAD\\[", colnames(out.mcmc[[1]])); nAD
+nTOT <- grep("^nTOT\\[", colnames(out.mcmc[[1]])); nTOT
 
 var <- nTOT
 
