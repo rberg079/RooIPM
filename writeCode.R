@@ -138,14 +138,14 @@ writeCode <- function(){
     ## ABUNDANCE MODEL
     ## -------------------------------------------------------------------------
     
-    #### Likelihood ####
-    for(t in 1:nYear){
-      ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
-    }
-
-    for(p in 1:nNoProp){
-      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
-    }
+    # #### Likelihood ####
+    # for(t in 1:nYear){
+    #   ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
+    # }
+    # 
+    # for(p in 1:nNoProp){
+    #   propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+    # }
     
     
     ## SURVIVAL MODEL (CJS)

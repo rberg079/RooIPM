@@ -15,6 +15,7 @@ library(here)
 library(boot)
 library(coda)
 library(nimble)
+library(parallel)
 
 # load data
 source('wrangleData_en.R')
@@ -79,7 +80,7 @@ myConst <- list(nR = rsData$nR,
 source('writeCode.R')
 myCode <- writeCode()
 
-nchains   <- 3
+nchains   <- 4
 seedMod   <- 1:nchains
 seedInits <- 1
 
@@ -142,23 +143,74 @@ if(testRun){
 
 ## Run model -------------------------------------------------------------------
 
+# start <- Sys.time()
+# samples <- nimbleMCMC(code = myCode,
+#                       data = myData,
+#                       constants = myConst,
+#                       inits = myInits,
+#                       monitors = params,
+#                       niter = niter,
+#                       nburnin = nburnin,
+#                       nchains = nchains,
+#                       thin = nthin,
+#                       samplesAsCodaMCMC = T,
+#                       setSeed = seedMod)
+# dur <- Sys.time() - start; dur
+# beep(2)
+# 
+# # save MCMC output
+# out.mcmc <- as.mcmc.list(samples)
+# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
+
+
+## Run in parallel -------------------------------------------------------------
+
+# function to run one chain inside cluster
+runChain <- function(chainID, code, data, const, inits, params, niter, nburnin, nthin, seed){
+  
+  library(nimble)
+  set.seed(seed)
+  inits <- myInits[[chainID]]
+  
+  model <- nimbleModel(code = myCode, data = myData, constants = myConst, inits = inits)
+  cModel <- compileNimble(model)
+  conf <- configureMCMC(model, monitors = params)
+  mcmc <- buildMCMC(conf)
+  cMCMC <- compileNimble(mcmc, project = model)
+  
+  samples <- runMCMC(cMCMC,
+                     thin = nthin,
+                     nburnin = nburnin,
+                     niter = niter,
+                     setSeed = seed,
+                     samplesAsCodaMCMC = TRUE)
+  return(samples)
+}
+
+# create a cluster & export everything needed to each worker
+cl <- makeCluster(nchains)
+clusterExport(cl, varlist = c("myCode", "myData", "myConst", "myInits", 
+                              "params", "nthin", "nburnin", "niter", "seedMod", "runChain"))
+
+# run chains in parallel
 start <- Sys.time()
-samples <- nimbleMCMC(code = myCode,
-                      data = myData,
-                      constants = myConst,
-                      inits = myInits,
-                      monitors = params,
-                      niter = niter,
-                      nburnin = nburnin,
-                      nchains = nchains,
-                      thin = nthin,
-                      samplesAsCodaMCMC = T,
-                      setSeed = seedMod)
+samples <- parLapply(cl, 1:nchains, function(i){
+  runChain(i,
+           code = myCode,
+           data = myData,
+           const = myConst,
+           inits = myInits,
+           params = params,
+           nthin = nthin,
+           nburnin = nburnin, 
+           niter = niter, 
+           seed = seedMod[i])})
 dur <- Sys.time() - start; dur
+stopCluster(cl)
 beep(2)
 
-# save MCMC output
-out.mcmc <- as.mcmc.list(samples)
+# combine & save
+out.mcmc <- mcmc.list(samples)
 saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
 
 
@@ -232,7 +284,7 @@ param.samples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
 ## Plot population model -------------------------------------------------------
 
 # posterior samples
-out.mat <- as.matrix(samples)
+out.mat <- as.matrix(out.mcmc)
 
 # parameters to include
 table.params <- c(
