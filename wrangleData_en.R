@@ -13,13 +13,13 @@
 
 wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list){
   
-  # # for testing purposes
-  # dens.data = "data/abundanceData_Proteus.csv"
-  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
-  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
-  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
-  # obs.data = "data/PromObs_2008-2019.xlsx"
-  # list = "data/PromlistAllOct24.xlsx"
+  # for testing purposes
+  dens.data = "data/abundanceData_Proteus.csv"
+  veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
+  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
+  wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  obs.data = "data/PromObs_2008-2019.xlsx"
+  list = "data/PromlistAllOct24.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -165,7 +165,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18))
+    distinct(Date, Year, Month, Day, SeasYr, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18))
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -177,13 +177,10 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
     filter(!is.na(Ab)) %>% 
-    group_by(Year) %>%
-    summarise(Ab = mean(Ab),
-              AbE = sqrt(sum(AbE^2)/n()),
-              Dens = mean(Dens),
-              DensE = sqrt(sum(DensE^2)/n())) %>% 
-    ungroup() %>% 
-    distinct(Year, Ab, AbE, Dens, DensE)
+    filter(grepl("Spr", SeasYr)) %>% 
+    distinct(SeasYr, Ab, AbE, Dens, DensE) %>% 
+    mutate(Year = as.integer(str_extract(SeasYr, "\\d{4}"))) %>% 
+    select(Year, Ab, AbE, Dens, DensE)
   
   veg <- env %>% 
     filter(!is.na(Veg)) %>% 
@@ -206,8 +203,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     distinct(Year, Win)
   
   # join & calculate vegetation per capita
-  env <- dens %>% 
-    rbind(c(2024, NA, NA, NA, NA)) %>% 
+  env <- c(2008, NA, NA, NA, NA) %>% 
+    rbind(dens, c(2024, NA, NA, NA, NA)) %>% 
     left_join(veg, by = "Year") %>% 
     left_join(win, by = "Year") %>% 
     mutate(VegRoo = Veg / Dens,
