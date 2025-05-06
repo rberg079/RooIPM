@@ -37,7 +37,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # source("wrangleData_rs.R")
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
   #                          obs.data = "data/PromObs_2008-2019.xlsx",
-  #                          known.age = TRUE, cum.surv = TRUE, surv.sep1 = TRUE)
+  #                          known.age = TRUE, cum.surv = FALSE)
   # 
   # source("wrangleData_sv.R")
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
@@ -49,8 +49,8 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # nYear <- 17
   # nAge <- 19
   # nAgeC <- 5
-  # id.R <- rsData$id
-  # year.R <- rsData$year
+  # id.R <- rsData$id.R
+  # year.R <- rsData$year.R
   # age.R <- rsData$age.R
   # dens <- enData$dens
   # veg <- enData$veg
@@ -70,6 +70,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   ageM <- sample(3:8, size = nNoAge, replace = T)
   dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
+  win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
   propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
   
   # true environment
@@ -93,10 +94,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   BetaV.S <- rnorm(nAgeC, 0, 1)
   # BetaDV.S <- rnorm(nAgeC, 0, 1)
   
-  ## Reproductive success model
-  # BetaD.rs <- rnorm(1, 0, 1)
-  # BetaV.rs <- rnorm(1, 0, 1)
-  # BetaW.rs <- rnorm(1, 0, 1)
+  # Reproductive success model
+  BetaD.R <- rnorm(1, 0, 1)
+  BetaV.R <- rnorm(1, 0, 1)
+  BetaW.R <- rnorm(1, 0, 1)
   
   
   ## Simulate vital rate random effects ----------------------------------------
@@ -166,9 +167,9 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   for(x in 1:nR) {
     Ri[x] <- plogis(
       qlogis(Mu.Ri[age.R[x]]) +
-        # BetaD.rs * dens[year[x]] +
-        # BetaV.rs * veg[year[x]] +
-        # BetaW.rs * win[year[x]] +
+        BetaD.R * dens[year.R[x]] +
+        BetaV.R * veg[year.R[x]] +
+        BetaW.R * win[year.R[x]] +
         EpsilonI.Ri[id.R[x]] +
         EpsilonT.Ri[year.R[x]]
     )
@@ -179,9 +180,9 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
     for(t in 1:(nYear-1)) {
       Ra[a, t] <- plogis(
         qlogis(Mu.Ra[a]) +
-          # BetaD.rs * dens[t] +
-          # BetaV.rs * veg[t] +
-          # BetaW.rs * win[t] +
+          BetaD.R * dens[t] +
+          BetaV.R * veg[t] +
+          BetaW.R * win[t] +
           EpsilonT.Ra[t]
       )
     }
@@ -269,6 +270,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   return(list(ageM = ageM,
               dens = dens,
               veg = veg,
+              win = win,
               propF = propF,
               dens.hat = dens.hat,
               veg.hat = veg.hat,
@@ -279,6 +281,9 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               BetaA.S = BetaA.S,
               BetaD.S = BetaD.S,
               BetaV.S = BetaV.S,
+              BetaD.R = BetaD.R,
+              BetaV.R = BetaV.R,
+              BetaW.R = BetaW.R,
               
               Xi.S = Xi.S,
               Epsilon.S = Epsilon.S,

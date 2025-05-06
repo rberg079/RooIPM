@@ -9,10 +9,6 @@ library(lubridate)
 library(beepr)
 library(coda)
 library(nimble)
-# library(foreach)
-# library(parallel)
-# library(doParallel)
-# registerDoParallel(3)
 
 # load data
 source("wrangleData_en.R")
