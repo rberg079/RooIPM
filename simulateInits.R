@@ -94,7 +94,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   BetaV.S <- rnorm(nAgeC, 0, 1)
   # BetaDV.S <- rnorm(nAgeC, 0, 1)
   
-  # Reproductive success model
+  ## Reproductive success model
   BetaD.R <- rnorm(1, 0, 1)
   BetaV.R <- rnorm(1, 0, 1)
   BetaW.R <- rnorm(1, 0, 1)

@@ -17,7 +17,7 @@ library(coda)
 library(nimble)
 
 # load data
-source("wrangleData_en.R")
+source('wrangleData_en.R')
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
@@ -25,12 +25,12 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          obs.data  = "data/PromObs_2008-2019.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
-source("wrangleData_sv.R")
+source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
                          known.age = TRUE)
 
-source("wrangleData_rs.R")
+source('wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2019.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
@@ -76,7 +76,7 @@ myConst <- list(nR = rsData$nR,
 
 ## Assemble --------------------------------------------------------------------
 
-source("writeCode.R")
+source('writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 3
@@ -84,7 +84,7 @@ seedMod   <- 1:nchains
 seedInits <- 1
 
 # assign initial values
-source("simulateInits.R")
+source('simulateInits.R')
 set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
@@ -135,7 +135,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 4000
+  nburnin <- 20000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -157,12 +157,9 @@ samples <- nimbleMCMC(code = myCode,
 dur <- Sys.time() - start; dur
 beep(2)
 
-# MCMC output
+# save MCMC output
 out.mcmc <- as.mcmc.list(samples)
-
-# save output
-fit <- list(model = myCode, out.mcmc = out.mcmc, dur = dur)
-write_rds(fit, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -173,10 +170,8 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-# load results
-# fit <- read_rds('results/IPM_CJS.rds')
-# out.mcmc <- fit$out.mcmc
-
+# # load results
+# out.mcmc <- readRDS('results/IPM_CJS.rds')$out.mcmc
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -220,11 +215,18 @@ nYear <- myConst$nYear
 nAge  <- myConst$nAge
 nAgeC <- myConst$nAgeC
 
-source("compareModels.R")
+source('compareModels.R')
 compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
               postPaths = c("results/IPM_CJS_RS.rds", "results/IPM_CJS_RSen.rds"),
               modelNames = c("IPM/CJS/RS", "IPM/CJS/RSen"), plotFolder = c("figures/RSen"),
               returnSumData = TRUE)
+
+
+## Extract parameter samples ---------------------------------------------------
+
+source('extractParamSamples.R')
+param.samples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+# param.samples <- readRDS('results/paramSamples.rds')
 
 
 ## Plot population model -------------------------------------------------------
