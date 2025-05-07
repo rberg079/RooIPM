@@ -6,8 +6,8 @@
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
-#' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
 #' @param year.R vector of length nR of years in the reproductive success analysis.
+#' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
 #' @param age.R vector of length nR of age of individuals in the reproductive success analysis.
 #' @param dens vector of lenth nYear of population density data.
 #' @param veg vector of lenth nYear of available vegetation data.
@@ -18,52 +18,56 @@
 #'
 #' @examples
 
-simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, nAgeC = 5,
-                          id.R, year.R, age.R, dens, veg, win, propF){
+simulateInits <- function(nR, nID.S, nID.R, nYear = 17, nAge = 19, nAgeC = 5,
+                          year.R, id.R, age.R, dens, veg, win, propF,
+                          envEffectsR = TRUE, envEffectsS = TRUE){
   
-  # for testing purposes
-  library(readxl)
-  library(tidyverse)
-  source("wrangleData_en.R")
-  source("wrangleData_rs.R")
-  source("wrangleData_sv.R")
+  # # for testing purposes
+  # library(readxl)
+  # library(tidyverse)
+  # 
+  # source("wrangleData_en.R")
+  # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
+  #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
+  #                          obs.data  = "data/PromObs_2008-2019.xlsx",
+  #                          list      = "data/PromlistAllOct24.xlsx")
+  # 
+  # source("wrangleData_rs.R")
+  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+  #                          obs.data = "data/PromObs_2008-2019.xlsx",
+  #                          known.age = TRUE, cum.surv = FALSE)
+  # 
+  # source("wrangleData_sv.R")
+  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+  #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
+  # 
+  # nR <- rsData$nR
+  # nID.S <- svData$nID
+  # nID.R <- rsData$nID
+  # nYear <- 17
+  # nAge <- 19
+  # nAgeC <- 5
+  # year.R <- rsData$year.R
+  # id.R <- rsData$id.R
+  # age.R <- rsData$age.R
+  # dens <- enData$dens
+  # veg <- enData$veg
+  # win <- enData$win
+  # propF <- enData$propF
+  # envEffectsS <- TRUE
+  # envEffectsR <- TRUE
   
-  enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-                           obs.data  = "data/PromObs_2008-2019.xlsx",
-                           list      = "data/PromlistAllOct24.xlsx")
-  rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                           obs.data = "data/PromObs_2008-2019.xlsx",
-                           known.age = TRUE, cum.surv = FALSE)
-  svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-                           yafs.data = "data/RSmainRB_Mar25.xlsx")
-
-  nR <- rsData$nR
-  nID.S <- svData$nID
-  nID.R <- rsData$nID
-  nYear <- 17
-  nAge <- 19
-  nAgeC <- 5
-  id.R <- rsData$id.R
-  year.R <- rsData$year.R
-  age.R <- rsData$age.R
-  dens <- enData$dens
-  veg <- enData$veg
-  win <- enData$win
-  propF <- enData$propF
-  
-  if(missing(age.R)){
-    age.R <- integer(nR)
-  }
+  if(missing(age.R))  age.R  <- integer(nR)
+  if(missing(year.R)) year.R <- integer(nR)
+  if(missing(id.R))   id.R   <- integer(nR)
   
   
   ## Simulate latent states for input data -------------------------------------
   
   ## Survival model
   # missing values
-  # ageM <- sample(3:8, size = nNoAge, replace = T)
   dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
   win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
@@ -72,6 +76,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   # true environment
   dens.hat <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg.hat  <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
+  win.hat  <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
   
   # latent states
   Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
@@ -86,14 +91,18 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
                rnorm(1, 2.8, 0.2),
                rnorm(1, 2.4, 0.2),
                rnorm(1, 1.0, 0.2))
-  BetaD.S <- runif(nAgeC, -5, 5)
-  BetaV.S <- runif(nAgeC, -5, 5)
-  # BetaDV.S <- rnorm(nAgeC, 0, 1)
+  
+  if(envEffectsS){
+    BetaD.S <- runif(nAgeC, -5, 5)
+    BetaV.S <- runif(nAgeC, -5, 5)
+  }
   
   ## Reproductive success model
-  BetaD.R <- runif(1, -2, 2)
-  BetaV.R <- runif(1, -2, 2)
-  BetaW.R <- runif(1, -2, 2)
+  if(envEffectsR){
+    BetaD.R <- runif(1, -2, 2)
+    BetaV.R <- runif(1, -2, 2)
+    BetaW.R <- runif(1, -2, 2)
+  }
   
   
   ## Simulate vital rate random effects ----------------------------------------
@@ -137,14 +146,18 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   S <- matrix(NA, nrow = nAgeC, ncol = nYear-1)
   
   for(a in 1:nAgeC){
-    for(t in 1:(nYear-1)){
-      S[a, t] <- plogis(
-        BetaA.S[a] +
-        # BetaD.S[a] * dens.hat[t] +
-        # BetaV.S[a] * veg.hat[t] +
-        # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
-        # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
-        Gamma.S[t, a])
+    for(t in 1:(nYear - 1)){
+      if(envEffectsS){
+        S[a, t] <- plogis(
+          BetaA.S[a] +
+            BetaD.S[a] * dens.hat[t] +
+            BetaV.S[a] * veg.hat[t] +
+            Gamma.S[t, a])
+      }else{
+        S[a, t] <- plogis(
+          BetaA.S[a] +
+            Gamma.S[t, a])
+      }
     }
   }
 
@@ -167,24 +180,37 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
 
   Ri <- numeric(nR)
   for(x in 1:nR){
-    Ri[x] <- plogis(
-      qlogis(Mu.Ri[age.R[x]]) +
-        BetaD.R * dens[year.R[x]] +
-        BetaV.R * veg[year.R[x]] +
-        BetaW.R * win[year.R[x]] +
-        EpsilonI.Ri[id.R[x]] +
-        EpsilonT.Ri[year.R[x]])
+    if(envEffectsR){
+      Ri[x] <- plogis(
+        qlogis(Mu.Ri[age.R[x]]) +
+          BetaD.R * dens.hat[year.R[x]] +
+          BetaV.R * veg.hat[year.R[x]] +
+          BetaW.R * win.hat[year.R[x]] +
+          EpsilonI.Ri[id.R[x]] +
+          EpsilonT.Ri[year.R[x]])
+    }else{
+      Ri[x] <- plogis(
+        qlogis(Mu.Ri[age.R[x]]) +
+          EpsilonI.Ri[id.R[x]] +
+          EpsilonT.Ri[year.R[x]])
+    }
   }
 
   Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
   for(a in 1:nAge) {
     for(t in 1:(nYear-1)) {
-      Ra[a, t] <- plogis(
-        qlogis(Mu.Ra[a]) +
-          BetaD.R * dens[t] +
-          BetaV.R * veg[t] +
-          BetaW.R * win[t] +
-          EpsilonT.Ra[t])
+      if(envEffectsR){
+        Ra[a, t] <- plogis(
+          qlogis(Mu.Ra[a]) +
+            BetaD.R * dens.hat[t] +
+            BetaV.R * veg.hat[t] +
+            BetaW.R * win.hat[t] +
+            EpsilonT.Ra[t])
+      }else{
+        Ra[a, t] <- plogis(
+          qlogis(Mu.Ra[a]) +
+            EpsilonT.Ra[t])
+      }
     }
   }
   
@@ -247,77 +273,89 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
     for(a in 3:nAge){
       nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * Ra[a-1, t]))
     }
-    # nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
-    nYAF[t+1] <- sum(nYAFa[3:nAge, t + 1])
-    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[3:nAge, t+1])
+    nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
+    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
-  ab <- round(pmax((nTOT / pmax(propF, .01)) + rnorm(length(nTOT), 0, 2), 1))
-  # pmax(propF, 0.01) returns 0.01 if propF falls below it
+  ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
+  # pmax(propF, .4) returns .4 if propF falls below it
   # pmax(..., 1) returns 1 if ab falls below it
-  # so propF is at least 1% & ab at least 1
+  # so propF is at least 40% & ab at least 1
   
+  nYAF; nSA; nAD; nTOT; ab
   
   ## Assemble myinits list -----------------------------------------------------
   
-  return(list(# ageM = ageM,
-              dens = dens,
-              veg = veg,
-              win = win,
-              propF = propF,
-              dens.hat = dens.hat,
-              veg.hat = veg.hat,
-              
-              Mu.Sp = Mu.Sp,
-              Mu.Op = Mu.Op,
-              
-              BetaA.S = BetaA.S,
-              BetaD.S = BetaD.S,
-              BetaV.S = BetaV.S,
-              BetaD.R = BetaD.R,
-              BetaV.R = BetaV.R,
-              BetaW.R = BetaW.R,
-              
-              Xi.S = Xi.S,
-              Epsilon.S = Epsilon.S,
-              Gamma.S = Gamma.S,
-              Tau.S = Tau.S,
-              
-              EpsilonI.Ri = EpsilonI.Ri,
-              EpsilonT.Ri = EpsilonT.Ri,
-              EpsilonT.Ra = EpsilonT.Ra,
-              EpsilonT.B = EpsilonT.B,
-
-              SigmaI.Ri = SigmaI.Ri,
-              SigmaT.Ri = SigmaT.Ri,
-              SigmaT.Ra = SigmaT.Ra,
-              SigmaT.B = SigmaT.B,
-
-              Mu.B = Mu.B,
-              Mu.Ri = Mu.Ri,
-              Mu.Ra = Mu.Ra,
-              Bi = Bi,
-              Ri = Ri,
-              Ra = Ra,
-              Bt = Bt,
-              
-              S = S,
-              sYAF = sYAF,
-              sSA = sSA,
-              sAD = sAD,
-              
-              O = O,
-              Mu.O = Mu.O,
-              Epsilon.O = Epsilon.O,
-              Sigma.O = Sigma.O,
-              
-              nYAF = nYAF,
-              nYAFa = nYAFa,
-              nSA = nSA,
-              nAD = nAD,
-              nTOT = nTOT,
-              ab = ab
-              ))
+  initList <- list(
+    dens = dens,
+    veg = veg,
+    win = win,
+    propF = propF,
+    dens.hat = dens.hat,
+    veg.hat = veg.hat,
+    win.hat = win.hat,
+    
+    Mu.Sp = Mu.Sp,
+    Mu.Op = Mu.Op,
+    
+    Xi.S = Xi.S,
+    Epsilon.S = Epsilon.S,
+    Gamma.S = Gamma.S,
+    Tau.S = Tau.S,
+    
+    EpsilonI.Ri = EpsilonI.Ri,
+    EpsilonT.Ri = EpsilonT.Ri,
+    EpsilonT.Ra = EpsilonT.Ra,
+    EpsilonT.B = EpsilonT.B,
+    
+    SigmaI.Ri = SigmaI.Ri,
+    SigmaT.Ri = SigmaT.Ri,
+    SigmaT.Ra = SigmaT.Ra,
+    SigmaT.B = SigmaT.B,
+    
+    Mu.B = Mu.B,
+    Mu.Ri = Mu.Ri,
+    Mu.Ra = Mu.Ra,
+    Bi = Bi,
+    Ri = Ri,
+    Ra = Ra,
+    Bt = Bt,
+    
+    S = S,
+    sYAF = sYAF,
+    sSA = sSA,
+    sAD = sAD,
+    
+    O = O,
+    Mu.O = Mu.O,
+    Epsilon.O = Epsilon.O,
+    Sigma.O = Sigma.O,
+    
+    nYAF = nYAF,
+    nYAFa = nYAFa,
+    nSA = nSA,
+    nAD = nAD,
+    nTOT = nTOT,
+    ab = ab
+  )
+  
+  if(envEffectsS){
+    initList <- c(initList, list(
+      BetaA.S = BetaA.S,
+      BetaD.S = BetaD.S,
+      BetaV.S = BetaV.S
+    ))
+  }
+  
+  if(envEffectsR){
+    initList <- c(initList, list(
+      BetaD.R = BetaD.R,
+      BetaV.R = BetaV.R,
+      BetaW.R = BetaW.R
+    ))
+  }
+  
+  return(initList)
   
 }
 
