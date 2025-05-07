@@ -94,6 +94,35 @@ writeCode <- function(){
   
   myCode = nimbleCode({
     
+    
+    ## MISSING VALUES
+    ## -------------------------------------------------------------------------
+    
+    if(envEffectsS || envEffectsR){
+      for(t in 1:(nYear-1)){
+        dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+        veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
+        win.hat[t]  ~ dnorm(win[t], sd = 1)
+      }
+      
+      for(m in 1:nNoVeg){
+        veg[m] ~ dnorm(0, sd = 2)
+      }
+      
+      for(m in 1:nNoDens){
+        dens[m] ~ dnorm(0, sd = 2)
+      }
+      
+      for(m in 1:nNoWin){
+        win[m] ~ dnorm(0, sd = 2)
+      }
+    }
+    
+    for(p in 1:nNoProp){
+      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+    }
+    
+    
     ## POPULATION MODEL
     ## -------------------------------------------------------------------------
     
@@ -108,8 +137,8 @@ writeCode <- function(){
         nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       }
       # then reproduction
-      for(a in 2:nAge){
-        nYAFa[a+1, t+1] ~ dbin(0.5 * Bt[t] * Ra[a, t], nAD[a, t])
+      for(a in 3:nAge){
+        nYAFa[a, t+1] ~ dbin(0.5 * Bt[t] * Ra[a-1, t], nAD[a-1, t])
       }
       nYAF[t+1] <- sum(nYAFa[3:nAge, t+1]) # number of female YAFs
       nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
@@ -138,15 +167,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      # ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
-      
-      # TODO: discuss with Chloé!
-      ab[t] ~ dnorm(Mu.ab[t], sd = abE[t])
-      Mu.ab[t] <- nTOT[t] / propF[t]
-    }
-    
-    for(p in 1:nNoProp){
-      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
     }
     
     
@@ -181,26 +202,6 @@ writeCode <- function(){
           logit(S[a, t]) <- BetaA.S[a] +
             Gamma.S[t, a]
         }
-      }
-    }
-    
-    if(envEffectsS || envEffectsR){
-      for(t in 1:(nYear-1)){
-        dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-        veg.hat[t] ~ dnorm(veg[t], sd = vegE[t])
-        win.hat[t] ~ dnorm(win[t], sd = 1)
-      }
-      
-      for(m in 1:nNoVeg){
-        veg[m] ~ dnorm(0, sd = 2)
-      }
-      
-      for(m in 1:nNoDens){
-        dens[m] ~ dnorm(0, sd = 2)
-      }
-      
-      for(m in 1:nNoWin){
-        win[m] ~ dnorm(0, sd = 2)
       }
     }
 

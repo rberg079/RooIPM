@@ -18,8 +18,8 @@
 #'
 #' @examples
 
-simulateInits <- function(nR, nID.S, nID.R, nYear = 17, nAge = 19, nAgeC = 5,
-                          year.R, id.R, age.R, dens, veg, win, propF,
+simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, nAgeC = 5,
+                          year.R = 0, id.R = 0, age.R = 0, dens, veg, win, propF = 0,
                           envEffectsR = TRUE, envEffectsS = TRUE){
   
   # # for testing purposes
