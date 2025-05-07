@@ -136,7 +136,7 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
                   mutate(param = paste0('S[', a, ', ', t, ']')) %>% 
                   pull(param)),
     
-    # RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
+    RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
 
     RSranEF = c(paste0('EpsilonT.Ri[', c(2, 6, 10, 14), ']'),
                 paste0('EpsilonT.Ra[', c(2, 6, 10, 14), ']'),

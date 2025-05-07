@@ -214,10 +214,10 @@ writeCode <- function(){
     #### Priors ####
     # for fixed effects
     for(a in 1:nAgeC){
-      BetaA.S[a] ~ dnorm(0, sd = 2)
-      BetaD.S[a] ~ dnorm(0, sd = 2)
-      BetaV.S[a] ~ dnorm(0, sd = 2)
-      # BetaDV.S[a] ~ dnorm(0, sd = 2)
+      BetaA.S[a] ~ dunif(-5, 5)
+      BetaD.S[a] ~ dunif(-5, 5)
+      BetaV.S[a] ~ dunif(-5, 5)
+      # BetaDV.S[a] ~ dunif(-5, 5)
     }
     
     # for random effects

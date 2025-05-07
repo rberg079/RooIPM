@@ -5,7 +5,8 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- F
+testRun <- TRUE
+parallelRun <- FALSE
 
 # load packages
 library(tidyverse)
@@ -48,9 +49,9 @@ myData  <- list(obs = svData$obs,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
                 
-                # ab = enData$ab,
-                # abE = enData$abE,
-                # propF = enData$propF,
+                ab = enData$ab,
+                abE = enData$abE,
+                propF = enData$propF,
                 dens = enData$dens,
                 densE = enData$densE,
                 veg = enData$veg,
@@ -63,8 +64,6 @@ myConst <- list(nR = rsData$nR,
                 nYear = svData$nYear,
                 nAge = rsData$nAge,
                 nAgeC = rsData$nAgeC,
-                # noAge = svData$noAge,
-                # nNoAge = svData$nNoAge,
                 nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
@@ -103,7 +102,6 @@ for(c in 1:nchains){
     veg = myData$veg,
     win = myData$win,
     propF = myData$propF
-    # nNoAge = myConst$nNoAge
     )
 }
 
@@ -117,16 +115,16 @@ params = c(
   'dens.hat', 'veg.hat', # 'ageM',                           # latent states
   'BetaA.S', 'BetaD.S', 'BetaV.S',                           # covariate effects
   'Mu.O', 'Epsilon.O', 'Sigma.O',                            # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S'                              # random effects
+  'Gamma.S', 'Xi.S', 'Sigma.S',                              # random effects
   
-  # # Reproductive success model
-  # 'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
-  # # 'BetaD.R', 'BetaV.R', 'BetaW.R',                           # covariate effects
-  # 'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B', # random effects
-  # 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'          # random effects
+  # Reproductive success model
+  'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
+  'BetaD.R', 'BetaV.R', 'BetaW.R',                           # covariate effects
+  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B', # random effects
+  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B',         # random effects
   
-  # # Abundance model
-  # 'ab', 'propF'
+  # Abundance model
+  'ab', 'propF'
   )
 
 # select MCMC settings
@@ -143,75 +141,75 @@ if(testRun){
 
 ## Run model -------------------------------------------------------------------
 
-# start <- Sys.time()
-# samples <- nimbleMCMC(code = myCode,
-#                       data = myData,
-#                       constants = myConst,
-#                       inits = myInits,
-#                       monitors = params,
-#                       niter = niter,
-#                       nburnin = nburnin,
-#                       nchains = nchains,
-#                       thin = nthin,
-#                       samplesAsCodaMCMC = T,
-#                       setSeed = seedMod)
-# dur <- Sys.time() - start; dur
-# beep(2)
-# 
-# # save MCMC output
-# out.mcmc <- as.mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
-
-
-## Run in parallel -------------------------------------------------------------
-
-# function to run one chain inside cluster
-runChain <- function(chainID, code, data, const, inits, params, niter, nburnin, nthin, seed){
+if(parallelRun){
+  # function to run one chain inside cluster
+  runChain <- function(chainID, code, data, const, inits, params,
+                       niter, nburnin, nthin, seed){
+    
+    library(nimble)
+    set.seed(seed)
+    inits <- myInits[[chainID]]
+    
+    model <- nimbleModel(code = myCode, data = myData, constants = myConst, inits = inits)
+    cModel <- compileNimble(model)
+    conf <- configureMCMC(model, monitors = params)
+    mcmc <- buildMCMC(conf)
+    cMCMC <- compileNimble(mcmc, project = model)
+    
+    samples <- runMCMC(cMCMC,
+                       thin = nthin,
+                       nburnin = nburnin,
+                       niter = niter,
+                       setSeed = seed,
+                       samplesAsCodaMCMC = TRUE)
+    return(samples)
+  }
   
-  library(nimble)
-  set.seed(seed)
-  inits <- myInits[[chainID]]
-  
-  model <- nimbleModel(code = myCode, data = myData, constants = myConst, inits = inits)
-  cModel <- compileNimble(model)
-  conf <- configureMCMC(model, monitors = params)
-  mcmc <- buildMCMC(conf)
-  cMCMC <- compileNimble(mcmc, project = model)
-  
-  samples <- runMCMC(cMCMC,
-                     thin = nthin,
-                     nburnin = nburnin,
-                     niter = niter,
-                     setSeed = seed,
-                     samplesAsCodaMCMC = TRUE)
-  return(samples)
+  # create a cluster & export everything needed to each worker
+  cl <- makeCluster(nchains)
+  clusterExport(cl, varlist = c("myCode", "myData", "myConst", "myInits", 
+                                "params", "nthin", "nburnin", "niter",
+                                "seedMod", "runChain"))
 }
 
-# create a cluster & export everything needed to each worker
-cl <- makeCluster(nchains)
-clusterExport(cl, varlist = c("myCode", "myData", "myConst", "myInits", 
-                              "params", "nthin", "nburnin", "niter", "seedMod", "runChain"))
-
-# run chains in parallel
-start <- Sys.time()
-samples <- parLapply(cl, 1:nchains, function(i){
-  runChain(i,
-           code = myCode,
-           data = myData,
-           const = myConst,
-           inits = myInits,
-           params = params,
-           nthin = nthin,
-           nburnin = nburnin, 
-           niter = niter, 
-           seed = seedMod[i])})
-dur <- Sys.time() - start; dur
-stopCluster(cl)
-beep(2)
+if(parallelRun){
+  # run chains in parallel
+  start <- Sys.time()
+  samples <- parLapply(cl, 1:nchains, function(i){
+    runChain(i,
+             code = myCode,
+             data = myData,
+             const = myConst,
+             inits = myInits,
+             params = params,
+             nthin = nthin,
+             nburnin = nburnin, 
+             niter = niter, 
+             seed = seedMod[i])})
+  dur <- Sys.time() - start; dur
+  stopCluster(cl)
+  beep(2)
+}else{
+  # run chains sequentially
+  start <- Sys.time()
+  samples <- nimbleMCMC(code = myCode,
+                        data = myData,
+                        constants = myConst,
+                        inits = myInits,
+                        monitors = params,
+                        niter = niter,
+                        nburnin = nburnin,
+                        nchains = nchains,
+                        thin = nthin,
+                        samplesAsCodaMCMC = T,
+                        setSeed = seedMod)
+  dur <- Sys.time() - start; dur
+  beep(2)
+}
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -222,9 +220,9 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-# load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
-summary(out.mcmc) # cannot handle NAs
+# # load results
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+# summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
 # for(i in 1:ncol(out.mcmc[[1]])){
@@ -293,11 +291,6 @@ table.params <- c(
   paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'),
   paste0('nTOT[', 1:nYear, ']'))
 
-# table.params <- list(
-#   nYAF = c(paste0('nYAF[', 1:nYear, ']')),
-#   nSA  = c(paste0('nSA[', rep(1:2, each = nYear), ', ', rep(1:nYear, times = 2), ']')),
-#   nAD  = c(paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']')))
-
 # table of posterior summaries
 post.table <- data.frame(Parameter = table.params, Estimate = NA)
 
@@ -309,11 +302,6 @@ for(i in 1:length(table.params)){
 }
 
 # plot results
-# nYAF <- grep("^nYAF\\[", colnames(samples)); nYAF
-# nSA <- grep("^nSA\\[", colnames(samples)); nSA
-# nAD <- grep("^nAD\\[", colnames(samples)); nAD
-# nTOT <- grep("^nTOT\\[", colnames(samples)); nTOT
-
 nYAF <- grep("^nYAF\\[", colnames(out.mcmc[[1]])); nYAF
 nSA <- grep("^nSA\\[", colnames(out.mcmc[[1]])); nSA
 nAD <- grep("^nAD\\[", colnames(out.mcmc[[1]])); nAD

@@ -12,7 +12,6 @@
 #' @param dens vector of lenth nYear of population density data.
 #' @param veg vector of lenth nYear of available vegetation data.
 #' @param win vector of lenth nYear of winter severity data.
-#' @param nNoAge integer. Number of individuals of unknown age in the analysis. nNoAge = 0 by default.
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
@@ -20,43 +19,40 @@
 #' @examples
 
 simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, nAgeC = 5,
-                          id.R, year.R, age.R, dens, veg, win, propF, nNoAge = 0){
+                          id.R, year.R, age.R, dens, veg, win, propF){
   
-  # # for testing purposes
-  # library(readxl)
-  # suppressPackageStartupMessages(library(tidyverse))
-  # 
-  # source("wrangleData_en.R")
-  # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-  #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-  #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-  #                          obs.data  = "data/PromObs_2008-2019.xlsx",
-  #                          list      = "data/PromlistAllOct24.xlsx")
-  # 
-  # source("wrangleData_rs.R")
-  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          obs.data = "data/PromObs_2008-2019.xlsx",
-  #                          known.age = TRUE, cum.surv = FALSE)
-  # 
-  # source("wrangleData_sv.R")
-  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-  #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
-  # 
-  # nR <- rsData$nR
-  # nID.S <- svData$nID
-  # nID.R <- rsData$nID
-  # nYear <- 17
-  # nAge <- 19
-  # nAgeC <- 5
-  # id.R <- rsData$id.R
-  # year.R <- rsData$year.R
-  # age.R <- rsData$age.R
-  # dens <- enData$dens
-  # veg <- enData$veg
-  # win <- enData$win
-  # propF <- enData$propF
-  # nNoAge <- svData$nNoAge
+  # for testing purposes
+  library(readxl)
+  library(tidyverse)
+  source("wrangleData_en.R")
+  source("wrangleData_rs.R")
+  source("wrangleData_sv.R")
+  
+  enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
+                           veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
+                           wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
+                           wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
+                           obs.data  = "data/PromObs_2008-2019.xlsx",
+                           list      = "data/PromlistAllOct24.xlsx")
+  rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
+                           obs.data = "data/PromObs_2008-2019.xlsx",
+                           known.age = TRUE, cum.surv = FALSE)
+  svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+                           yafs.data = "data/RSmainRB_Mar25.xlsx")
+
+  nR <- rsData$nR
+  nID.S <- svData$nID
+  nID.R <- rsData$nID
+  nYear <- 17
+  nAge <- 19
+  nAgeC <- 5
+  id.R <- rsData$id.R
+  year.R <- rsData$year.R
+  age.R <- rsData$age.R
+  dens <- enData$dens
+  veg <- enData$veg
+  win <- enData$win
+  propF <- enData$propF
   
   if(missing(age.R)){
     age.R <- integer(nR)
@@ -85,19 +81,19 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
   ## Simulate vital rate covariate effects -------------------------------------
   
   ## Survival model
-  BetaA.S <- c(rnorm(1, 0.6, 0.2),
-               rnorm(1, 2.3, 0.2),
+  BetaA.S <- c(rnorm(1, 1.0, 0.2),
+               rnorm(1, 2.4, 0.2),
                rnorm(1, 2.8, 0.2),
                rnorm(1, 2.4, 0.2),
                rnorm(1, 1.0, 0.2))
-  BetaD.S <- rnorm(nAgeC, 0, 1)
-  BetaV.S <- rnorm(nAgeC, 0, 1)
+  BetaD.S <- runif(nAgeC, -5, 5)
+  BetaV.S <- runif(nAgeC, -5, 5)
   # BetaDV.S <- rnorm(nAgeC, 0, 1)
   
   ## Reproductive success model
-  BetaD.R <- rnorm(1, 0, 1)
-  BetaV.R <- rnorm(1, 0, 1)
-  BetaW.R <- rnorm(1, 0, 1)
+  BetaD.R <- runif(1, -2, 2)
+  BetaV.R <- runif(1, -2, 2)
+  BetaW.R <- runif(1, -2, 2)
   
   
   ## Simulate vital rate random effects ----------------------------------------
@@ -278,30 +274,30 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 18, n
               BetaA.S = BetaA.S,
               BetaD.S = BetaD.S,
               BetaV.S = BetaV.S,
-              # BetaD.R = BetaD.R,
-              # BetaV.R = BetaV.R,
-              # BetaW.R = BetaW.R,
+              BetaD.R = BetaD.R,
+              BetaV.R = BetaV.R,
+              BetaW.R = BetaW.R,
               
               Xi.S = Xi.S,
               Epsilon.S = Epsilon.S,
               Gamma.S = Gamma.S,
               Tau.S = Tau.S,
               
-              # EpsilonI.Ri = EpsilonI.Ri,
-              # EpsilonT.Ri = EpsilonT.Ri,
-              # EpsilonT.Ra = EpsilonT.Ra,
-              # EpsilonT.B = EpsilonT.B,
-              # 
-              # SigmaI.Ri = SigmaI.Ri,
-              # SigmaT.Ri = SigmaT.Ri,
-              # SigmaT.Ra = SigmaT.Ra,
-              # SigmaT.B = SigmaT.B,
-              
-              # Mu.B = Mu.B,
-              # Mu.Ri = Mu.Ri,
-              # Mu.Ra = Mu.Ra,
-              # Bi = Bi,
-              # Ri = Ri,
+              EpsilonI.Ri = EpsilonI.Ri,
+              EpsilonT.Ri = EpsilonT.Ri,
+              EpsilonT.Ra = EpsilonT.Ra,
+              EpsilonT.B = EpsilonT.B,
+
+              SigmaI.Ri = SigmaI.Ri,
+              SigmaT.Ri = SigmaT.Ri,
+              SigmaT.Ra = SigmaT.Ra,
+              SigmaT.B = SigmaT.B,
+
+              Mu.B = Mu.B,
+              Mu.Ri = Mu.Ri,
+              Mu.Ra = Mu.Ra,
+              Bi = Bi,
+              Ri = Ri,
               Ra = Ra,
               Bt = Bt,
               
