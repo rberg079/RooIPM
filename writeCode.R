@@ -118,10 +118,6 @@ writeCode <- function(){
     
     # priors
     for(t in 1:(nYear-1)){
-      Bt[t]     ~ dunif(0.5, 1)
-      for(a in 2:nAge){
-        Ra[a, t] ~ dunif(0.1, 1)
-      }
       sYAF[t]   <- S[1, t]
       sSA[t]    <- S[2, t]
       sAD[1, t] <- 0 # don't exist
@@ -141,14 +137,14 @@ writeCode <- function(){
     ## ABUNDANCE MODEL
     ## -------------------------------------------------------------------------
     
-    # #### Likelihood ####
-    # for(t in 1:nYear){
-    #   ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
-    # }
-    # 
-    # for(p in 1:nNoProp){
-    #   propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
-    # }
+    #### Likelihood ####
+    for(t in 1:nYear){
+      ab[t] ~ dnorm(nTOT[t] / propF[t], sd = abE[t])
+    }
+
+    for(p in 1:nNoProp){
+      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+    }
     
     
     ## SURVIVAL MODEL (CJS)
@@ -250,71 +246,71 @@ writeCode <- function(){
     ## REPRODUCTIVE SUCCESS MODEL
     ## -------------------------------------------------------------------------
     
-    # #### Likelihood & constraints ####
-    # # yearly birth rate
-    # for(x in 1:nR){
-    #   B[x] ~ dbern(Bi[x])
-    #   logit(Bi[x]) <- logit(Mu.B) +
-    #     EpsilonT.B[year.R[x]]
-    # }
-    # 
-    # for(t in 1:(nYear-1)){
-    #   logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
-    # }
-    # 
-    # # individual RS function
-    # Mu.Ri[1] <- 0
-    # for(x in 1:nR){
-    #   R[x] ~ dbern(Ri[x])
-    #   logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
-    #     # BetaD.R * dens[year.R[x]] +
-    #     # BetaV.R * veg[year.R[x]] +
-    #     # BetaW.R * win[year.R[x]] +
-    #     EpsilonI.Ri[id.R[x]] +
-    #     EpsilonT.Ri[year.R[x]]
-    # }
-    # 
-    # # age-specific RS function
-    # # use parameters estimated from individual data above
-    # # to predict age-specific reproductive success (Ra) here!
-    # Mu.Ra[1] <- 0
-    # for(a in 1:nAge){
-    #   for(t in 1:(nYear-1)){
-    #     logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
-    #       # BetaD.R * dens[t] +
-    #       # BetaV.R * veg[t] +
-    #       # BetaW.R * win[t] +
-    #       EpsilonT.Ra[t]
-    #   }
-    # }
-    # 
-    # ##### Priors ####
-    # # priors for fixed effects
-    # for(a in 2:nAge){
-    #   Mu.Ri[a] ~ dunif(0, 1)
-    #   Mu.Ra[a] ~ dunif(0, 1)
-    # }
-    # 
-    # # BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # # BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # # BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-    # 
-    # # priors for random effects
-    # for(i in 1:nID.R){
-    #   EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
-    # }
-    # 
-    # for(t in 1:(nYear-1)){
-    #   EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
-    #   EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
-    #   EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
-    # }
-    # 
-    # # priors for sigma
-    # SigmaI.Ri ~ dunif(0, 100)
-    # SigmaT.Ri ~ dunif(0, 100)
-    # SigmaT.Ra ~ dunif(0, 100)
-    # SigmaT.B ~ dunif(0, 100)
+    #### Likelihood & constraints ####
+    # yearly birth rate
+    for(x in 1:nR){
+      B[x] ~ dbern(Bi[x])
+      logit(Bi[x]) <- logit(Mu.B) +
+        EpsilonT.B[year.R[x]]
+    }
+
+    for(t in 1:(nYear-1)){
+      logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
+    }
+
+    # individual RS function
+    Mu.Ri[1] <- 0
+    for(x in 1:nR){
+      R[x] ~ dbern(Ri[x])
+      logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
+        BetaD.R * dens[year.R[x]] +
+        BetaV.R * veg[year.R[x]] +
+        BetaW.R * win[year.R[x]] +
+        EpsilonI.Ri[id.R[x]] +
+        EpsilonT.Ri[year.R[x]]
+    }
+
+    # age-specific RS function
+    # use parameters estimated from individual data above
+    # to predict age-specific reproductive success (Ra) here!
+    Mu.Ra[1] <- 0
+    for(a in 1:nAge){
+      for(t in 1:(nYear-1)){
+        logit(Ra[a, t]) <- logit(Mu.Ra[a]) + # Ra used in Pop model
+          BetaD.R * dens[t] +
+          BetaV.R * veg[t] +
+          BetaW.R * win[t] +
+          EpsilonT.Ra[t]
+      }
+    }
+
+    ##### Priors ####
+    # priors for fixed effects
+    for(a in 2:nAge){
+      Mu.Ri[a] ~ dunif(0, 1)
+      Mu.Ra[a] ~ dunif(0, 1)
+    }
+
+    BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+    BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+
+    # priors for random effects
+    for(i in 1:nID.R){
+      EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
+    }
+
+    for(t in 1:(nYear-1)){
+      EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
+      EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
+      EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
+    }
+
+    # priors for sigma
+    SigmaI.Ri ~ dunif(0, 100)
+    SigmaT.Ri ~ dunif(0, 100)
+    SigmaT.Ra ~ dunif(0, 100)
+    SigmaT.B ~ dunif(0, 100)
     
   }) # nimbleCode
   

@@ -222,9 +222,9 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-# # load results
-# out.mcmc <- readRDS('results/IPM_CJS.rds')$out.mcmc
-# summary(out.mcmc) # cannot handle NAs
+# load results
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
 # for(i in 1:ncol(out.mcmc[[1]])){
@@ -269,8 +269,8 @@ nAgeC <- myConst$nAgeC
 
 source('compareModels.R')
 compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
-              postPaths = c("results/IPM_CJSen_RS.rds", "results/IPM_CJSen_RSen.rds"),
-              modelNames = c("CJSen/RS", "CJSen/RSen"), plotFolder = c("figures/RSen"),
+              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds"),
+              modelNames = c("CJSen", "CJSen/RSen", "CJSen/RSen/AB"), plotFolder = c("figures/Mod"),
               returnSumData = TRUE)
 
 

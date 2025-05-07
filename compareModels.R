@@ -132,32 +132,32 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
     
     CJSestO = c('Mu.O', 'Sigma.O', paste0('Epsilon.O[', 1:nYear, ']')),
     
-    CJSestS = c(expand.grid(a = 1:nAgeC, t = c(1, 5, 9, 13)) %>% 
+    CJSestS = c(expand.grid(a = 1:nAgeC, t = c(2, 6, 10, 14)) %>% 
                   mutate(param = paste0('S[', a, ', ', t, ']')) %>% 
                   pull(param)),
     
     # RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
 
-    RSranEF = c(paste0('EpsilonT.Ri[', c(1, 5, 9, 13), ']'),
-                paste0('EpsilonT.Ra[', c(1, 5, 9, 13), ']'),
-                paste0('EpsilonT.B[', c(1, 5, 9, 13), ']'),
+    RSranEF = c(paste0('EpsilonT.Ri[', c(2, 6, 10, 14), ']'),
+                paste0('EpsilonT.Ra[', c(2, 6, 10, 14), ']'),
+                paste0('EpsilonT.B[', c(2, 6, 10, 14), ']'),
                 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'),
     
     RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
     
-    RSestRa = c(expand.grid(a = c(2, 6, 10, 14), t = c(1, 5, 9, 13)) %>%
+    RSestRa = c(expand.grid(a = c(2, 6, 10, 14), t = c(2, 6, 10, 14)) %>%
                   mutate(param = paste0('Ra[', a, ', ', t, ']')) %>%
                   pull(param)),
     
-    # ABestAB = c(paste0('ab[', 1:nYear, ']'),
-    #             paste0('propF[', 1:nNoProp, ']')),
+    POPestNA = c(expand.grid(a = c(2, 6, 10, 14), t = c(2, 6, 10, 14)) %>%
+                   mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
+                   pull(param)),
     
-    POPestN = c(paste0('nYAF[', c(1, 5, 9, 13), ']'),
-                paste0('nSA[', c(1, 5, 9, 13), ']'),
-                expand.grid(a = c(2, 6, 10, 14), t = c(1, 5, 9, 13)) %>%
-                  mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
-                  pull(param),
-                paste0('nTOT[', c(1, 5, 9, 13), ']')))
+    POPestNT = c(paste0('nYAF[', c(2, 6, 10, 14), ']'),
+                 paste0('nSA[', c(2, 6, 10, 14), ']'),
+                 paste0('nTOT[', c(2, 6, 10, 14), ']')),
+    
+    ABestAB = c(paste0('ab[', 1:nYear, ']')))
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
@@ -169,9 +169,9 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
                     'Survival of adults (2+ yrs)'))
   
   plotTS.Ns <- list(
-    ParamNames = c('nYAF', 'nSA', 'nAD', 'nTOT'),
+    ParamNames = c('nYAF', 'nSA', 'nAD', 'nTOT', 'ab'),
     ParamLabels = c('# of young-at-foot', '# of subadults',
-                    '# of adults', 'Total # of females'))
+                    '# of adults', 'Total # of females', 'Abundance'))
   
   # set plotting colors
   # plot.cols <- paletteer_c("grDevices::Temps", length(modelNames))
