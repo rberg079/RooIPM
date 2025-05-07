@@ -114,7 +114,7 @@ params <- c(
   'nYAF', 'nSA', 'nAD', 'nTOT',                              # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat',                                     # latent environment
+  'dens.hat', 'veg.hat', 'BetaA.S',                          # latent environment
   'Mu.O', 'Epsilon.O', 'Sigma.O',                            # observation parameters
   'Gamma.S', 'Xi.S', 'Sigma.S',                              # random effects
   
@@ -128,7 +128,7 @@ params <- c(
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaA.S', 'BetaD.S', 'BetaV.S')}
+if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
 if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
 
 # select MCMC settings

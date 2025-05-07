@@ -3,6 +3,10 @@
 
 ## Set up ----------------------------------------------------------------------
 
+# set toggles
+testRun <- FALSE
+parallelRun <- TRUE
+
 # load packages
 library(tidyverse)
 library(lubridate)
@@ -28,9 +32,8 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          known.age = TRUE)
 
 # to play around with age classes!
-# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
-ageC <- seq(from = 1, to = 33, by = 1); ageC
-nAgeC <- length(ageC); nAgeC
+# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
+ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -45,20 +48,17 @@ myData  <- list(obs = svData$obs,
 
 myConst <- list(nID.S = svData$nID.S,
                 nYear = svData$nYear,
-                nAgeC = nAgeC,
+                nAgeC = length(ageC),
                 first = svData$first,
                 last = svData$last,
-                W = diag(nAgeC),
-                DF = nAgeC)
+                W = diag(length(ageC)),
+                DF = length(ageC))
 
 # # checks
 # sapply(1:nrow(myData$state), function (i) myData$state[i, myConst$first[i]]) %>% table(useNA = 'a') # should all be 1
 # sapply(1:nrow(myData$state), function (i) myData$state[i, myConst$last[i]]) %>% table(useNA = 'a')  # should be mostly 0s & NAs
 # sapply(1:nrow(myData$state), function (i) myData$age[i, myConst$first[i]]) %>% table(useNA = 'a')   # should all be >= 1
 # table(myConst$first >= myConst$last, useNA = 'a')                                                   # should all be F
-
-# set toggles
-testRun <- TRUE
 
 
 ## Model -----------------------------------------------------------------------
@@ -151,14 +151,20 @@ seedMod   <- 1:nchains
 seedInits <- 1
 
 Tau.S = diag(myConst$nAgeC) + rnorm(myConst$nAgeC^2, 0, 0.1)
-Tau.S = matrix(Tau.S, nrow = myConst$nAgeC)
-Tau.S = (Tau.S + t(Tau.S)) / 2
+Tau.S = inverse((Tau.S + t(Tau.S))/2)
 
-myInits <- list(
+set.seed(seedInits)
+myInits <- list()
+for(c in 1:nchains){
+myInits[[c]] <- list(
+  dens = ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens),
+  veg = ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg),
+  dens.hat = ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens),
+  veg.hat = ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg),
+  
   BetaA.S = rnorm(myConst$nAgeC, 0, 1),
   
-  O = matrix(runif(myConst$nID.S * myConst$nYear, 0.1, 0.9),
-              nrow = myConst$nID.S, ncol = myConst$nYear),
+  O = runif(myConst$nYear, 0.1, 0.9),
   
   Mu.O = runif(1, 0.1, 0.9),
   Epsilon.O = rnorm(myConst$nYear, 0, 0.2),
@@ -166,17 +172,16 @@ myInits <- list(
   
   Xi.S = rnorm(myConst$nAgeC, 1, 0.1),
   Epsilon.S = matrix(rnorm((myConst$nYear-1) * myConst$nAgeC, 0, 0.1),
-                     nrow = myConst$nYear-1, ncol = myConst$nAgeC),
+                     nrow = myConst$nYear-1,
+                     ncol = myConst$nAgeC),
   
-  Tau.S
-)
+  Tau.S = Tau.S
+)}
 
 # select parameters to monitors
 params <- c('S', 'BetaA.S', # 'BetaD.S', 'BetaV.S',
             'Mu.O', 'Epsilon.O', 'Sigma.O',
-            'Gamma.S', 'Xi.S', 'Sigma.S'
-            # 'dens.hat', 'veg.hat'
-            )
+            'Gamma.S', 'Xi.S', 'Sigma.S')
 
 # select MCMC settings
 if(testRun){
@@ -192,24 +197,75 @@ if(testRun){
 
 ## Run model -------------------------------------------------------------------
 
-start <- Sys.time()
-samples <- nimbleMCMC(code = myCode,
-                      data = myData,
-                      constants = myConst,
-                      inits = myInits,
-                      monitors = params,
-                      niter = niter,
-                      nburnin = nburnin,
-                      nchains = nchains,
-                      thin = nthin,
-                      samplesAsCodaMCMC = T,
-                      setSeed = seedMod)
-dur <- Sys.time() - start; dur
-beep(2)
+if(parallelRun){
+  # function to run one chain inside cluster
+  runChain <- function(chainID, code, data, const, inits, params,
+                       niter, nburnin, nthin, seed){
+    
+    library(nimble)
+    set.seed(seed)
+    inits <- myInits[[chainID]]
+    
+    model <- nimbleModel(code = myCode, data = myData, constants = myConst, inits = inits)
+    cModel <- compileNimble(model)
+    conf <- configureMCMC(model, monitors = params)
+    mcmc <- buildMCMC(conf)
+    cMCMC <- compileNimble(mcmc, project = model)
+    
+    samples <- runMCMC(cMCMC,
+                       thin = nthin,
+                       nburnin = nburnin,
+                       niter = niter,
+                       setSeed = seed,
+                       samplesAsCodaMCMC = TRUE)
+    return(samples)
+  }
+  
+  # create a cluster & export everything needed to each worker
+  cl <- makeCluster(nchains)
+  clusterExport(cl, varlist = c("myCode", "myData", "myConst", "myInits", 
+                                "params", "nthin", "nburnin", "niter",
+                                "seedMod", "runChain"))
+}
+
+if(parallelRun){
+  # run chains in parallel
+  start <- Sys.time()
+  samples <- parLapply(cl, 1:nchains, function(i){
+    runChain(i,
+             code = myCode,
+             data = myData,
+             const = myConst,
+             inits = myInits,
+             params = params,
+             nthin = nthin,
+             nburnin = nburnin, 
+             niter = niter, 
+             seed = seedMod[i])})
+  dur <- Sys.time() - start; dur
+  stopCluster(cl)
+  beep(2)
+}else{
+  # run chains sequentially
+  start <- Sys.time()
+  samples <- nimbleMCMC(code = myCode,
+                        data = myData,
+                        constants = myConst,
+                        inits = myInits,
+                        monitors = params,
+                        niter = niter,
+                        nburnin = nburnin,
+                        nchains = nchains,
+                        thin = nthin,
+                        samplesAsCodaMCMC = T,
+                        setSeed = seedMod)
+  dur <- Sys.time() - start; dur
+  beep(2)
+}
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/IPM_CJSen.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/CJS_Age20.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
@@ -225,14 +281,14 @@ library(scales)
 # summary(out.mcmc) # cannot handle NAs
 
 # summaries
-MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
-# MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('S', 'BetaA.S'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 # chainplots
-MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('S', 'BetaA.S'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
