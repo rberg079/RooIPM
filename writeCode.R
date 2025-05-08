@@ -167,7 +167,8 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
+      # ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t]) # abE numbers are very weird (small)
+      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = 25)
     }
     
     
