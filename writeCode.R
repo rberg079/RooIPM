@@ -167,8 +167,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      # ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t]) # abE numbers are very weird (small)
-      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = 25)
+      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
     }
     
     
@@ -305,6 +304,7 @@ writeCode <- function(){
       Mu.Ri[a] ~ dunif(0, 1)
       Mu.Ra[a] ~ dunif(0, 1)
     }
+    Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
       BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be

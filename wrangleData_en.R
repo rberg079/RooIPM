@@ -13,13 +13,13 @@
 
 wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list){
   
-  # for testing purposes
-  dens.data = "data/abundanceData_Proteus.csv"
-  veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
-  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
-  wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
-  obs.data = "data/PromObs_2008-2019.xlsx"
-  list = "data/PromlistAllOct24.xlsx"
+  # # for testing purposes
+  # dens.data = "data/abundanceData_Proteus.csv"
+  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
+  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
+  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  # obs.data = "data/PromObs_2008-2019.xlsx"
+  # list = "data/PromlistAllOct24.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -222,7 +222,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   win <- as.numeric(scale(env$Win))
   propF <- as.numeric(env$PropF)
   
-  abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE/sd(env$Ab, na.rm = T)))
+  abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE))
   densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T)))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
   

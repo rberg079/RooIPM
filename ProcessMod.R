@@ -122,8 +122,8 @@ params <- c(
   
   # Reproductive success model
   'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
-  'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', 'EpsilonT.B', # random effects
-  'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B',         # random effects
+  'EpsilonT.B', 'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', # random effects
+  'SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra',         # random effects
   
   # Abundance model
   'ab', 'propF'
@@ -140,7 +140,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 1000
+  nburnin <- 10000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -339,7 +339,7 @@ out.dat <- out.mcmc %>% map(as.data.frame) %>% bind_rows()
 
 # check for correlations among fixed effects
 par(mfrow = c(1,1))
-corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
+corrplot(cor(out.mcmc[, grepl('Beta', colnames(out.mcmc[[1]]))] %>%
                map(as.data.frame) %>% bind_rows(), use = 'p'))
 
 # check random effects among demographic rates
@@ -364,7 +364,7 @@ round(apply(varCorrMatrix, 1:2, quantile, prob = 0.025, na.rm = T), 2)
 round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
 
 # calculate survival probabilities
-df <- expand.grid(age = 1:22, year = 1:16)
+df <- expand.grid(age = 1:20, year = 1:16)
 S.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){
