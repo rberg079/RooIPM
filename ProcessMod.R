@@ -5,8 +5,8 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
-parallelRun <- TRUE
+testRun <- TRUE
+parallelRun <- FALSE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 
@@ -18,6 +18,7 @@ library(here)
 library(boot)
 library(coda)
 library(nimble)
+library(nimbleEcology)
 library(parallel)
 
 # load data

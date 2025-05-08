@@ -176,15 +176,27 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(i in 1:nID.S){
-      for(t in (first[i] + 1):last[i]){
-        # state process
-        state[i, t] ~ dbern(Mu.Sp[i, t])
-        Mu.Sp[i, t] <- S[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
-        
-        # observation process
-        obs[i, t] ~ dbern(Mu.Op[i, t])
-        Mu.Op[i, t] <- O[t] * state[i, t]
+      
+      #S_ind[i, 1:(first[i]-1)] <- 0
+      for(t in first[i]:(last[i]-1)){
+        S_ind[i, t] <- S[ageC[age.S[i, t]], t] 
       }
+      #S_ind[i, (last[i]-1):(nYear-1)] <- 0
+      
+      obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
+                                               probCapture = O[first[i]:last[i]], 
+                                               len = last[i] - first[i] + 1)
+      #TODO: Find out how to make one-dimensional matrix into vector for dCJS_vv
+      
+      # for(t in (first[i] + 1):last[i]){
+      #   # state process
+      #   state[i, t] ~ dbern(Mu.Sp[i, t])
+      #   Mu.Sp[i, t] <- S[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
+      #   
+      #   # observation process
+      #   obs[i, t] ~ dbern(Mu.Op[i, t])
+      #   Mu.Op[i, t] <- O[t] * state[i, t]
+      # }
     }
     
     #### Constraints ####
