@@ -4,8 +4,8 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
-parallelRun <- FALSE
+testRun <- FALSE
+parallelRun <- TRUE
 
 # load packages
 library(tidyverse)
@@ -309,22 +309,21 @@ Bt.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 Ra.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){
-  
   Bt.pred[i, ] <- qlogis(out.dat[, "Mu.B"]) +
     out.dat[, paste0("EpsilonT.B[", df$year[i], "]")]
-  
+}
+
+df$Bt <- inv.logit(apply(Bt.pred, 1, mean))
+df$bLCI <- inv.logit(apply(Bt.pred, 1, quantile, 0.025))
+df$bUCI <- inv.logit(apply(Bt.pred, 1, quantile, 0.975))
+
+for(i in 1:nrow(df)){
   Ra.pred[i, ] <- qlogis(out.dat[, paste0("Mu.Ra[", df$age[i], "]")]) +
     out.dat[, "BetaD.R"] * out.dat[, paste0("dens.hat[", df$year[i], "]")] +
     out.dat[, "BetaV.R"] * out.dat[, paste0("veg.hat[", df$year[i], "]")] +
     out.dat[, "BetaW.R"] * out.dat[, paste0("win.hat[", df$year[i], "]")] +
     out.dat[, paste0("EpsilonT.Ra[", df$year[i], "]")]
-  
-  df$ageC[i] <- myData$ageC[df$age[i]]
 }
-
-df$Bt <- inv.logit(apply(Ra.pred, 1, mean))
-df$bLCI <- inv.logit(apply(Ra.pred, 1, quantile, 0.025))
-df$bUCI <- inv.logit(apply(Ra.pred, 1, quantile, 0.975))
 
 df$Ra <- inv.logit(apply(Ra.pred, 1, mean))
 df$rLCI <- inv.logit(apply(Ra.pred, 1, quantile, 0.025))
@@ -332,7 +331,6 @@ df$rUCI <- inv.logit(apply(Ra.pred, 1, quantile, 0.975))
 
 # plot main results
 young <- df %>% 
-  filter()
   mutate(age = as.factor(age)) %>% 
   filter(age %in% c(2, 4, 6, 8, 10)) %>% 
   ggplot(aes(x = year, y = Ra)) +
@@ -366,6 +364,7 @@ df %>%
   geom_line(linewidth = 1, show.legend = F) +
   scale_y_continuous(breaks = pretty_breaks()) +
   labs(x = "Year", y = "Birth rate") +
+  ylim(0, 1) +
   theme_bw()
 
 # ggsave("figures/RS_Bt.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
