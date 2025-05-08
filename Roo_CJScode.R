@@ -265,7 +265,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/CJS_Age20.rds', compress = 'xz')
+# saveRDS(out.mcmc, 'results/CJS_Age20.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
@@ -275,9 +275,10 @@ library(MCMCvis)
 library(corrplot)
 library(ggplot2)
 library(scales)
+library(patchwork)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+# out.mcmc <- readRDS('results/CJS_Age20.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # summaries
@@ -341,7 +342,7 @@ df$sUCI = inv.logit(apply(S.pred, 1, quantile, 0.975))
 df %>%
   mutate(ageC = as.factor(ageC)) %>% 
   ggplot(aes(x = year, y = S)) +
-  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.2) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.1) +
   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
   labs(x = "Year", y = "Survival", fill = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +
@@ -349,4 +350,45 @@ df %>%
   theme_bw()
 
 # ggsave("figures/IPM_CJS.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
+
+young <- df %>%
+  mutate(age = as.factor(age-1)) %>% 
+  filter(age %in% c(0, 2, 4, 6, 8)) %>%
+  ggplot(aes(x = year, y = S)) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = age), alpha = 0.1, show.legend = F) +
+  geom_line(aes(colour = age), linewidth = 1) +
+  labs(x = "Year", y = "Survival", fill = "Age") +
+  # scale_x_continuous(breaks = pretty_breaks()) +
+  scale_y_continuous(breaks = pretty_breaks()) +
+  theme_bw(); young
+
+old <- df %>%
+  mutate(age = as.factor(age-1)) %>% 
+  filter(age %in% c(10, 12, 14, 16, 18)) %>%
+  ggplot(aes(x = year, y = S)) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = age), alpha = 0.1, show.legend = F) +
+  geom_line(aes(colour = age), linewidth = 1) +
+  labs(x = "Year", y = "Survival", fill = "Age") +
+  # scale_x_continuous(breaks = pretty_breaks()) +
+  scale_y_continuous(breaks = pretty_breaks()) +
+  theme_bw(); old
+
+young / old
+
+# ggsave("figures/CJS_AgeYr.jpeg", scale = 1, width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+
+df %>% 
+  group_by(age) %>% 
+  mutate(age = age-1,
+         S = mean(S),
+         sUCI = mean(sUCI),
+         sLCI = mean(sLCI)) %>% 
+  ggplot(aes(x = age, y = S)) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI), alpha = 0.1) +
+  geom_line(linewidth = 1, show.legend = F) +
+  scale_y_continuous(breaks = pretty_breaks()) +
+  labs(x = "Age", y = "Survival") +
+  theme_bw()
+
+# ggsave("figures/CJS_Age20.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
 

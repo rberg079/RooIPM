@@ -215,7 +215,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
