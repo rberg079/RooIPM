@@ -105,7 +105,9 @@ for(c in 1:nchains){
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
-    propF = myData$propF
+    propF = myData$propF,,
+    envEffectsR = TRUE,
+    envEffectsS = TRUE
     )
 }
 

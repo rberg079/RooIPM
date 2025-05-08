@@ -9,9 +9,12 @@
 #' @param year.R vector of length nR of years in the reproductive success analysis.
 #' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
 #' @param age.R vector of length nR of age of individuals in the reproductive success analysis.
-#' @param dens vector of lenth nYear of population density data.
-#' @param veg vector of lenth nYear of available vegetation data.
-#' @param win vector of lenth nYear of winter severity data.
+#' @param dens vector of length nYear of population density data.
+#' @param veg vector of length nYear of available vegetation data.
+#' @param win vector of length nYear of winter severity data.
+#' @param propF vector of length nYear of proportion of observations belonging to females.
+#' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
+#' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
 #'
 #' @returns list containing all initial values needed for the IPM.
 #' @export
@@ -44,11 +47,11 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
   # 
   # nR <- rsData$nR
-  # nID.S <- svData$nID
+  # nID.S <- 0 # svData$nID
   # nID.R <- rsData$nID
   # nYear <- 17
   # nAge <- 19
-  # nAgeC <- 5
+  # nAgeC <- 20
   # year.R <- rsData$year.R
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R

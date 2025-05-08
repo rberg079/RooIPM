@@ -36,23 +36,23 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
 ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
 
 # create Nimble lists
-myData  <- list(obs = svData$obs,
+myData  <- list(obs   = svData$obs,
                 state = svData$state,
                 age.S = svData$age.S,
-                ageC = ageC,
+                ageC  = ageC,
                 
-                dens = enData$dens,
+                dens  = enData$dens,
                 densE = enData$densE,
-                veg = enData$veg,
-                vegE = enData$vegE)
+                veg   = enData$veg,
+                vegE  = enData$vegE)
 
 myConst <- list(nID.S = svData$nID.S,
                 nYear = svData$nYear,
-                nAgeC = length(ageC),
+                nAgeC = max(ageC),
                 first = svData$first,
-                last = svData$last,
-                W = diag(length(ageC)),
-                DF = length(ageC))
+                last  = svData$last,
+                W     = diag(max(ageC)),
+                DF    = max(ageC))
 
 # # checks
 # sapply(1:nrow(myData$state), function (i) myData$state[i, myConst$first[i]]) %>% table(useNA = 'a') # should all be 1
@@ -91,6 +91,7 @@ myCode = nimbleCode({
     }
   }
   
+  # # missing environment
   # for(t in 1:(nYear-1)){
   #   dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
   #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
@@ -300,7 +301,7 @@ out.dat <- out.mcmc %>% map(as.data.frame) %>% bind_rows()
 
 # check for correlations among fixed effects
 par(mfrow = c(1,1))
-corrplot(cor(out.mcmc[, grepl('B.', colnames(out.mcmc[[1]]))] %>%
+corrplot(cor(out.mcmc[, grepl('Beta', colnames(out.mcmc[[1]]))] %>%
                map(as.data.frame) %>% bind_rows(), use = 'p'))
 
 # check random effects among demographic rates
@@ -325,7 +326,7 @@ round(apply(varCorrMatrix, 1:2, quantile, prob = 0.025, na.rm = T), 2)
 round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
 
 # calculate survival probabilities
-df <- expand.grid(age = 1:22, year = 1:16)
+df <- expand.grid(age = 1:20, year = 1:16)
 S.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){

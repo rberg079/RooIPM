@@ -267,7 +267,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   nR    <- length(id.R)
   nID.R <- length(unique(id.R))
-  nYear <- length(unique(year.R))
+  # nYear <- length(unique(year.R))
   nAge  <- max(age.R)
   nAgeC <- max(ageC)
   
@@ -291,7 +291,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   return(list(nR = nR,
               nID.R = nID.R,
-              nYear = nYear,
+              nYear = 17,
               nAge = nAge,
               nAgeC = nAgeC,
               id.R = id.R,

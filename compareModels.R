@@ -38,6 +38,7 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
   suppressPackageStartupMessages(library(tidyverse))
   suppressPackageStartupMessages(library(data.table))
   library(NatParksPalettes)
+  library(paletteer)
   
   # check that models are specified correctly
   if(missing(postPaths)){
@@ -175,7 +176,9 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
   
   # set plotting colors
   # plot.cols <- paletteer_c("grDevices::Temps", length(modelNames))
-  plot.cols <- natparks.pals("Banff", nModels)
+  # plot.cols <- paletteer_d("nationalparkcolors::BlueRidgePkwy", nModels)
+  # plot.cols <- paletteer_d("nationalparkcolors::ArcticGates", nModels)
+  plot.cols <- paletteer_d("nationalparkcolors::MtRainier", nModels)
   
   
   ## Plot ----------------------------------------------------------------------
