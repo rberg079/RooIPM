@@ -136,10 +136,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
   EpsilonT.B <- rnorm(nYear-1, 0, 1)
 
-  SigmaI.Ri <- runif(1, 0, 10)
-  SigmaT.Ri <- runif(1, 0, 10)
-  SigmaT.Ra <- runif(1, 0, 10)
-  SigmaT.B <- runif(1, 0, 10)
+  SigmaI.Ri <- runif(1, 0, 5)
+  SigmaT.Ri <- runif(1, 0, 5)
+  SigmaT.Ra <- runif(1, 0, 5)
+  SigmaT.B <- runif(1, 0, 5)
 
   
   ## Simulate yearly vital rates -----------------------------------------------

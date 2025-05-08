@@ -32,8 +32,8 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
 
 # to play around with age classes!
-# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
-ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
+ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
+# ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
 
 # create Nimble lists
 myData <-  list(B       = rsData$B,
@@ -142,10 +142,10 @@ myCode = nimbleCode({
   }
   
   # priors for sigma
-  SigmaI.Ri ~ dunif(0, 100)
-  SigmaT.Ri ~ dunif(0, 100)
-  SigmaT.Ra ~ dunif(0, 100)
-  SigmaT.B ~ dunif(0, 100)
+  SigmaI.Ri ~ dunif(0, 10)
+  SigmaT.Ri ~ dunif(0, 10)
+  SigmaT.Ra ~ dunif(0, 10)
+  SigmaT.B ~ dunif(0, 10)
   
 })
 
@@ -291,12 +291,14 @@ MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.Ri', 'Mu.Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Mu.B', 'Mu.Ri', 'Mu.Ra'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), pdf = FALSE)
 
 
 ## Plots -----------------------------------------------------------------------
