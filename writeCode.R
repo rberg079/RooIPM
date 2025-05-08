@@ -116,10 +116,10 @@ writeCode <- function(){
       for(m in 1:nNoWin){
         win[m] ~ dnorm(0, sd = 2)
       }
-    }
-    
-    for(p in 1:nNoProp){
-      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+      
+      for(p in 1:nNoProp){
+        propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+      }
     }
     
     
