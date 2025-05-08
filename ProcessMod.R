@@ -5,8 +5,8 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
-parallelRun <- FALSE
+testRun <- FALSE
+parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 
@@ -73,7 +73,9 @@ myConst <- list(nR = rsData$nR,
                 first = svData$first,
                 last = svData$last,
                 W = svData$W,
-                DF = svData$DF)
+                DF = svData$DF,
+                envEffectsS = envEffectsS,
+                envEffectsR = envEffectsR)
 
 
 ## Assemble --------------------------------------------------------------------
@@ -138,7 +140,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 20000
+  nburnin <- 100000
   niter   <- nburnin + 1000*nthin
 }
 
