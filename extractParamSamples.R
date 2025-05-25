@@ -21,7 +21,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   suppressPackageStartupMessages(library(tidyverse))
   
   # # for testing purposes
-  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB.rds')$out.mcmc
+  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB.rds')
   # nYear <- 17
   # nAge <- 19
   # nAgeC <- 5
