@@ -53,7 +53,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   nAD <- array(NA, dim = c(nSamples, nAge, nYear))
   nTOT <- matrix(NA, nrow = nSamples, ncol = nYear)
   # ab <- matrix(NA, nrow = nSamples, ncol = nYear)
-  lambda <- matrix(NA, nrow = nSamples, ncol = nYear)
+  lambda <- matrix(NA, nrow = nSamples, ncol = nYear-1)
   
   
   ## Fill samples into arrays --------------------------------------------------
@@ -114,26 +114,26 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   
   paramSamples <- list(
     
-    t = list(Bt = Bt,
-             Ra = Ra,
-             sYAF = sYAF,
-             sSA = sSA,
-             sAD = sAD,
-             nYAF = nYAF,
+    t = list(nYAF = nYAF,
              nSA = nSA,
              nAD = nAD,
              nTOT = nTOT,
+             sYAF = sYAF,
+             sSA = sSA,
+             sAD = sAD,
+             Bt = Bt,
+             Ra = Ra,
              lambda = lambda),
     
-    t.mean = list(Bt.mean = Bt.mean,
-                  Ra.mean = Ra.mean,
-                  sYAF.mean = sYAF.mean,
-                  sSA.mean = sSA.mean,
-                  sAD.mean = sAD.mean,
-                  nYAF.mean = nYAF.mean,
+    t.mean = list(nYAF.mean = nYAF.mean,
                   nSA.mean = nSA.mean,
                   nAD.mean = nAD.mean,
                   nTOT.mean = nTOT.mean,
+                  sYAF.mean = sYAF.mean,
+                  sSA.mean = sSA.mean,
+                  sAD.mean = sAD.mean,
+                  Bt.mean = Bt.mean,
+                  Ra.mean = Ra.mean,
                   lambda.mean = lambda.mean)
   )
   

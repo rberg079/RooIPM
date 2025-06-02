@@ -20,7 +20,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # nAge <- 19
   
   
-  ## Calculate transient sensitivities -------------------------------------------
+  ## Calculate transient sensitivities -----------------------------------------
   
   # unpack objects from parameter list
   if(is.null(t.period)){
@@ -115,7 +115,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   }
   
   
-  ## Calculate transient elasticities --------------------------------------------
+  ## Calculate transient elasticities ------------------------------------------
   
   # calculate transient elasticities for vital rates & population size/structure
   # (evaluated at the temporal mean)
@@ -165,7 +165,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   }
   
   
-  ## Save & return results -------------------------------------------------------
+  ## Save & return results -----------------------------------------------------
   
   sensResults <- list(sensitivity = list(samples = sensList, summaries = postSum.sens),
                       elasticity = list(samples = elasList, summaries = postSum.elas))
