@@ -1,6 +1,6 @@
 #' Compare outputs of different models
 #'
-#' @param nAge integer. Maximum age to consider in the analysis. nAge = 22 by default.
+#' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
 #' @param nAgeC integer. Number of age classes to consider in the analysis. nAgeC = 5 by default.
 #' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.

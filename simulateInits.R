@@ -4,7 +4,7 @@
 #' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
 #' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
-#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
+#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
 #' @param year.R vector of length nR of years in the reproductive success analysis.
 #' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
@@ -16,7 +16,7 @@
 #' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
 #' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
 #'
-#' @returns list containing all initial values needed for the IPM.
+#' @returns a list containing all initial values needed for the IPM.
 #' @export
 #'
 #' @examples
