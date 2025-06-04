@@ -7,7 +7,7 @@
 #' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
 #' @param modelNames character vector. User-defined names for models to compare. 
-#' @param plotFolder character string. Path to the folder in which to store comparison plots.
+#' @param plotFolder character string. Path to the folder in which to store plots.
 #' @param returnSumData logical. If TRUE, returns a data frame containing posterior samples from all 
 #' compared models as an object in the R global environment. If FALSE (default), no data is returned.
 #'

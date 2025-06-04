@@ -11,13 +11,13 @@
 
 calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   
-  # for testing purposes
-  # source('extractParamSamples.R')
-  # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
-  # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  paramSamples <- readRDS('results/paramSamples.rds')
-  t.period <- NULL
-  nAge <- 19
+  # # for testing purposes
+  # # source('extractParamSamples.R')
+  # # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+  # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+  # paramSamples <- readRDS('results/paramSamples.rds')
+  # t.period <- NULL
+  # nAge <- 19
   
   
   ## Calculate transient sensitivities -----------------------------------------
@@ -48,37 +48,35 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   
   # set up list of arrays for storing transient sensitivities
   sensList <- list(
-    sens.pYAF = rep(NA, nSamples),
-    sens.pSA = rep(NA, nSamples),
-    sens.pAD = matrix(NA, nrow = nSamples, ncol = nAge),
-    
+    sens.Bt = rep(NA, nSamples),
+    sens.Ra = matrix(NA, nrow = nSamples, ncol = nAge),
     sens.sYAF = rep(NA, nSamples),
     sens.sSA = rep(NA, nSamples),
     sens.sAD = matrix(NA, nrow = nSamples, ncol = nAge),
-    
-    sens.Bt = rep(NA, nSamples),
-    sens.Ra = matrix(NA, nrow = nSamples, ncol = nAge)
+    sens.pYAF = rep(NA, nSamples),
+    sens.pSA = rep(NA, nSamples),
+    sens.pAD = matrix(NA, nrow = nSamples, ncol = nAge)
   )
   
-  # calculate transient sensitivities for vital rates & population size/structure
-  # (evaluated at the temporal mean)
+  # calculate transient sensitivities 
+  # for vital rates & population size/structure (at the temporal mean)
   for(i in 1:nSamples){
-    sensList$sens.pYAF[i] <- sYAF[i]
-    sensList$sens.pSA[i]  <- sSA[i]
+    sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * Ra[i, 2:nAge])
+    
     sensList$sens.sYAF[i] <- pYAF[i]
     sensList$sens.sSA[i]  <- pSA[i]
-    
-    sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * Ra[i, 2:nAge])
+    sensList$sens.pYAF[i] <- sYAF[i]
+    sensList$sens.pSA[i]  <- sSA[i]
     
     for(a in 1:nAge){
       if(a == 1){
-        sensList$sens.pAD[i, a] <- 0
-        sensList$sens.sAD[i, a] <- 0
         sensList$sens.Ra[i, a] <- 0
+        sensList$sens.sAD[i, a] <- 0
+        sensList$sens.pAD[i, a] <- 0
       }else{
-        sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
-        sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
         sensList$sens.Ra[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * Bt[i]
+        sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
+        sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
       }
     }
   }
@@ -120,17 +118,15 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # calculate transient elasticities for vital rates & population size/structure
   # (evaluated at the temporal mean)
   elasList <- list(
-    elas.pYAF = sensList$sens.pYAF * (pYAF/lambda),
-    elas.pSA = sensList$sens.pSA * (pSA/lambda),
-    elas.pAD = sensList$sens.pAD * (pAD/lambda),
-    
+    elas.Bt = sensList$sens.Bt * (Bt/lambda),
+    # elas.Ra = sensList$sens.Ra * (Ra/lambda)
+    elas.Ra = sensList$sens.Ra /lambda, # TODO: DISCUSS
     elas.sYAF = sensList$sens.sYAF * (sYAF/lambda),
     elas.sSA = sensList$sens.sSA * (sSA/lambda),
     elas.sAD = sensList$sens.sAD * (sAD/lambda),
-    
-    elas.Bt = sensList$sens.Bt * (Bt/lambda),
-    # elas.Ra = sensList$sens.Ra * (Ra/lambda)
-    elas.Ra = sensList$sens.Ra /lambda # TODO: DISCUSS
+    elas.pYAF = sensList$sens.pYAF * (pYAF/lambda),
+    elas.pSA = sensList$sens.pSA * (pSA/lambda),
+    elas.pAD = sensList$sens.pAD * (pAD/lambda)
   )
   
   # get posterior summaries for transient sensitivities
@@ -170,10 +166,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   sensResults <- list(sensitivity = list(samples = sensList, summaries = postSum.sens),
                       elasticity = list(samples = elasList, summaries = postSum.elas))
   
-  if(is.null(t.period)){
-    saveRDS(sensResults, file = "results/sensitivities.rds")
-  }
-  
+  saveRDS(sensResults, file = "results/sensitivities.rds")
   return(sensResults)
   
 }
