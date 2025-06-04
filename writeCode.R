@@ -85,7 +85,7 @@ writeCode <- function(){
   ## Set up --------------------------------------------------------------------
   
   # load packages
-  library(tidyverse)
+  suppressPackageStartupMessages(library(tidyverse))
   library(lubridate)
   library(nimble)
   
