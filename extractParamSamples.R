@@ -5,7 +5,7 @@
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
 #' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
 #' @param saveList logical. If TRUE, saves the created list object as an RDS to the /results folder.
-#' @param testing logical. If TRUE, will only use the first 100 samples, for computational efficiency.
+#' @param testRun logical. If TRUE, will only use the first 100 samples, for computational efficiency.
 #'
 #' @returns a list of lists containing posterior samples for all vital rates & population-level quantities.
 #' The sublist "t" contains time-specific parameters while the sublist "t.mean" contains time-averaged parameters.
@@ -16,23 +16,24 @@
 #' 
 
 extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
-                                saveList = FALSE, testing = FALSE){
-  
-  suppressPackageStartupMessages(library(tidyverse))
+                                saveList = FALSE, testRun = FALSE){
   
   # # for testing purposes
   # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB.rds')
   # nYear <- 17
   # nAge <- 19
   # nAgeC <- 5
-  # testing <- TRUE
+  # testRun <- TRUE
 
   ## Set up --------------------------------------------------------------------
+  
+  # load packages
+  suppressPackageStartupMessages(library(tidyverse))
   
   # convert MCMC samples to matrix
   out.mat <- do.call(rbind, lapply(MCMCsamples, as.matrix))
   
-  if(testing){
+  if(testRun){
     out.mat <- out.mat[1:100,]
   }
   
@@ -52,7 +53,9 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   nSA <- matrix(NA, nrow = nSamples, ncol = nYear)
   nAD <- array(NA, dim = c(nSamples, nAge, nYear))
   nTOT <- matrix(NA, nrow = nSamples, ncol = nYear)
-  # ab <- matrix(NA, nrow = nSamples, ncol = nYear)
+  pYAF <- matrix(NA, nrow = nSamples, ncol = nYear)
+  pSA <- matrix(NA, nrow = nSamples, ncol = nYear)
+  pAD <- array(NA, dim = c(nSamples, nAge, nYear))
   lambda <- matrix(NA, nrow = nSamples, ncol = nYear-1)
   
   
@@ -82,7 +85,15 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
       }
       
       nTOT[i, t] <- out.mat[i, paste0("nTOT[", t, "]")]
-      # ab <- out.mat[i, paste0("ab[", t, "]")]
+      
+      # time-varying proportions of the population
+      # represented by each age class
+      pYAF[i, t] <- out.mat[i, paste0("nYAF[", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
+      pSA[i, t] <- out.mat[i, paste0("nSA[", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
+      
+      for(a in 1:nAge){
+        pAD[i, a, t] <- out.mat[i, paste0("nAD[", a, ", ", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
+      }
       
       # population growth rate
       if(t < nYear){
@@ -106,7 +117,9 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   nSA.mean <- rowMeans(nSA[, 1:nYear], na.rm = T)
   nAD.mean <- apply(nAD[, , 1:(nYear-1)], c(1, 2), mean)
   nTOT.mean <- rowMeans(nTOT[, 1:nYear], na.rm = T)
-  # ab.mean <- rowMeans(ab[, 1:nYear], na.rm = T)
+  pYAF.mean <- rowMeans(pYAF[, 1:nYear], na.rm = T)
+  pSA.mean <- rowMeans(pSA[, 1:nYear], na.rm = T)
+  pAD.mean <- apply(pAD[, , 1:(nYear-1)], c(1, 2), mean)
   lambda.mean <- rowMeans(lambda[, 1:(nYear-1)], na.rm = T)
   
   
@@ -114,26 +127,32 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   
   paramSamples <- list(
     
-    t = list(nYAF = nYAF,
-             nSA = nSA,
-             nAD = nAD,
-             nTOT = nTOT,
+    t = list(Bt = Bt,
+             Ra = Ra,
              sYAF = sYAF,
              sSA = sSA,
              sAD = sAD,
-             Bt = Bt,
-             Ra = Ra,
+             nYAF = nYAF,
+             nSA = nSA,
+             nAD = nAD,
+             nTOT = nTOT,
+             pYAF = pYAF,
+             pSA = pSA,
+             pAD = pAD,
              lambda = lambda),
     
-    t.mean = list(nYAF.mean = nYAF.mean,
-                  nSA.mean = nSA.mean,
-                  nAD.mean = nAD.mean,
-                  nTOT.mean = nTOT.mean,
+    t.mean = list(Bt.mean = Bt.mean,
+                  Ra.mean = Ra.mean,
                   sYAF.mean = sYAF.mean,
                   sSA.mean = sSA.mean,
                   sAD.mean = sAD.mean,
-                  Bt.mean = Bt.mean,
-                  Ra.mean = Ra.mean,
+                  nYAF.mean = nYAF.mean,
+                  nSA.mean = nSA.mean,
+                  nAD.mean = nAD.mean,
+                  nTOT.mean = nTOT.mean,
+                  pYAF.mean = pYAF.mean,
+                  pSA.mean = pSA.mean,
+                  pAD.mean = pAD.mean,
                   lambda.mean = lambda.mean)
   )
   

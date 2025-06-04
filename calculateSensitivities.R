@@ -11,13 +11,13 @@
 
 calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   
-  # # for testing purposes
-  # # source('extractParamSamples.R')
-  # # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
-  # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  # paramSamples <- readRDS('results/paramSamples.rds')
-  # t.period <- NULL
-  # nAge <- 19
+  # for testing purposes
+  # source('extractParamSamples.R')
+  # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+  # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+  paramSamples <- readRDS('results/paramSamples.rds')
+  t.period <- NULL
+  nAge <- 19
   
   
   ## Calculate transient sensitivities -----------------------------------------
@@ -48,9 +48,9 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   
   # set up list of arrays for storing transient sensitivities
   sensList <- list(
-    sens.nYAF = rep(NA, nSamples),
-    sens.nSA = rep(NA, nSamples),
-    sens.nAD = matrix(NA, nrow = nSamples, ncol = nAge),
+    sens.pYAF = rep(NA, nSamples),
+    sens.pSA = rep(NA, nSamples),
+    sens.pAD = matrix(NA, nrow = nSamples, ncol = nAge),
     
     sens.sYAF = rep(NA, nSamples),
     sens.sSA = rep(NA, nSamples),
@@ -63,22 +63,22 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # calculate transient sensitivities for vital rates & population size/structure
   # (evaluated at the temporal mean)
   for(i in 1:nSamples){
-    sensList$sens.nYAF[i] <- sYAF[i]
-    sensList$sens.nSA[i]  <- sSA[i]
-    sensList$sens.sYAF[i] <- nYAF[i]
-    sensList$sens.sSA[i]  <- nSA[i]
+    sensList$sens.pYAF[i] <- sYAF[i]
+    sensList$sens.pSA[i]  <- sSA[i]
+    sensList$sens.sYAF[i] <- pYAF[i]
+    sensList$sens.sSA[i]  <- pSA[i]
     
-    sensList$sens.Bt[i] <- sum(nAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * Ra[i, 2:nAge]) #TODO: DISCUSS!
+    sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * Ra[i, 2:nAge])
     
     for(a in 1:nAge){
       if(a == 1){
-        sensList$sens.nAD[i, a] <- 0
+        sensList$sens.pAD[i, a] <- 0
         sensList$sens.sAD[i, a] <- 0
         sensList$sens.Ra[i, a] <- 0
       }else{
-        sensList$sens.nAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
-        sensList$sens.sAD[i, a] <- nAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
-        sensList$sens.Ra[i, a] <- nAD[i, a] * sAD[i, a] * 0.5 * Bt[i]
+        sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
+        sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
+        sensList$sens.Ra[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * Bt[i]
       }
     }
   }
@@ -120,9 +120,9 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # calculate transient elasticities for vital rates & population size/structure
   # (evaluated at the temporal mean)
   elasList <- list(
-    elas.nYAF = sensList$sens.nYAF * (nYAF/lambda),
-    elas.nSA = sensList$sens.nSA * (nSA/lambda),
-    elas.nAD = sensList$sens.nAD * (nAD/lambda),
+    elas.pYAF = sensList$sens.pYAF * (pYAF/lambda),
+    elas.pSA = sensList$sens.pSA * (pSA/lambda),
+    elas.pAD = sensList$sens.pAD * (pAD/lambda),
     
     elas.sYAF = sensList$sens.sYAF * (sYAF/lambda),
     elas.sSA = sensList$sens.sSA * (sSA/lambda),
@@ -130,7 +130,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
     
     elas.Bt = sensList$sens.Bt * (Bt/lambda),
     # elas.Ra = sensList$sens.Ra * (Ra/lambda)
-    elas.Ra = sensList$sens.Ra /lambda #TODO: DISCUSS
+    elas.Ra = sensList$sens.Ra /lambda # TODO: DISCUSS
   )
   
   # get posterior summaries for transient sensitivities
