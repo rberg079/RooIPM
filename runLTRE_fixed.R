@@ -1,9 +1,8 @@
-#' Run random design transient life table response experiment (LTRE)
+#' Run fixed design transient life table response experiment (LTRE) for a pair of years
 #'
 #' @param paramSamples list. Contains lists of posterior samples for all vital rates & population-level quantities.
-#' @param sensitivities list. Contains lists containing posterior samples of transient sensitivities & elasticities for all vital rates & population structure (n).
+#' @param t.pair vector. Contains 2 integers specifying the indices of the two years to compare in the analysis.
 #' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
-#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #'
 #' @returns a list of lists containing results of the LTRE analysis.
 #' Object 'contList' is a list containing posterior distributions of all parameters' LTRE contributions (sublist 'cont'), as well as some auxiliary quantities (sublist 'other').
@@ -13,20 +12,17 @@
 #'
 #' @examples
 
-runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
+runLTRE_fixedDesign <- function(paramSamples, t.pair, nAge = 19){
   
   # # for testing purposes
   # source('extractParamSamples.R')
-  # source('calculateSensitivities.R')
   # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
   # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
   # 
   # OR
-  # paramSamples <- readRDS('results/paramSamples.rds')
-  # sensitivities <- readRDS('results/sensitivities.rds')
-  # nYear <- 17
-  # nAge <- 19
+  paramSamples <- readRDS('results/paramSamples.rds')
+  t.pair <- c(4, 8)
+  nAge <- 19
   
   
   ## Set up --------------------------------------------------------------------
@@ -41,7 +37,6 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   dropIdx <- which(names(paramSamples$t) %in% dropParams)
   
   paramList <- paramSamples$t[-dropIdx]
-  sensList <- sensitivities$sensitivity$samples
   
   # set up list of arrays for storing calculated LTRE contributions
   contList <- list()
@@ -65,17 +60,27 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   
   contCount <- length(contList)
   
-  contList$est.var <- matrix(as.numeric(NA), nrow = contCount, ncol = nSamples)
-  contList$est.covar <- matrix(as.numeric(NA), nrow = contCount, ncol = nSamples)
+  contList$delta_lambda <- rep(NA, nSamples)
+  contList$delta_loglambda <- rep(NA, nSamples)
   
   
-  ## Calculate LTRE contributions per sample (random design) -------------------
+  ## Calculate sensitivities for relevant year pair ----------------------------
+  
+  source('calculateSensitivities.R')
+  sensitivities <- calculateSensitivities(paramSamples = paramSamples,
+                                          nAge = nAge,
+                                          t.period = t.pair)
+  
+  sensList <- sensitivities$sensitivity$samples
+  
+  
+  ## Calculate LTRE contributions per sample (fixed design) --------------------
   
   for(i in 1:nSamples){
     
     # make lists of vital rates/population structure & of sensitivities
-    dp.stoch.list <- list()
-    sens.list <- list()
+    param_list <- list()
+    sens_list <- list()
     
     for(x in 1:length(paramList)){
       if(names(paramList)[x] == "lambda"){
@@ -84,9 +89,9 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
       
       # set time interval based on parameter
       if(names(paramList)[x] %in% c("nYAF", "nSA", "nAD")){
-        tInt <- 2:nYear
+        tInt <- t.pair + 1
       }else{
-        tInt <- 1:(nYear-1)
+        tInt <- t.pair
       }
       
       # expand age if required & list relevant parameter estimates
@@ -96,46 +101,33 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
         tempListS <- list()
         
         for(a in 1:nAge){
-          tempList <- c(tempList, list(paramList[[x]][i, a, tInt]))
+          tempList <- c(tempList, list(diff(paramList[[x]][i, a, tInt])))
           tempListS <- c(tempListS, list(sensList[[x]][i, a]))
         }
         names(tempList) <- paste0(names(paramList)[x], "_", 1:nAge)
         names(tempListS) <- paste0(names(paramList)[x], "_", 1:nAge)
       }else{
-        tempList <- list(paramList[[x]][i, tInt])
+        tempList <- list(diff(paramList[[x]][i, tInt]))
         tempListS <- list(sensList[[x]][i])
         names(tempList) <- names(paramList)[x]
         names(tempListS) <- names(paramList)[x]
       }
-      dp.stoch.list <- c(dp.stoch.list, tempList)
-      sens.list <- c(sens.list, tempListS)
+      param_list <- c(param_list, tempList)
+      sens_list <- c(sens_list, tempListS)
     }
     
-    # convert parameter list to matrix
-    dp.stoch <- as.matrix(dplyr::bind_rows(dp.stoch.list, .id = "column.label"))
+    # convert parameter & sensitivity lists to vectors
+    paramvec <- do.call(c, param_list)
+    sensvec <- do.call(c, sens_list)
     
-    # derive process variances & covariances
-    dp.varcov <- var(dp.stoch)
-    
-    # save total estimated (co)variance per parameter
-    contList$est.var[,i] <- diag(dp.varcov)
-    contList$est.covar[,i] <- rowSums(dp.varcov, na.rm = T)
-    
-    # convert sensitivity list to vector
-    sens.vec <- do.call(c, sens.list)
+    # calculate & save change in lambda
+    contList$delta_lambda[i] <- diff(paramList$lambda[i, t.pair])
+    contList$delta_loglambda[i] <- diff(log(paramList$lambda[i, t.pair]))
     
     # calculate demographic contributions
-    # NOTE: here we multiply sensitivities & (co)variances
-    cont.mat <- matrix(NA, nrow = length(sens.vec), ncol = length(sens.vec))
-    for(k in 1:length(sens.vec)){
-      for(l in 1:length(sens.vec)){
-        cont.mat[k, l] <- dp.varcov[k, l] * sens.vec[k] * sens.vec[l]
-      }
-    }
-    
-    # summarise contributions (sum of variances & covariances)
-    cont <- rowSums(cont.mat)
-    names(cont) <- names(sens.vec)
+    # NOTE: here we multiply sensitivities & parameter differences
+    cont <- paramvec * sensvec
+    names(cont) <- names(sensvec)
     
     # insert contributions into storage list
     for(x in 1:length(cont)){
@@ -145,19 +137,12 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   
   # restructure results list
   contList <- list(cont = contList[1:contCount],
-                   other = list(est.var = contList$est.var,
-                                est.covar = contList$est.covar)
+                   other = list(delta_lambda = contList$delta_lambda,
+                                delta_loglambda = contList$delta_loglambda)
   )
   
   
   ## Summarise results ---------------------------------------------------------
-  
-  # check sum of contributions against variance in lambda
-  contList$other$total.contSum <- rowSums(dplyr::bind_rows(contList$cont))
-  quantile(contList$other$total.contSum, probs = c(0.025, 0.5, 0.975))
-  
-  contList$other$tempvar.lambda <- matrixStats::rowVars(paramList$lambda[, 1:(nYear-1)])
-  quantile(contList$other$tempvar.lambda, probs = c(0.025, 0.5, 0.975))
   
   # calculate summed contributions for age-specific parameters
   sumParams <- names(paramList)[which(names(paramList) %in% c("nAD", "sAD", "Ra"))]
@@ -181,8 +166,8 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   contData$Age[which(contData$Age == "")] <- NA
   
   # make posterior summaries
-  contData_summary <- contData %>% 
-    dplyr::group_by(Variable) %>% 
+  contData_summary <- contData %>%
+    dplyr::group_by(Variable) %>%
     dplyr::summarise(lCI = quantile(Contribution, 0.025),
                      median = median(Contribution),
                      uCI = quantile(Contribution, 0.975))
@@ -194,7 +179,7 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
                   contData = contData,
                   contData_summary = contData_summary)
   
-  saveRDS(results, file = "results/LTREresults_random.rds")
+  saveRDS(results, file = "results/LTREresults_fixed.rds")
   
   return(results)
   
