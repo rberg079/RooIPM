@@ -131,14 +131,12 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   Tau.S <- (Tau.S + t(Tau.S)) / 2
   
   ## Reproductive success model
-  EpsilonI.Ri <- rnorm(nID.R, 0, 1)
-  EpsilonT.Ri <- rnorm(nYear-1, 0, 1)
-  EpsilonT.Ra <- rnorm(nYear-1, 0, 1)
+  EpsilonI.R <- rnorm(nID.R, 0, 1)
+  EpsilonT.R <- rnorm(nYear-1, 0, 1)
   EpsilonT.B <- rnorm(nYear-1, 0, 1)
 
-  SigmaI.Ri <- runif(1, 0, 5)
-  SigmaT.Ri <- runif(1, 0, 5)
-  SigmaT.Ra <- runif(1, 0, 5)
+  SigmaI.R <- runif(1, 0, 5)
+  SigmaT.R <- runif(1, 0, 5)
   SigmaT.B <- runif(1, 0, 5)
 
   
@@ -167,8 +165,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # Reproductive success model
   # age-specific reproductive success
   Mu.B <- runif(1, 0.4, 1)
-  Mu.Ri <- c(0, rep(runif(nAge-1, 0, 1)))
-  Mu.Ra <- c(0, rep(runif(nAge-1, 0, 1)))
+  Mu.R <- c(0, rep(runif(nAge-1, 0, 1)))
 
   Bi <- numeric(nR)
   for(x in 1:nR){
@@ -185,17 +182,17 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   for(x in 1:nR){
     if(envEffectsR){
       Ri[x] <- plogis(
-        qlogis(Mu.Ri[age.R[x]]) +
+        qlogis(Mu.R[age.R[x]]) +
           BetaD.R * dens.hat[year.R[x]] +
           BetaV.R * veg.hat[year.R[x]] +
           BetaW.R * win.hat[year.R[x]] +
-          EpsilonI.Ri[id.R[x]] +
-          EpsilonT.Ri[year.R[x]])
+          EpsilonI.R[id.R[x]] +
+          EpsilonT.R[year.R[x]])
     }else{
       Ri[x] <- plogis(
-        qlogis(Mu.Ri[age.R[x]]) +
-          EpsilonI.Ri[id.R[x]] +
-          EpsilonT.Ri[year.R[x]])
+        qlogis(Mu.R[age.R[x]]) +
+          EpsilonI.R[id.R[x]] +
+          EpsilonT.R[year.R[x]])
     }
   }
 
@@ -204,15 +201,15 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     for(t in 1:(nYear-1)) {
       if(envEffectsR){
         Ra[a, t] <- plogis(
-          qlogis(Mu.Ra[a]) +
+          qlogis(Mu.R[a]) +
             BetaD.R * dens.hat[t] +
             BetaV.R * veg.hat[t] +
             BetaW.R * win.hat[t] +
-            EpsilonT.Ra[t])
+            EpsilonT.R[t])
       }else{
         Ra[a, t] <- plogis(
-          qlogis(Mu.Ra[a]) +
-            EpsilonT.Ra[t])
+          qlogis(Mu.R[a]) +
+            EpsilonT.R[t])
       }
     }
   }
@@ -285,7 +282,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # pmax(..., 1) returns 1 if ab falls below it
   # so propF is at least 40% & ab at least 1
   
-  nYAF; nSA; nAD; nTOT; ab
+  # nYAF; nSA; nAD; nTOT; ab
   
   ## Assemble myinits list -----------------------------------------------------
   
@@ -306,23 +303,20 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     Gamma.S = Gamma.S,
     Tau.S = Tau.S,
     
-    EpsilonI.Ri = EpsilonI.Ri,
-    EpsilonT.Ri = EpsilonT.Ri,
-    EpsilonT.Ra = EpsilonT.Ra,
+    EpsilonI.R = EpsilonI.R,
+    EpsilonT.R = EpsilonT.R,
     EpsilonT.B = EpsilonT.B,
     
-    SigmaI.Ri = SigmaI.Ri,
-    SigmaT.Ri = SigmaT.Ri,
-    SigmaT.Ra = SigmaT.Ra,
+    SigmaI.R = SigmaI.R,
+    SigmaT.R = SigmaT.R,
     SigmaT.B = SigmaT.B,
     
     Mu.B = Mu.B,
-    Mu.Ri = Mu.Ri,
-    Mu.Ra = Mu.Ra,
+    Mu.R = Mu.R,
     Bi = Bi,
+    Bt = Bt,
     Ri = Ri,
     Ra = Ra,
-    Bt = Bt,
     
     S = S,
     sYAF = sYAF,

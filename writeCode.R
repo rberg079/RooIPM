@@ -61,21 +61,18 @@ writeCode <- function(){
   # Sigma.O = standard deviation of effect of year on probability of observation (was sd.p)
   
   # Mu.B = mean breeding rate, or probability of a female producing a jellybean
-  # Mu.Ri = mean probability of successfully turning a jellybean into a YAF, from individual-based model
-  # Mu.Ra = mean probability of successfully turning a jellybean into a YAF, from age-class-based model
+  # Mu.R = mean probability of successfully turning a jellybean into a YAF
   
   # BetaD.R = covariate effect of density (D) on reproductive success (R)
   # BetaV.R = covariate effect of vegetation (V) on reproductive success (R)
   # BetaW.R = covariate effect of winter severity (W) on reproductive success (R)
   
-  # EpsilonI.Ri = random effect of mother's identity (I) on individual reproductive success (Ri)
-  # EpsilonT.Ri = random effect of year (T) on individual reproductive success (Ri)
-  # EpsilonT.Ra = random effect of year (T) on age-specific reproductive success (Ra)
+  # EpsilonI.R = random effect of mother's identity (I) on reproductive success (Ri)
+  # EpsilonT.R = random effect of year (T) on reproductive success (Ri & Ra)
   # EpsilonT.B = random effect of year (T) on breeding rate (Bt)
   
-  # SigmaI.Ri = standard deviation of effect of mother's identity (I) on individual reproductive success (Ri)
-  # SigmaT.Ri = standard deviation of effect of year (T) on individual reproductive success (Ri)
-  # SigmaT.Ra = standard deviation of effect of year (T) on age-specific reproductive success (Ra)
+  # SigmaI.R = standard deviation of effect of mother's identity (I) on reproductive success (Ri)
+  # SigmaT.R = standard deviation of effect of year (T) on reproductive success (Ri & Ra)
   # SigmaT.B = standard deviation of effect of year (T) on breeding rate (Bt)
   
   # ab = yearly abundance in number of kangaroos, supplied for most years with 1-2 NAs
@@ -261,39 +258,38 @@ writeCode <- function(){
     }
 
     # individual RS function
-    Mu.Ri[1] <- 0
     for(x in 1:nR){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
+        logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
           BetaD.R * dens.hat[year.R[x]] +
           BetaV.R * veg.hat[year.R[x]] +
           BetaW.R * win.hat[year.R[x]] +
-          EpsilonI.Ri[id.R[x]] +
-          EpsilonT.Ri[year.R[x]]
+          EpsilonI.R[id.R[x]] +
+          EpsilonT.R[year.R[x]]
       }else{
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
-          EpsilonI.Ri[id.R[x]] +
-          EpsilonT.Ri[year.R[x]]
+        logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
+          EpsilonI.R[id.R[x]] +
+          EpsilonT.R[year.R[x]]
       }
     }
 
     # age-specific RS function
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
-    Mu.Ra[1] <- 0
+    Mu.R[1] <- 0
     for(a in 1:nAge){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
-          logit(Ra[a, t]) <- logit(Mu.Ra[a]) +
+          logit(Ra[a, t]) <- logit(Mu.R[a]) +
             BetaD.R * dens.hat[t] +
             BetaV.R * veg.hat[t] +
             BetaW.R * win.hat[t] +
-            EpsilonT.Ra[t]
+            EpsilonT.R[t]
         }else{
-          logit(Ra[a, t]) <- logit(Mu.Ra[a]) +
-            EpsilonT.Ra[t]
+          logit(Ra[a, t]) <- logit(Mu.R[a]) +
+            EpsilonT.R[t]
         }
       }
     }
@@ -301,8 +297,7 @@ writeCode <- function(){
     ##### Priors ####
     # priors for fixed effects
     for(a in 2:nAge){
-      Mu.Ri[a] ~ dunif(0, 1)
-      Mu.Ra[a] ~ dunif(0, 1)
+      Mu.R[a] ~ dunif(0, 1)
     }
     Mu.B ~ dunif(0, 1)
 
@@ -314,19 +309,17 @@ writeCode <- function(){
     
     # priors for random effects
     for(i in 1:nID.R){
-      EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
+      EpsilonI.R[i] ~ dnorm(0, sd = SigmaI.R)
     }
 
     for(t in 1:(nYear-1)){
-      EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
-      EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
+      EpsilonT.R[t] ~ dnorm(0, sd = SigmaT.R)
       EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
     }
 
     # priors for sigma
-    SigmaI.Ri ~ dunif(0, 100)
-    SigmaT.Ri ~ dunif(0, 100)
-    SigmaT.Ra ~ dunif(0, 100)
+    SigmaI.R ~ dunif(0, 100)
+    SigmaT.R ~ dunif(0, 100)
     SigmaT.B ~ dunif(0, 100)
     
   }) # nimbleCode

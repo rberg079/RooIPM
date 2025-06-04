@@ -23,10 +23,10 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
   # 
   # OR
-  # paramSamples <- readRDS('results/paramSamples.rds')
-  # sensitivities <- readRDS('results/sensitivities.rds')
-  # nYear <- 17
-  # nAge <- 19
+  paramSamples <- readRDS('results/paramSamples.rds')
+  sensitivities <- readRDS('results/sensitivities.rds')
+  nYear <- 17
+  nAge <- 19
   
   
   ## Set up --------------------------------------------------------------------

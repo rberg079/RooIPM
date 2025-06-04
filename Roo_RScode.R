@@ -4,7 +4,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 
 # load packages
@@ -74,28 +74,27 @@ myCode = nimbleCode({
   }
   
   # individual RS function
-  Mu.Ri[1] <- 0
   for(x in 1:nR){
     R[x] ~ dbern(Ri[x])
-    logit(Ri[x]) <- logit(Mu.Ri[age.R[x]]) +
+    logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
       BetaD.R * dens.hat[year.R[x]] +
       BetaV.R * veg.hat[year.R[x]] +
       BetaW.R * win.hat[year.R[x]] +
-      EpsilonI.Ri[id.R[x]] +
-      EpsilonT.Ri[year.R[x]]
+      EpsilonI.R[id.R[x]] +
+      EpsilonT.R[year.R[x]]
   }
   
   # age-specific RS function
   # use parameters estimated from individual data above
   # to predict age-specific reproductive success (Ra) here!
-  Mu.Ra[1] <- 0
+  Mu.R[1] <- 0
   for(a in 1:nAge){
     for(t in 1:(nYear-1)){
-      logit(Ra[a, t]) <- logit(Mu.Ra[a]) +
+      logit(Ra[a, t]) <- logit(Mu.R[a]) +
         BetaD.R * dens.hat[t] +
         BetaV.R * veg.hat[t] +
         BetaW.R * win.hat[t] +
-        EpsilonT.Ra[t]
+        EpsilonT.R[t]
     }
   }
   
@@ -121,8 +120,7 @@ myCode = nimbleCode({
   ##### Priors ####
   # priors for fixed effects
   for(a in 2:nAge){
-    Mu.Ri[a] ~ dunif(0, 1)
-    Mu.Ra[a] ~ dunif(0, 1)
+    Mu.R[a] ~ dunif(0, 1)
   }
   Mu.B ~ dunif(0, 1)
   
@@ -132,19 +130,17 @@ myCode = nimbleCode({
   
   # priors for random effects
   for(i in 1:nID.R){
-    EpsilonI.Ri[i] ~ dnorm(0, sd = SigmaI.Ri)
+    EpsilonI.R[i] ~ dnorm(0, sd = SigmaI.R)
   }
   
   for(t in 1:(nYear-1)){
-    EpsilonT.Ri[t] ~ dnorm(0, sd = SigmaT.Ri)
-    EpsilonT.Ra[t] ~ dnorm(0, sd = SigmaT.Ra)
+    EpsilonT.R[t] ~ dnorm(0, sd = SigmaT.R)
     EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
   }
   
   # priors for sigma
-  SigmaI.Ri ~ dunif(0, 10)
-  SigmaT.Ri ~ dunif(0, 10)
-  SigmaT.Ra ~ dunif(0, 10)
+  SigmaI.R ~ dunif(0, 10)
+  SigmaT.R ~ dunif(0, 10)
   SigmaT.B ~ dunif(0, 10)
   
 })
@@ -181,10 +177,10 @@ for(c in 1:nchains){
 
 # select parameters to monitor
 params = c("Bt", "Ra",
-           "Mu.B", "Mu.Ri", "Mu.Ra",
+           "Mu.B", "Mu.R",
            "BetaD.R", "BetaV.R", "BetaW.R",
-           "EpsilonT.B", "EpsilonI.Ri", "EpsilonT.Ri", "EpsilonT.Ra", 
-           "SigmaT.B", "SigmaI.Ri", "SigmaT.Ri", "SigmaT.Ra",
+           "EpsilonT.B", "EpsilonI.R", "EpsilonT.R",
+           "SigmaT.B", "SigmaI.R", "SigmaT.R",
            "dens.hat", "veg.hat", "win.hat"
 )
 
@@ -288,17 +284,19 @@ library(patchwork)
 
 # summaries
 MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.Ri', 'Mu.Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Mu.B', 'Mu.Ri', 'Mu.Ra'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Mu.B', 'Mu.R'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ra'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), pdf = FALSE)
+
+# MCMCtrace(out.mcmc, pdf = T)
 
 
 ## Plots -----------------------------------------------------------------------
@@ -320,7 +318,7 @@ df$bLCI <- inv.logit(apply(Bt.pred, 1, quantile, 0.025))
 df$bUCI <- inv.logit(apply(Bt.pred, 1, quantile, 0.975))
 
 for(i in 1:nrow(df)){
-  Ra.pred[i, ] <- qlogis(out.dat[, paste0("Mu.Ra[", df$age[i], "]")]) +
+  Ra.pred[i, ] <- qlogis(out.dat[, paste0("Mu.R[", df$age[i], "]")]) +
     out.dat[, "BetaD.R"] * out.dat[, paste0("dens.hat[", df$year[i], "]")] +
     out.dat[, "BetaV.R"] * out.dat[, paste0("veg.hat[", df$year[i], "]")] +
     out.dat[, "BetaW.R"] * out.dat[, paste0("win.hat[", df$year[i], "]")] +

@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -105,7 +105,7 @@ for(c in 1:nchains){
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
-    propF = myData$propF,,
+    propF = myData$propF,
     envEffectsR = TRUE,
     envEffectsS = TRUE
     )
@@ -114,18 +114,18 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'Ra', 'sYAF', 'sSA', 'sAD',                     # yearly vital rates
-  'nYAF', 'nSA', 'nAD', 'nTOT',                              # population sizes
+  'S', 'Bt', 'Ra', 'sYAF', 'sSA', 'sAD',    # yearly vital rates
+  'nYAF', 'nSA', 'nAD', 'nTOT',             # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat', 'BetaA.S',                          # latent environment
-  'Mu.O', 'Epsilon.O', 'Sigma.O',                            # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S',                              # random effects
+  'dens.hat', 'veg.hat', 'BetaA.S',         # latent environment
+  'Mu.O', 'Epsilon.O', 'Sigma.O',           # observation parameters
+  'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
   
   # Reproductive success model
-  'Mu.B', 'Mu.Ri', 'Mu.Ra',                                  # mean reproductive success
-  'EpsilonT.B', 'EpsilonI.Ri', 'EpsilonT.Ri', 'EpsilonT.Ra', # random effects
-  'SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra',         # random effects
+  'Mu.B', 'Mu.R',                           # mean reproductive success
+  'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', # random effects
+  'SigmaT.B', 'SigmaI.R', 'SigmaT.R',       # random effects
   
   # Abundance model
   'ab', 'propF'
@@ -248,7 +248,7 @@ MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
 if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
-MCMCsummary(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
@@ -261,7 +261,7 @@ MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
 if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)}
-MCMCtrace(out.mcmc, params = c('SigmaI.Ri', 'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)
