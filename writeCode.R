@@ -302,9 +302,9 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-      BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-      BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+      BetaD.R ~ dunif(-5, 5)
+      BetaV.R ~ dunif(-5, 5)
+      BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects

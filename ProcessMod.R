@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -217,7 +217,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB.rds', compress = 'xz')
+# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB2.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -266,6 +266,8 @@ MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)
 
+MCMCtrace(out.mcmc, pdf = T)
+
 
 ## Compare model outputs -------------------------------------------------------
 
@@ -275,16 +277,16 @@ nAgeC <- myConst$nAgeC
 
 source('compareModels.R')
 compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
-              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds"),
-              modelNames = c("CJSen", "CJSen/RSen", "CJSen/RSen/AB"), plotFolder = c("figures/Mod"),
+              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds", "results/IPM_CJSen_RSen_AB2.rds"),
+              modelNames = c("CJSen", "CJSen/RSen", "CJSen/RSen/AB", "CJSen/RSen/AB2"), plotFolder = c("figures/Mod"),
               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
 
 source('extractParamSamples.R')
-param.samples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-# param.samples <- readRDS('results/paramSamples.rds')
+paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+# paramSamples <- readRDS('results/paramSamples.rds')
 
 
 ## Plot population model -------------------------------------------------------
