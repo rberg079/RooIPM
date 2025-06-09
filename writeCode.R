@@ -302,9 +302,9 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
-      BetaV.R ~ dunif(-5, 5)
-      BetaW.R ~ dunif(-5, 5)
+      BetaD.R ~ dunif(-2, 2)
+      BetaV.R ~ dunif(-2, 2)
+      BetaW.R ~ dunif(-2, 2)
     }
     
     # priors for random effects
@@ -318,7 +318,8 @@ writeCode <- function(){
     }
 
     # priors for sigma
-    SigmaI.R ~ dunif(0, 100)
+    SigmaI.R <- 0
+    # SigmaI.R ~ dunif(0, 100)
     SigmaT.R ~ dunif(0, 100)
     SigmaT.B ~ dunif(0, 100)
     

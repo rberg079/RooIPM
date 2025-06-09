@@ -101,10 +101,10 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     }
     
     p.sum <- ggplot(sum.data, aes(x = type, y = estimate, group = type)) + 
-      geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = 'width', draw_quantiles = 0.5) + 
+      geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) + 
       geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") + 
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
-      xlab('') + 
+      xlab("") + 
       scale_fill_manual(values = plot.colours) + 
       scale_colour_manual(values = plot.colours) + 
       scale_x_discrete(labels = c("Birth\nrate",
@@ -116,7 +116,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
                                   "Prop. of\nsubadults",
                                   "Prop. of\nadults")) + 
       theme_bw() + 
-      theme(legend.position = 'none',
+      theme(legend.position = "none",
             panel.grid = element_blank(),
             axis.text.x = element_text(size = 10),
             axis.title = element_text(size = 10))
@@ -127,14 +127,14 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     p.R <- ggplot(subset(age.data, variable %in% c("Bt", paste0("Ra_", 2:nAge)))) +
       geom_violin(aes(x = factor(variable, levels = c("Bt", paste0("Ra_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = 'width', draw_quantiles = 0.5, position = 'dodge') +
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
-      xlab('') + 
+      xlab("") + 
       scale_x_discrete(labels = expression(B, R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
                                            R[11], R[12], R[13], R[14], R[15], R[16], R[17], R[18], R[19])) +
       scale_fill_manual(values = R.colours) +
       theme_bw() + 
-      theme(legend.position = 'none',
+      theme(legend.position = "none",
             panel.grid = element_blank(), 
             axis.text.x = element_text(size = 10), 
             axis.title = element_text(size = 10))
@@ -145,16 +145,16 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     p.S <- ggplot(subset(age.data, variable %in% c("sYAF", "sSA", paste0("sAD_", 2:nAge)))) +
       geom_violin(aes(x = factor(variable, levels = c("sYAF", "sSA", paste0("sAD_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = 'width', draw_quantiles = 0.5, position = 'dodge') + 
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") + 
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
-      xlab('') + 
+      xlab("") + 
       scale_x_discrete(labels = expression(S[0], S[1],
                                            S[2], S[3], S[4], S[5], S[6], 
                                            S[7], S[8], S[9], S[10], S[11], S[12],
                                            S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
       scale_fill_manual(values = S.colours) +
       theme_bw() + 
-      theme(legend.position = 'none',
+      theme(legend.position = "none",
             panel.grid = element_blank(), 
             axis.text.x = element_text(size = 10), 
             axis.title = element_text(size = 10))
@@ -165,16 +165,16 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     p.P <- ggplot(subset(age.data, variable %in% c("pYAF", "pSA", paste0("pAD_", 2:nAge)))) +
       geom_violin(aes(x = factor(variable, levels = c("pYAF", "pSA", paste0("pAD_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = 'width', draw_quantiles = 0.5, position = 'dodge') +
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
-      xlab('') + 
+      xlab("") + 
       scale_x_discrete(labels = expression(P[0], P[1],
                                            P[2], P[3], P[4], P[5], P[6], 
                                            P[7], P[8], P[9], P[10], P[11], P[12],
                                            P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
       scale_fill_manual(values = P.colours) +
       theme_bw() + 
-      theme(legend.position = 'none',
+      theme(legend.position = "none",
             panel.grid = element_blank(), 
             axis.text.x = element_text(size = 10), 
             axis.title = element_text(size = 10))
@@ -190,7 +190,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     pdf(paste0(plotFolder, ifelse(i == 1, "/sensitivities", "/elasticities"), "_age.pdf"), width = 12, height = 6) # or 10 & 6
     print(
       # p.sum + (p.R / p.S / p.P)
-      (p.sum + labs(tag = 'a)')) + ((p.R + labs(tag = 'b)')) / (p.S + labs(tag = 'c)')) / (p.P + labs(tag = 'd)')))
+      (p.sum + labs(tag = "a)")) + ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
     )
     dev.off()
   }
