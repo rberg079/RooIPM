@@ -19,6 +19,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
   
   ## Set up --------------------------------------------------------------------
   
+  # load packages
   library(coda)
   suppressPackageStartupMessages(library(tidyverse))
   suppressPackageStartupMessages(library(data.table))
@@ -125,9 +126,9 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
     names(R.colours) <- c("Bt", paste0("Ra_", 2:nAge))
     
-    p.R <- ggplot(subset(age.data, variable %in% c("Bt", paste0("Ra_", 2:nAge)))) +
-      geom_violin(aes(x = factor(variable, levels = c("Bt", paste0("Ra_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
+    p.R <- ggplot(subset(age.data, Variable %in% c("Bt", paste0("Ra_", 2:nAge)))) +
+      geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("Ra_", 2:nAge))),
+                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(B, R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
@@ -143,9 +144,9 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 18))
     names(S.colours) <- c("sYAF", "sSA", paste0("sAD_", 2:nAge))
     
-    p.S <- ggplot(subset(age.data, variable %in% c("sYAF", "sSA", paste0("sAD_", 2:nAge)))) +
-      geom_violin(aes(x = factor(variable, levels = c("sYAF", "sSA", paste0("sAD_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") + 
+    p.S <- ggplot(subset(age.data, Variable %in% c("sYAF", "sSA", paste0("sAD_", 2:nAge)))) +
+      geom_violin(aes(x = factor(Variable, levels = c("sYAF", "sSA", paste0("sAD_", 2:nAge))),
+                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") + 
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(S[0], S[1],
@@ -163,9 +164,9 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     P.colours <- c(plot.colours[6:7], rep(plot.colours[8], 18))
     names(P.colours) <- c("pYAF", "pSA", paste0("pAD_", 2:nAge))
     
-    p.P <- ggplot(subset(age.data, variable %in% c("pYAF", "pSA", paste0("pAD_", 2:nAge)))) +
-      geom_violin(aes(x = factor(variable, levels = c("pYAF", "pSA", paste0("pAD_", 2:nAge))),
-                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
+    p.P <- ggplot(subset(age.data, Variable %in% c("pYAF", "pSA", paste0("pAD_", 2:nAge)))) +
+      geom_violin(aes(x = factor(Variable, levels = c("pYAF", "pSA", paste0("pAD_", 2:nAge))),
+                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(P[0], P[1],

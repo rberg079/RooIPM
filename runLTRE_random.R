@@ -13,7 +13,7 @@
 #'
 #' @examples
 
-runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
+runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
   
   # # for testing purposes
   # source('extractParamSamples.R')
@@ -83,7 +83,7 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
       }
       
       # set time interval based on parameter
-      if(names(paramList)[x] %in% c("nYAF", "nSA", "nAD")){
+      if(names(paramList)[x] %in% c("pYAF", "pSA", "pAD")){
         tInt <- 2:nYear
       }else{
         tInt <- 1:(nYear-1)
@@ -160,7 +160,7 @@ runLTRE_randomDesign <- function(paramSamples, sensitivities, nAge = 19, nYear =
   quantile(contList$other$tempvar.lambda, probs = c(0.025, 0.5, 0.975))
   
   # calculate summed contributions for age-specific parameters
-  sumParams <- names(paramList)[which(names(paramList) %in% c("nAD", "sAD", "Ra"))]
+  sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "Ra"))]
   
   for(x in 1:length(sumParams)){
     subList <- contList$cont[which(grepl(paste0(sumParams[x], "_"), names(contList$cont)))]

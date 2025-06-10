@@ -12,7 +12,7 @@
 #'
 #' @examples
 
-runLTRE_fixedDesign <- function(paramSamples, t.pair, nAge = 19){
+runLTRE_fixed <- function(paramSamples, t.pair, nAge = 19){
   
   # # for testing purposes
   # source('extractParamSamples.R')
