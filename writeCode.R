@@ -318,8 +318,8 @@ writeCode <- function(){
     }
 
     # priors for sigma
-    # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 100)
+    SigmaI.R <- 0
+    # SigmaI.R ~ dunif(0, 100)
     SigmaT.R ~ dunif(0, 100)
     SigmaT.B ~ dunif(0, 100)
     
