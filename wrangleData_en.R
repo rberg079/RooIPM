@@ -229,7 +229,6 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoDens <- sum(is.na(dens))
   nNoVeg  <- sum(is.na(veg))
   nNoWin  <- sum(is.na(win))
-  nNoProp <- sum(is.na(propF))
   
   return(list(year = year,
               ab = ab,
@@ -242,8 +241,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               vegE = vegE,
               nNoDens = nNoDens,
               nNoVeg = nNoVeg,
-              nNoWin = nNoWin,
-              nNoProp = nNoProp))
+              nNoWin = nNoWin))
   
 }
 

@@ -74,7 +74,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
   win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
-  propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
+  # propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
   
   # true environment
   dens.hat <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
