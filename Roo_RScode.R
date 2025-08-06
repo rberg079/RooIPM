@@ -4,7 +4,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 
 # load packages
@@ -41,11 +41,11 @@ myData <-  list(B       = rsData$B,
                 id.R    = rsData$id.R,
                 year.R  = rsData$year.R,
                 age.R   = rsData$age.R,
-                dens    = enData$dens,
-                densE   = enData$densE,
-                veg     = enData$veg,
-                vegE    = enData$vegE,
-                win     = enData$win)
+                dens    = enData$dens[1:16],
+                densE   = enData$densE[1:16],
+                veg     = enData$veg[1:16],
+                vegE    = enData$vegE[1:16],
+                win     = enData$win[1:16])
 
 myConst <- list(nR      = rsData$nR,
                 nID.R   = rsData$nID.R,
@@ -166,9 +166,9 @@ for(c in 1:nchains){
     id.R = myData$id.R,
     year.R = myData$year.R,
     age.R = myData$age.R,
-    dens = enData$dens,
-    veg = enData$veg,
-    win = enData$win,
+    dens = enData$dens[1:16],
+    veg = enData$veg[1:16],
+    win = enData$win[1:16],
     propF = enData$propF,,
     envEffectsR = TRUE,
     envEffectsS = TRUE
@@ -190,8 +190,8 @@ if(testRun){
   nburnin <- 0
   niter   <- 10
 }else{
-  nthin   <- 4
-  nburnin <- 20000
+  nthin   <- 8
+  nburnin <- 40000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -286,7 +286,7 @@ library(patchwork)
 MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.Ri', 'SigmaT.Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), n.eff = TRUE, round = 2)
 
 # chainplots
