@@ -229,7 +229,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_RSissue1.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_RSfix2.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -277,7 +277,7 @@ nAgeC <- myConst$nAgeC
 
 source('compareModels.R')
 compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
-              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds", "results/IPM_CJSen_RSen_AB2.rds"),
+              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds", "results/IPM_CJSen_RSen_AB_RSfix2.rds"),
               modelNames = c("CJSen", "CJSen/RSen", "CJSen/RSen/AB", "CJSen/RSen/AB2"), plotFolder = c("figures/Mod"),
               returnSumData = TRUE)
 

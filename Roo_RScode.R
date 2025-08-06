@@ -4,7 +4,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 
 # load packages
@@ -23,7 +23,7 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-                         obs.data  = "data/PromObs_2008-2019.xlsx",
+                         obs.data  = "data/PromObs_2008-2023.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
 source("wrangleData_rs.R")
@@ -124,9 +124,9 @@ myCode = nimbleCode({
   }
   Mu.B ~ dunif(0, 1)
   
-  BetaD.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-  BetaV.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
-  BetaW.R ~ dunif(-2, 2) # could be dunif(-5, 5) if need be
+  BetaD.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  BetaV.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  BetaW.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
   
   # priors for random effects
   for(i in 1:nID.R){
@@ -139,9 +139,9 @@ myCode = nimbleCode({
   }
   
   # priors for sigma
-  SigmaI.R ~ dunif(0, 10)
-  SigmaT.R ~ dunif(0, 10)
-  SigmaT.B ~ dunif(0, 10)
+  SigmaI.R ~ dunif(0, 100)
+  SigmaT.R ~ dunif(0, 100)
+  SigmaT.B ~ dunif(0, 100)
   
 })
 

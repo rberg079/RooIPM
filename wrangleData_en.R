@@ -18,7 +18,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
   # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
   # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
-  # obs.data = "data/PromObs_2008-2019.xlsx"
+  # obs.data = "data/PromObs_2008-2023.xlsx"
   # list = "data/PromlistAllOct24.xlsx"
   
   
@@ -134,7 +134,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     select(Date, Year, Month, Day, ID) %>% 
     mutate(Day = yday(Date)) %>% 
     filter(between(Day, 213, 304)) %>% 
-    left_join(list, by = "ID") %>% 
+    left_join(list, by = "ID", relationship = "many-to-many") %>% 
     group_by(Year) %>% 
     summarise(PropF = mean(Sex == 1, na.rm = T), .groups = "drop")
   
