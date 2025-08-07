@@ -4,7 +4,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 
 # load packages
@@ -80,9 +80,9 @@ myCode = nimbleCode({
   for(x in 1:nR){
     R[x] ~ dbern(Ri[x])
     logit(Ri[x]) <- logit(Mu.R[ageC[age.R[x]]]) +
-      BetaD.R * dens.hat[year.R[x]] +
-      BetaV.R * veg.hat[year.R[x]] +
-      BetaW.R * win.hat[year.R[x]] +
+      # BetaD.R * dens.hat[year.R[x]] +
+      # BetaV.R * veg.hat[year.R[x]] +
+      # BetaW.R * win.hat[year.R[x]] +
       EpsilonI.R[id.R[x]] +
       EpsilonT.R[year.R[x]]
   }
@@ -94,31 +94,31 @@ myCode = nimbleCode({
   for(a in 1:nAgeC){
     for(t in 1:(nYear-1)){
       logit(Ra[a, t]) <- logit(Mu.R[a]) +
-        BetaD.R * dens.hat[t] +
-        BetaV.R * veg.hat[t] +
-        BetaW.R * win.hat[t] +
+        # BetaD.R * dens.hat[t] +
+        # BetaV.R * veg.hat[t] +
+        # BetaW.R * win.hat[t] +
         EpsilonT.R[t]
     }
   }
   
-  # missing environment
-  for(t in 1:(nYear-1)){
-    dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-    veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-    win.hat[t]  ~ dnorm(win[t], sd = 1)
-  }
-  
-  for(m in 1:nNoVeg){
-    veg[m] ~ dnorm(0, sd = 2)
-  }
-  
-  for(m in 1:nNoDens){
-    dens[m] ~ dnorm(0, sd = 2)
-  }
-  
-  for(m in 1:nNoWin){
-    win[m] ~ dnorm(0, sd = 2)
-  }
+  # # missing environment
+  # for(t in 1:(nYear-1)){
+  #   dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+  #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
+  #   win.hat[t]  ~ dnorm(win[t], sd = 1)
+  # }
+  # 
+  # for(m in 1:nNoVeg){
+  #   veg[m] ~ dnorm(0, sd = 2)
+  # }
+  # 
+  # for(m in 1:nNoDens){
+  #   dens[m] ~ dnorm(0, sd = 2)
+  # }
+  # 
+  # for(m in 1:nNoWin){
+  #   win[m] ~ dnorm(0, sd = 2)
+  # }
   
   ##### Priors ####
   # priors for fixed effects
@@ -127,9 +127,9 @@ myCode = nimbleCode({
   }
   Mu.B ~ dunif(0, 1)
   
-  BetaD.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
-  BetaV.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
-  BetaW.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  # BetaD.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  # BetaV.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  # BetaW.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
   
   # priors for random effects
   for(i in 1:nID.R){
@@ -269,7 +269,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/RS_AgeClasses.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/RS_AgeClasses_NoEnv.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------

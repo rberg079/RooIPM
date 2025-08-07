@@ -34,12 +34,12 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
   #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
   #                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-  #                          obs.data  = "data/PromObs_2008-2019.xlsx",
+  #                          obs.data  = "data/PromObs_2008-2023.xlsx",
   #                          list      = "data/PromlistAllOct24.xlsx")
   # 
   # source("wrangleData_rs.R")
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          obs.data = "data/PromObs_2008-2019.xlsx",
+  #                          obs.data = "data/PromObs_2008-2023.xlsx",
   #                          known.age = TRUE, cum.surv = FALSE)
   # 
   # source("wrangleData_sv.R")
@@ -51,7 +51,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # nID.R <- rsData$nID
   # nYear <- 17
   # nAge <- 19
-  # nAgeC <- 20
+  # nAgeC <- 6
   # year.R <- rsData$year.R
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R
@@ -61,10 +61,10 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # propF <- enData$propF
   # envEffectsS <- TRUE
   # envEffectsR <- TRUE
-  
-  if(missing(age.R))  age.R  <- integer(nR)
-  if(missing(year.R)) year.R <- integer(nR)
-  if(missing(id.R))   id.R   <- integer(nR)
+  # 
+  # if(missing(age.R))  age.R  <- integer(nR)
+  # if(missing(year.R)) year.R <- integer(nR)
+  # if(missing(id.R))   id.R   <- integer(nR)
   
   
   ## Simulate latent states for input data -------------------------------------
@@ -165,7 +165,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   # Reproductive success model
   # age-specific reproductive success
   Mu.B <- runif(1, 0.4, 1)
-  Mu.R <- c(0, rep(runif(nAge-1, 0, 1)))
+  Mu.R <- c(0, rep(runif(nAgeC-1, 0, 1)))
 
   Bi <- numeric(nR)
   for(x in 1:nR){
@@ -177,12 +177,15 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   for(t in 1:(nYear-1)){
     Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
   }
+  
+  # TEMP
+  ageC <- c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
 
   Ri <- numeric(nR)
   for(x in 1:nR){
     if(envEffectsR){
       Ri[x] <- plogis(
-        qlogis(Mu.R[age.R[x]]) +
+        qlogis(Mu.R[ageC[age.R[x]]]) +
           BetaD.R * dens.hat[year.R[x]] +
           BetaV.R * veg.hat[year.R[x]] +
           BetaW.R * win.hat[year.R[x]] +
@@ -190,14 +193,14 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
           EpsilonT.R[year.R[x]])
     }else{
       Ri[x] <- plogis(
-        qlogis(Mu.R[age.R[x]]) +
+        qlogis(Mu.R[ageC[age.R[x]]]) +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]])
     }
   }
 
-  Ra <- matrix(0, nrow = nAge, ncol = nYear-1)
-  for(a in 1:nAge) {
+  Ra <- matrix(0, nrow = nAgeC, ncol = nYear-1)
+  for(a in 1:nAgeC) {
     for(t in 1:(nYear-1)) {
       if(envEffectsR){
         Ra[a, t] <- plogis(
@@ -266,15 +269,15 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     # survival & birthdays
     nSA[t+1] <- pmax(10, rbinom(1, nYAF[t], sYAF[t]))
     nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
-    for(a in 3:nAge){
+    for(a in 3:nAgeC){
       nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
     }
     # then reproduction
-    for(a in 3:nAge){
+    for(a in 3:nAgeC){
       nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * Ra[a-1, t]))
     }
-    nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
-    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
+    nYAF[t+1] <- sum(nYAFa[3:nAgeC, t+1])
+    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAgeC, t+1])
   }
   
   ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
