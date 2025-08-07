@@ -32,8 +32,9 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
 
 # to play around with age classes!
-ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
+# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC # default
 # ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
+ageC <- c(1,2,3,4,4,4,5,5,5,5, rep(6,30)); ageC
 
 # create Nimble lists
 myData <-  list(B       = rsData$B,
@@ -41,6 +42,8 @@ myData <-  list(B       = rsData$B,
                 id.R    = rsData$id.R,
                 year.R  = rsData$year.R,
                 age.R   = rsData$age.R,
+                ageC    = ageC,
+                
                 dens    = enData$dens[1:16],
                 densE   = enData$densE[1:16],
                 veg     = enData$veg[1:16],
@@ -76,7 +79,7 @@ myCode = nimbleCode({
   # individual RS function
   for(x in 1:nR){
     R[x] ~ dbern(Ri[x])
-    logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
+    logit(Ri[x]) <- logit(Mu.R[ageC[age.R[x]]]) +
       BetaD.R * dens.hat[year.R[x]] +
       BetaV.R * veg.hat[year.R[x]] +
       BetaW.R * win.hat[year.R[x]] +
@@ -88,7 +91,7 @@ myCode = nimbleCode({
   # use parameters estimated from individual data above
   # to predict age-specific reproductive success (Ra) here!
   Mu.R[1] <- 0
-  for(a in 1:nAge){
+  for(a in 1:nAgeC){
     for(t in 1:(nYear-1)){
       logit(Ra[a, t]) <- logit(Mu.R[a]) +
         BetaD.R * dens.hat[t] +
@@ -119,7 +122,7 @@ myCode = nimbleCode({
   
   ##### Priors ####
   # priors for fixed effects
-  for(a in 2:nAge){
+  for(a in 2:nAgeC){
     Mu.R[a] ~ dunif(0, 1)
   }
   Mu.B ~ dunif(0, 1)
@@ -266,7 +269,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/RS_Age20.rds', compress = 'xz')
+# saveRDS(out.mcmc, 'results/RS_AgeClasses.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
