@@ -23,7 +23,7 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-                         obs.data  = "data/PromObs_2008-2019.xlsx",
+                         obs.data  = "data/PromObs_2008-2023.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
 source('wrangleData_sv.R')
@@ -33,7 +33,8 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
 
 # to play around with age classes!
 # ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
-ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
+# ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
+ageC <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29)); ageC
 
 # create Nimble lists
 myData  <- list(obs   = svData$obs,
@@ -41,14 +42,18 @@ myData  <- list(obs   = svData$obs,
                 age.S = svData$age.S,
                 ageC  = ageC,
                 
-                dens  = enData$dens,
-                densE = enData$densE,
-                veg   = enData$veg,
-                vegE  = enData$vegE)
+                dens  = enData$dens[1:16],
+                densE = enData$densE[1:16],
+                veg   = enData$veg[1:16],
+                vegE  = enData$vegE[1:16],
+                win   = enData$win[1:16])
 
 myConst <- list(nID.S = svData$nID.S,
                 nYear = svData$nYear,
                 nAgeC = max(ageC),
+                nNoDens = enData$nNoDens,
+                nNoVeg  = enData$nNoVeg,
+                nNoWin  = enData$nNoWin,
                 first = svData$first,
                 last  = svData$last,
                 W     = diag(max(ageC)),
@@ -83,27 +88,33 @@ myCode = nimbleCode({
   for(a in 1:nAgeC){                               
     for(t in 1:(nYear-1)){
       logit(S[a, t]) <- BetaA.S[a] +
-        # BetaD.S[a] * dens.hat[t] +
-        # BetaV.S[a] * veg.hat[t] +
+        BetaD.S[a] * dens.hat[t] +
+        BetaV.S[a] * veg.hat[t] +
+        BetaW.S[a] * win.hat[t] +
         # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
         # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
         Gamma.S[t, a]
     }
   }
   
-  # # missing environment
-  # for(t in 1:(nYear-1)){
-  #   dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-  #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-  # }
-  # 
-  # for(m in 1:nNoVeg){
-  #   veg[m] ~ dnorm(0, sd = 2)
-  # }
-  # 
-  # for(m in 1:nNoDens){
-  #   dens[m] ~ dnorm(0, sd = 2)
-  # }
+  # missing environment
+  for(t in 1:(nYear-1)){
+    dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+    veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
+    win.hat[t]  ~ dnorm(win[t], sd = 1)
+  }
+  
+  for(m in 1:nNoDens){
+    dens[m] ~ dnorm(0, sd = 2)
+  }
+  
+  for(m in 1:nNoVeg){
+    veg[m] ~ dnorm(0, sd = 2)
+  }
+
+  for(m in 1:nNoWin){
+    win[m] ~ dnorm(0, sd = 2)
+  }
   
   # observation function
   for(t in 1:nYear){
@@ -115,8 +126,9 @@ myCode = nimbleCode({
   # for fixed effects
   for(a in 1:nAgeC){
     BetaA.S[a] ~ dunif(-5, 5)
-    # BetaD.S[a] ~ dunif(-5, 5)
-    # BetaV.S[a] ~ dunif(-5, 5)
+    BetaD.S[a] ~ dunif(-5, 5)
+    BetaV.S[a] ~ dunif(-5, 5)
+    BetaW.S[a] ~ dunif(-5, 5)
     # BetaDV.S[a] ~ dunif(-5, 5)
   }
   
@@ -284,13 +296,13 @@ library(patchwork)
 
 # summaries
 MCMCsummary(out.mcmc, params = c('S', 'BetaA.S'), n.eff = TRUE, round = 2)
-# MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('S', 'BetaA.S'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 

@@ -21,7 +21,7 @@
 #'
 #' @examples
 
-simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, nAgeC = 5,
+simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, ageC, nAgeC = 5,
                           year.R = 0, id.R = 0, age.R = 0, dens, veg, win, propF = 0,
                           envEffectsR = TRUE, envEffectsS = TRUE){
   
@@ -178,8 +178,7 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
     Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
   }
   
-  # TEMP
-  ageC <- c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+  ageC <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
 
   Ri <- numeric(nR)
   for(x in 1:nR){
@@ -265,20 +264,20 @@ simulateInits <- function(nR = 0, nID.S = 0, nID.R = 0, nYear = 17, nAge = 19, n
   
   nTOT <- c(nYAF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1)); nTOT
   
-  for(t in 1:(nYear-1)){
-    # survival & birthdays
-    nSA[t+1] <- pmax(10, rbinom(1, nYAF[t], sYAF[t]))
-    nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
-    for(a in 3:nAgeC){
-      nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
-    }
-    # then reproduction
-    for(a in 3:nAgeC){
-      nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * Ra[a-1, t]))
-    }
-    nYAF[t+1] <- sum(nYAFa[3:nAgeC, t+1])
-    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAgeC, t+1])
-  }
+  # for(t in 1:(nYear-1)){
+  #   # survival & birthdays
+  #   nSA[t+1] <- pmax(10, rbinom(1, nYAF[t], sYAF[t]))
+  #   nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
+  #   for(a in 3:nAge){
+  #     nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
+  #   }
+  #   # then reproduction
+  #   for(a in 3:nAge){
+  #     nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * Ra[a-1, t]))
+  #   }
+  #   nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
+  #   nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
+  # }
   
   ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
   # pmax(propF, .4) returns .4 if propF falls below it

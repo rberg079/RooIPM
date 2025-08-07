@@ -32,9 +32,9 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
 
 # to play around with age classes!
-# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC # default
+# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC
 # ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
-ageC <- c(1,2,3,4,4,4,5,5,5,5, rep(6,30)); ageC
+ageC <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29)); ageC
 
 # create Nimble lists
 myData <-  list(B       = rsData$B,
@@ -81,7 +81,7 @@ myCode = nimbleCode({
     R[x] ~ dbern(Ri[x])
     logit(Ri[x]) <- logit(Mu.R[ageC[age.R[x]]]) +
       # BetaD.R * dens.hat[year.R[x]] +
-      # BetaV.R * veg.hat[year.R[x]] +
+      BetaV.R * veg.hat[year.R[x]] +
       # BetaW.R * win.hat[year.R[x]] +
       EpsilonI.R[id.R[x]] +
       EpsilonT.R[year.R[x]]
@@ -95,27 +95,27 @@ myCode = nimbleCode({
     for(t in 1:(nYear-1)){
       logit(Ra[a, t]) <- logit(Mu.R[a]) +
         # BetaD.R * dens.hat[t] +
-        # BetaV.R * veg.hat[t] +
+        BetaV.R * veg.hat[t] +
         # BetaW.R * win.hat[t] +
         EpsilonT.R[t]
     }
   }
   
-  # # missing environment
-  # for(t in 1:(nYear-1)){
-  #   dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-  #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-  #   win.hat[t]  ~ dnorm(win[t], sd = 1)
-  # }
-  # 
-  # for(m in 1:nNoVeg){
-  #   veg[m] ~ dnorm(0, sd = 2)
-  # }
-  # 
+  # missing environment
+  for(t in 1:(nYear-1)){
+    # dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+    veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
+    # win.hat[t]  ~ dnorm(win[t], sd = 1)
+  }
+
   # for(m in 1:nNoDens){
   #   dens[m] ~ dnorm(0, sd = 2)
   # }
-  # 
+  
+  for(m in 1:nNoVeg){
+    veg[m] ~ dnorm(0, sd = 2)
+  }
+
   # for(m in 1:nNoWin){
   #   win[m] ~ dnorm(0, sd = 2)
   # }
@@ -128,7 +128,7 @@ myCode = nimbleCode({
   Mu.B ~ dunif(0, 1)
   
   # BetaD.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
-  # BetaV.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
+  BetaV.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
   # BetaW.R ~ dunif(-5, 5) # could be dunif(-5, 5) if need be
   
   # priors for random effects
@@ -166,6 +166,7 @@ for(c in 1:nchains){
     nYear = myConst$nYear,
     nAge = myConst$nAge,
     nAgeC = myConst$nAgeC,
+    ageC = myData$ageC,
     id.R = myData$id.R,
     year.R = myData$year.R,
     age.R = myData$age.R,
@@ -181,10 +182,10 @@ for(c in 1:nchains){
 # select parameters to monitor
 params = c("Bt", "Ra",
            "Mu.B", "Mu.R",
-           "BetaD.R", "BetaV.R", "BetaW.R",
+           "BetaV.R", # "BetaD.R", "BetaW.R",
            "EpsilonT.B", "EpsilonI.R", "EpsilonT.R",
            "SigmaT.B", "SigmaI.R", "SigmaT.R",
-           "dens.hat", "veg.hat", "win.hat"
+           "veg.hat" # "dens.hat", "win.hat"
 )
 
 # select MCMC settings
@@ -269,7 +270,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/RS_AgeClasses_NoEnv.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/RS_AgeC12_OnlyVeg.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
@@ -288,9 +289,9 @@ library(patchwork)
 # summaries
 MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('BetaV.R'), n.eff = TRUE, round = 2) # 'BetaD.R', 'BetaW.R'
 MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('dens.hat', 'veg.hat', 'win.hat'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('veg.hat'), n.eff = TRUE, round = 2) # 'dens.hat', 'win.hat'
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
