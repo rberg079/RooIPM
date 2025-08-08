@@ -88,33 +88,33 @@ myCode = nimbleCode({
   for(a in 1:nAgeC){                               
     for(t in 1:(nYear-1)){
       logit(S[a, t]) <- BetaA.S[a] +
-        BetaD.S[a] * dens.hat[t] +
-        BetaV.S[a] * veg.hat[t] +
-        BetaW.S[a] * win.hat[t] +
+        # BetaD.S[a] * dens.hat[t] +
+        # BetaV.S[a] * veg.hat[t] +
+        # BetaW.S[a] * win.hat[t] +
         # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
         # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
         Gamma.S[t, a]
     }
   }
   
-  # missing environment
-  for(t in 1:(nYear-1)){
-    dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-    veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-    win.hat[t]  ~ dnorm(win[t], sd = 1)
-  }
+  # # missing environment
+  # for(t in 1:(nYear-1)){
+  #   # dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
+  #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
+  #   # win.hat[t]  ~ dnorm(win[t], sd = 1)
+  # }
   
-  for(m in 1:nNoDens){
-    dens[m] ~ dnorm(0, sd = 2)
-  }
+  # for(m in 1:nNoDens){
+  #   dens[m] ~ dnorm(0, sd = 2)
+  # }
   
-  for(m in 1:nNoVeg){
-    veg[m] ~ dnorm(0, sd = 2)
-  }
+  # for(m in 1:nNoVeg){
+  #   veg[m] ~ dnorm(0, sd = 2)
+  # }
 
-  for(m in 1:nNoWin){
-    win[m] ~ dnorm(0, sd = 2)
-  }
+  # for(m in 1:nNoWin){
+  #   win[m] ~ dnorm(0, sd = 2)
+  # }
   
   # observation function
   for(t in 1:nYear){
@@ -126,9 +126,9 @@ myCode = nimbleCode({
   # for fixed effects
   for(a in 1:nAgeC){
     BetaA.S[a] ~ dunif(-5, 5)
-    BetaD.S[a] ~ dunif(-5, 5)
-    BetaV.S[a] ~ dunif(-5, 5)
-    BetaW.S[a] ~ dunif(-5, 5)
+    # BetaD.S[a] ~ dunif(-5, 5)
+    # BetaV.S[a] ~ dunif(-5, 5)
+    # BetaW.S[a] ~ dunif(-5, 5)
     # BetaDV.S[a] ~ dunif(-5, 5)
   }
   
@@ -193,7 +193,7 @@ myInits[[c]] <- list(
 
 # select parameters to monitors
 params <- c('S', 'BetaA.S',
-            'BetaD.S', 'BetaV.S', 'BetaW.S',
+            # 'BetaV.S', # 'BetaD.S', 'BetaW.S',
             'Mu.O', 'Epsilon.O', 'Sigma.O',
             'Gamma.S', 'Xi.S', 'Sigma.S')
 
@@ -279,7 +279,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/CJS_AgeC12.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/CJS_AgeC12_NoEnv.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
