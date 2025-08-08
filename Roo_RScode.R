@@ -142,7 +142,8 @@ myCode = nimbleCode({
   }
   
   # priors for sigma
-  SigmaI.R ~ dunif(0, 100)
+  SigmaI.R <- 0
+  # SigmaI.R ~ dunif(0, 100)
   SigmaT.R ~ dunif(0, 100)
   SigmaT.B ~ dunif(0, 100)
   
@@ -270,7 +271,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/RS_AgeC12_OnlyVeg.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/RS_AgeC12_OnlyVeg_NoSigI.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------

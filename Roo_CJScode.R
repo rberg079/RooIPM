@@ -34,7 +34,7 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
 # to play around with age classes!
 # ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
 # ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
-ageC <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29)); ageC
+ageC <- c(1,2,3,4,5,6,7,8,9,10,11,12, rep(13,28)); ageC
 
 # create Nimble lists
 myData  <- list(obs   = svData$obs,
@@ -192,7 +192,8 @@ myInits[[c]] <- list(
 )}
 
 # select parameters to monitors
-params <- c('S', 'BetaA.S', # 'BetaD.S', 'BetaV.S',
+params <- c('S', 'BetaA.S',
+            'BetaD.S', 'BetaV.S', 'BetaW.S',
             'Mu.O', 'Epsilon.O', 'Sigma.O',
             'Gamma.S', 'Xi.S', 'Sigma.S')
 
@@ -202,8 +203,8 @@ if(testRun){
   nburnin <- 0
   niter   <- 10
 }else{
-  nthin   <- 4
-  nburnin <- 20000
+  nthin   <- 8
+  nburnin <- 40000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -278,7 +279,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/CJS_Age20.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/CJS_AgeC12.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
