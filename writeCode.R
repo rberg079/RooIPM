@@ -131,7 +131,7 @@ writeCode <- function(){
       }
       # then reproduction
       for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(0.5 * Bt[t] * Ra[a-1, t], nAD[a-1, t])
+        nYAFa[a, t+1] ~ dbin(0.5 * Bt[t] * rAD[a-1, t], nAD[a-1, t])
       }
       nYAF[t+1] <- sum(nYAFa[3:nAge, t+1]) # number of female YAFs
       nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
@@ -139,6 +139,8 @@ writeCode <- function(){
     
     # priors
     for(t in 1:(nYear-1)){
+      # survival by age
+      # from estimates by age class
       sYAF[t]   <- S[1, t]
       sSA[t]    <- S[2, t]
       sAD[1, t] <- 0 # don't exist
@@ -152,8 +154,19 @@ writeCode <- function(){
       for(a in 10:nAge){ # senescent
         sAD[a, t] <- S[5, t]
       }
+      
+      # reproduction by age
+      # from estimates by age class
+      for(a in 1:nAgeC.R){
+        rAD[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
+      }
+      if(nAge > nAgeC.R){
+        for(a in (nAgeC.R+1):nAge){
+          rAD[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
+        }
+      }
     }
-    
+
     
     ## ABUNDANCE MODEL
     ## -------------------------------------------------------------------------
@@ -172,7 +185,7 @@ writeCode <- function(){
       for(t in (first[i] + 1):last[i]){
         # state process
         state[i, t] ~ dbern(Mu.Sp[i, t])
-        Mu.Sp[i, t] <- S[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
+        Mu.Sp[i, t] <- S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1]
         
         # observation process
         obs[i, t] ~ dbern(Mu.Op[i, t])
@@ -182,7 +195,7 @@ writeCode <- function(){
     
     #### Constraints ####
     # survival function
-    for(a in 1:nAgeC){                               
+    for(a in 1:nAgeC.S){                               
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- BetaA.S[a] +
@@ -206,32 +219,31 @@ writeCode <- function(){
     
     #### Priors ####
     # for fixed effects
-    for(a in 1:nAgeC){
+    for(a in 1:nAgeC.S){
       BetaA.S[a] ~ dunif(-5, 5)
       if(envEffectsS){
         BetaD.S[a] ~ dunif(-5, 5)
         BetaV.S[a] ~ dunif(-5, 5)
-        # BetaDV.S[a] ~ dunif(-5, 5)
       }
     }
     
     # for random effects
     # variance-covariance matrix
-    for(i in 1:nAgeC){
+    for(i in 1:nAgeC.S){
       zero[i] <- 0
       Xi.S[i] ~ dunif(0, 2)
     }
     
     for(t in 1:(nYear-1)){
-      Epsilon.S[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.S[1:nAgeC, 1:nAgeC])
-      for(i in 1:nAgeC){
+      Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
+      for(i in 1:nAgeC.S){
         Gamma.S[t, i] <- Xi.S[i] * Epsilon.S[t, i]
       }
     }
     
     # precision matrix
-    Tau.S[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
-    Sigma.S[1:nAgeC, 1:nAgeC] <- inverse(Tau.S[1:nAgeC, 1:nAgeC])
+    Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
+    Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -257,15 +269,15 @@ writeCode <- function(){
     for(x in 1:nR){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
-          BetaD.R * dens.hat[year.R[x]] +
+        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+          # BetaD.R * dens.hat[year.R[x]] +
           BetaV.R * veg.hat[year.R[x]] +
-          BetaW.R * win.hat[year.R[x]] +
+          # BetaW.R * win.hat[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[age.R[x]]) +
+        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }
@@ -275,13 +287,13 @@ writeCode <- function(){
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
     Mu.R[1] <- 0
-    for(a in 1:nAge){
+    for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.hat[t] +
+            # BetaD.R * dens.hat[t] +
             BetaV.R * veg.hat[t] +
-            BetaW.R * win.hat[t] +
+            # BetaW.R * win.hat[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
@@ -292,15 +304,15 @@ writeCode <- function(){
 
     ##### Priors ####
     # priors for fixed effects
-    for(a in 2:nAge){
+    for(a in 2:nAgeC.R){
       Mu.R[a] ~ dunif(0, 1)
     }
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
+      # BetaD.R ~ dunif(-5, 5)
       BetaV.R ~ dunif(-5, 5)
-      BetaW.R ~ dunif(-5, 5)
+      # BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects

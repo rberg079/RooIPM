@@ -39,17 +39,27 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2023.xlsx",
                          known.age = TRUE, cum.surv = FALSE)
 
+# sort age classes!
+# TO BE MADE INTO SOME SORT OF TOGGLE?
+ageC.S <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC.S
+ageC.R <- c(seq(from = 1, to = 19, by = 1), rep(19, times = 21)); ageC.R
+# ageC.R <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29)); ageC.R
+
+nAgeC.S <- max(ageC.S)
+nAgeC.R <- max(ageC.R)
+
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 state = svData$state,
                 age.S = svData$age.S,
-                ageC = svData$ageC,
+                ageC.S = ageC.S,
                 
                 B = rsData$B,
                 R = rsData$survS1,
                 id.R = rsData$id.R,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
+                ageC.R = ageC.R,
                 
                 ab = enData$ab,
                 abE = enData$abE,
@@ -65,14 +75,15 @@ myConst <- list(nR = rsData$nR,
                 nID.R = rsData$nID,
                 nYear = svData$nYear,
                 nAge = rsData$nAge,
-                nAgeC = rsData$nAgeC,
+                nAgeC.S = nAgeC.S,
+                nAgeC.R = nAgeC.R,
                 nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
                 first = svData$first,
                 last = svData$last,
-                W = svData$W,
-                DF = svData$DF,
+                W = diag(nAgeC.S),
+                DF = nAgeC.S,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR)
 
@@ -92,15 +103,16 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
+    nYear = myConst$nYear,
+    nAge = myConst$nAge,
     nR = rsData$nR,
     nID.S = myConst$nID.S,
     nID.R = myConst$nID.R,
-    nYear = myConst$nYear,
-    nAge = myConst$nAge,
-    nAgeC = myConst$nAgeC,
-    id.R = myData$id.R,
     year.R = myData$year.R,
+    id.R = myData$id.R,
     age.R = myData$age.R,
+    ageC.S = myData$ageC.S,
+    ageC.R = myData$ageC.R,
     dens = myData$dens[1:16],
     veg = myData$veg[1:16],
     win = myData$win[1:16],
@@ -113,7 +125,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'Ra', 'sYAF', 'sSA', 'sAD',    # yearly vital rates
+  'S', 'Bt', 'rAD', 'sYAF', 'sSA', 'sAD',   # yearly vital rates
   'nYAF', 'nSA', 'nAD', 'nTOT',             # population sizes
   
   # Survival model
@@ -132,7 +144,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
+if(envEffectsR){params <- c(params, 'BetaV.R')} # 'BetaD.R', 'BetaW.R'
 
 # select MCMC settings
 if(testRun){
@@ -216,7 +228,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_RSfix2.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_OnlyVeg.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -245,7 +257,7 @@ if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'
 MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('Bt', 'Ra'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Bt', 'rAD'), n.eff = TRUE, round = 2)
 if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 
