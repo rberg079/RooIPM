@@ -1,14 +1,15 @@
 #' Simulate initial values for IPM
 #'
+#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
+#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
 #' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
 #' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
 #' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
-#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
-#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
-#' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
 #' @param year.R vector of length nR of years in the reproductive success analysis.
 #' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
 #' @param age.R vector of length nR of age of individuals in the reproductive success analysis.
+#' @param ageC.S vector of age classes to assign to actual ages in survival model.
+#' @param ageC.R vector of age classes to assign to actual ages in reproductive success model.
 #' @param dens vector of length nYear of population density data.
 #' @param veg vector of length nYear of available vegetation data.
 #' @param win vector of length nYear of winter severity data.
@@ -77,7 +78,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
   veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
   win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
-  # propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
+  propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
   
   # true environment
   dens.hat <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
@@ -242,7 +243,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     sAD[a, 1:(nYear-1)] <- S[5, 1:(nYear-1)]
   }
   
-  # reproduction
+  # reproductive success
   rAD <- matrix(0, nrow = nAge, ncol = nYear-1)
   for(a in 1:nAgeC.R){
     rAD[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
@@ -287,7 +288,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     for(a in 3:nAge){
       nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
     }
-    # then reproduction
+    # then reproductive success
     for(a in 3:nAge){
       nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * rAD[a-1, t]))
     }

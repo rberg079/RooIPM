@@ -113,6 +113,10 @@ writeCode <- function(){
       for(m in 1:nNoWin){
         win[m] ~ dnorm(0, sd = 2)
       }
+      
+      for(m in 1:nNoProp){
+        propF[m] ~ T(dnorm(0.8, 0.2), 0, 1)
+      }
     }
     
     
@@ -129,7 +133,7 @@ writeCode <- function(){
       for(a in 3:nAge){
         nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       }
-      # then reproduction
+      # then reproductive success
       for(a in 3:nAge){
         nYAFa[a, t+1] ~ dbin(0.5 * Bt[t] * rAD[a-1, t], nAD[a-1, t])
       }
@@ -155,7 +159,7 @@ writeCode <- function(){
         sAD[a, t] <- S[5, t]
       }
       
-      # reproduction by age
+      # reproductive success by age
       # from estimates by age class
       for(a in 1:nAgeC.R){
         rAD[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
@@ -201,8 +205,6 @@ writeCode <- function(){
           logit(S[a, t]) <- BetaA.S[a] +
             BetaD.S[a] * dens.hat[t] +
             BetaV.S[a] * veg.hat[t] +
-            # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
-            # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
             Gamma.S[t, a]
         }else{
           logit(S[a, t]) <- BetaA.S[a] +

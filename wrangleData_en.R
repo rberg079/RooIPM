@@ -136,7 +136,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     filter(between(Day, 213, 304)) %>% 
     left_join(list, by = "ID", relationship = "many-to-many") %>% 
     group_by(Year) %>% 
-    summarise(PropF = mean(Sex == 1, na.rm = T), .groups = "drop")
+    summarise(PropF = mean(Sex == 1, na.rm = T), .groups = "drop") %>% 
+    ungroup()
   
   
   ## Join it all ---------------------------------------------------------------
@@ -229,6 +230,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoDens <- sum(is.na(dens))
   nNoVeg  <- sum(is.na(veg))
   nNoWin  <- sum(is.na(win))
+  nNoProp <- sum(is.na(propF))
   
   return(list(year = year,
               ab = ab,
@@ -241,7 +243,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               vegE = vegE,
               nNoDens = nNoDens,
               nNoVeg = nNoVeg,
-              nNoWin = nNoWin))
+              nNoWin = nNoWin,
+              nNoProp = nNoProp))
   
 }
 
