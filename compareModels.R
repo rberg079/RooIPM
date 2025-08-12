@@ -1,10 +1,11 @@
 #' Compare outputs of different models
 #'
-#' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
-#' @param nAgeC integer. Number of age classes to consider in the analysis. nAgeC = 5 by default.
 #' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
 #' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
+#' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 5 by default.
+#' @param plotAges integer vector. Ages to plot in time series plots. plotAges = c(2, 6, 10, 14) by default.
+#' @param plotYears integer vector. Years to plot in density plots. plotYears = c(2, 6, 10, 14) by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
 #' @param modelNames character vector. User-defined names for models to compare. 
 #' @param plotFolder character string. Path to the folder in which to store plots.
@@ -16,19 +17,24 @@
 #'
 #' @examples
 
-compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear = 2008, maxYear,
+compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
+                          plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
   # # for testing purposes
-  # nAge = 19
-  # nAgeC = 5
   # nYear = 17
-  # nNoProp = 5
   # minYear = 2008
   # maxYear = minYear + nYear - 1
-  # postPaths = c("results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds")
-  # modelNames = c("CJSen/RSen", "CJSen/RSen/AB")
-  # plotFolder = c("figures/AB")
+  # nAgeC.S = 5
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_WidePriors.rds",
+  #               "results/IPM_CJSen_RSen_AB_NoSigI.rds",
+  #               "results/IPM_CJSen_RSen_AB_OnlyVeg.rds")
+  # modelNames = c("IPM_RSbug_WidePriorBetas",
+  #                "IPM_RSbug_NoIndividualRE",
+  #                "IPM_RSbug_Only1EnvCov(V)")
+  # plotFolder = c("figures/RSdebugging")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
 
@@ -100,22 +106,20 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
     rename("Parameter" = "X1", "Idx1" = "X2", "Idx2" = "X3") %>%
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
-           YearIdx = case_when(grepl('^Sigma\\.S\\[|^Xi\\.S\\[|^EpsilonI\\.Ri\\[|^Mu\\.Ri\\[|^Mu\\.Ra\\[', Parameter) ~ NA_real_,
-                               !is.na(Idx2) & !grepl('^Gamma\\.S\\[', Parameter) ~ Idx2,
-                               !is.na(Idx1) & grepl('^Gamma\\.S\\[', Parameter) ~ Idx1,
-                               !is.na(Idx1) & !grepl('Beta', Parameter) ~ Idx1),
-           AgeIdx = case_when(grepl('^Sigma\\.S\\[|^Xi\\.S\\[', Parameter) ~ Idx1,
-                              !is.na(Idx2) & !grepl('^Gamma\\.S\\[', Parameter) ~ Idx1,
-                              !is.na(Idx2) & grepl('^Gamma\\.S\\[', Parameter) ~ Idx2,
-                              is.na(Idx2) & grepl('Beta|Mu.Ri|Mu.Ra', Parameter) ~ Idx1),
+           YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
+                               grepl('ab|Bt|EpsilonT|Gamma|nSA|nTOT|nYAF|propF|sYAF|sSA', Parameter) ~ Idx1,
+                               grepl('nAD|Ra|rAD|S|sAD', Parameter) ~ Idx2), # Ra to be removed!
+           AgeIdx  = case_when(grepl('ab|BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nSA|nTOT|nYAF|propF|SigmaT|sSA|sYAF', Parameter) ~ NA_real_,
+                               grepl('BetaA.S|BetaD.S|BetaV.S|Mu.R|nAD|Ra|rAD|S|sAD|Sigma.S|Xi.S', Parameter) ~ Idx1,  # Ra to be removed!
+                               grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
-           Age = case_when(grepl('^nSA\\[|^nAD\\[|^Ra\\[|^sSA\\[|^sAD\\[', Parameter) ~ AgeIdx,
-                           grepl('^nSA\\[|^sSA\\[', Parameter) ~ 1,
-                           grepl('^nYAF\\[|^sYAF\\[', Parameter) ~ 0,
-                           TRUE ~ NA_real_),
-           # AgeClass = ifelse(grepl('^BetaA\\.S\\[|^BetaD\\.S\\[|^BetaV\\.S\\[|^S\\[', Parameter), AgeIdx, NA),
-           AgeClass = ifelse(grepl('Beta|^S\\[', Parameter), AgeIdx, NA),
-           ParamName = word(Parameter, 1, sep = "\\["))
+           Age  = case_when(grepl('Mu.R|nAD|Ra|rAD|sAD', Parameter) ~ AgeIdx, # Ra to be removed!
+                            grepl('nYAF|sYAF', Parameter) ~ 0,
+                            grepl('nSA|sSA', Parameter) ~ 1,
+                            TRUE ~ NA_real_),
+           ParamName = word(Parameter, 1, sep = "\\["),
+           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'rAD', 'Ra') & AgeIdx %in% plotAges,
+                              paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
   sum.dat <- sum.dat %>%
     left_join(idx.dat, by = "Parameter")
@@ -125,60 +129,93 @@ compareModels <- function(nAge = 19, nAgeC = 5, nYear = 17, nNoProp = 5, minYear
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJScovEF = c(paste0('BetaA.S[', 1:nAgeC, ']'),
-                 paste0('BetaD.S[', 1:nAgeC, ']'),
-                 paste0('BetaV.S[', 1:nAgeC, ']')),
+    CJScovEF = c(paste0('BetaA.S[', 1:nAgeC.S, ']'),
+                 paste0('BetaD.S[', 1:nAgeC.S, ']'),
+                 paste0('BetaV.S[', 1:nAgeC.S, ']')),
     
-    CJSranEF = c(paste0('Sigma.S[', 1:nAgeC, ', ', 1:nAgeC, ']')),
+    CJSranEF = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
     
-    CJSestO = c('Mu.O', 'Sigma.O', paste0('Epsilon.O[', 1:nYear, ']')),
+    CJSestO = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
-    CJSestS = c(expand.grid(a = 1:nAgeC, t = c(2, 6, 10, 14)) %>% 
+    CJSestS = c(expand.grid(a = 1:nAgeC.S, t = plotYears) %>% 
                   mutate(param = paste0('S[', a, ', ', t, ']')) %>% 
                   pull(param)),
     
     RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
 
-    RSranEF = c(paste0('EpsilonT.Ri[', c(2, 6, 10, 14), ']'),
-                paste0('EpsilonT.Ra[', c(2, 6, 10, 14), ']'),
-                paste0('EpsilonT.B[', c(2, 6, 10, 14), ']'),
-                'SigmaT.Ri', 'SigmaT.Ra', 'SigmaT.B'),
+    RSranEF = c(paste0('EpsilonT.R[', plotYears, ']'),
+                paste0('EpsilonT.B[', plotYears, ']'),
+                'SigmaT.R', 'SigmaT.B'),
     
     RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
     
-    RSestRa = c(expand.grid(a = c(2, 6, 10, 14), t = c(2, 6, 10, 14)) %>%
+    RSestRa = c(expand.grid(a = plotAges, t = plotYears) %>% # Ra to be removed!
                   mutate(param = paste0('Ra[', a, ', ', t, ']')) %>%
                   pull(param)),
     
-    POPestNA = c(expand.grid(a = c(2, 6, 10, 14), t = c(2, 6, 10, 14)) %>%
+    RSestrA = c(expand.grid(a = plotAges, t = plotYears) %>%
+                  mutate(param = paste0('rAD[', a, ', ', t, ']')) %>%
+                  pull(param)),
+    
+    POPestNA = c(expand.grid(a = plotAges, t = plotYears) %>%
                    mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
                    pull(param)),
     
-    POPestNT = c(paste0('nYAF[', c(2, 6, 10, 14), ']'),
-                 paste0('nSA[', c(2, 6, 10, 14), ']'),
-                 paste0('nTOT[', c(2, 6, 10, 14), ']')),
+    POPestNT = c(paste0('nYAF[', plotYears, ']'),
+                 paste0('nSA[', plotYears, ']'),
+                 paste0('nTOT[', plotYears, ']')),
     
     ABestAB = c(paste0('ab[', 1:nYear, ']')))
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
-    ParamNames = c('Bt', 'Ra', 'sYAF', 'sSA', 'sAD'),
+    ParamNames = c('Bt',
+                   expand.grid(a = plotAges) %>% 
+                     mutate(param = paste0('rAD[', a, ']')) %>%
+                     pull(param),
+                   expand.grid(a = plotAges) %>% 
+                     mutate(param = paste0('Ra[', a, ']')) %>%
+                     pull(param),
+                   'sYAF',
+                   'sSA', 
+                   expand.grid(a = plotAges) %>% 
+                     mutate(param = paste0('sAD[', a, ']')) %>%
+                     pull(param)),
+    
     ParamLabels = c('Breeding rate',
-                    'Survival to pouch exit',
+                    expand.grid(a = plotAges) %>% 
+                      mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
+                      pull(name),
+                    expand.grid(a = plotAges) %>% 
+                      mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
+                      pull(name),
                     'Survival of young-at-foot (0 yrs)',
                     'Survival of subadults (1 yr)',
-                    'Survival of adults (2+ yrs)'))
+                    expand.grid(a = plotAges) %>% 
+                      mutate(name = paste0('Survival of adults(', a, ' yrs)')) %>% 
+                      pull(name)))
   
   plotTS.Ns <- list(
-    ParamNames = c('nYAF', 'nSA', 'nAD', 'nTOT', 'ab'),
-    ParamLabels = c('# of young-at-foot', '# of subadults',
-                    '# of adults', 'Total # of females', 'Abundance'))
+    ParamNames = c('nYAF',
+                   'nSA',
+                   expand.grid(a = plotAges) %>% 
+                     mutate(param = paste0('nAD[', a, ']')) %>% 
+                     pull(param),
+                   'nTOT',
+                   'ab'),
+    
+    ParamLabels = c('# of young-at-foot',
+                    '# of subadults',
+                    expand.grid(a = plotAges) %>% 
+                      mutate(name = paste0('# of adults(', a, ' yrs)')) %>% 
+                      pull(name),
+                    'Total # of females',
+                    'Abundance'))
   
   # set plotting colors
-  # plot.cols <- paletteer_c("grDevices::Temps", length(modelNames))
+  plot.cols <- paletteer_c("grDevices::Temps", nModels)
   # plot.cols <- paletteer_d("nationalparkcolors::BlueRidgePkwy", nModels)
-  # plot.cols <- paletteer_d("nationalparkcolors::ArcticGates", nModels)
-  plot.cols <- paletteer_d("nationalparkcolors::MtRainier", nModels)
+  # plot.cols <- paletteer_d("nationalparkcolors::MtRainier", nModels)
   
   
   ## Plot ----------------------------------------------------------------------
