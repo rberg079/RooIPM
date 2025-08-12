@@ -264,13 +264,11 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 6,
   age.R <- as.integer(rs$Age) # age in Sept before breeding!
   
   # sort age classes
-  if(ageClasses == 5){
-      ageC.R = c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
-    }else if(ageClasses == 6){
-      ageC.R = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
-    }else if(ageClasses == 12){
-      ageC.R = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
-    }else if(ageClasses == 19){
+  if(ageClasses == 6){
+    ageC.R = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+  }else if(ageClasses == 12){
+    ageC.R = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
+  }else if(ageClasses == 19){
     ageC.R = c(seq(from = 1, to = 19, by = 1), rep(19,21))
   }
   

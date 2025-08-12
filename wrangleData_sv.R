@@ -3,7 +3,7 @@
 #' @param surv.data character string. Path to xlsx file of survival data to use. As of Apr 2025: "data/PromSurvivalOct24.xlsx".
 #' @param yafs.data character string. Path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
 #' @param surv.sheet character string. Sheet to select from Excel spreadsheet of survival data. surv.sheet = "YEARLY SURV" by default.
-#' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 5 by default.
+#' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 6 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #'
 #' @returns a list containing the obs, state, & age matrices & other parameters needed for the CJS survival model.
@@ -12,7 +12,7 @@
 #' @examples
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
-                           ageClasses = 5, known.age = FALSE){
+                           ageClasses = 6, known.age = FALSE){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalOct24.xlsx"
@@ -262,14 +262,12 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   age.S <- unname(as.matrix(age[!noInfo,])+1) # so age starts at 1 rather than 0
   
   # sort age classes
-  if(ageClasses == 5){
-    ageC.S = c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
-  }else if(ageClasses == 6){
-    ageC.S = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+  if(ageClasses == 6){
+    ageC.S = c(1,2,3,4,4,4,4,5,5,5, rep(6,30))
   }else if(ageClasses == 12){
-    ageC.S = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
+    ageC.S = c(1,2,3,4,5,6,7,8,9,10,11,12, rep(13,28))
   }else if(ageClasses == 19){
-    ageC.S = c(seq(from = 1, to = 19, by = 1), rep(19,21))
+    ageC.S = c(seq(from = 1, to = 19, by = 1), rep(20,21))
   }
   
   nYear <- ncol(state)
