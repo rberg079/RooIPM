@@ -1,19 +1,20 @@
 #' Wrangle reproductive success data
 #'
-#' @param rs.data path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
-#' @param obs.data path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2019.xlsx".
-#' @param prime age range which should be considered prime age. prime = c(4:9) by default.
-#' @param known.age should we limit to females of known-age? known.age = FALSE by default.
-#' @param cum.surv are we interested in cumulative survival to the current step, rather than survival from the previous step? cum.surv = TRUE by default.
-#' @param surv.sep1 are we interested in survival to first September, such that NAs should be removed from SurvSep1? surv.sep1 = FALSE by default.
-#' @param surv.sep2 are we interested in survival to second September, such that NAs should be removed from SurvSep2? surv.sep2 = FALSE by default.
+#' @param rs.data character string. Path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
+#' @param obs.data character string. Path to xlsx file of observation data to use. As of Aug 2025: "data/PromObs_2008-2023.xlsx".
+#' @param prime integer vector. Age range which should be considered prime age for reproductive success. prime = c(5:11) by default.
+#' @param ageClasses integer. Number of age classes to be considered in the reproductive success model. ageClasses = 6 by default.
+#' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
+#' @param cum.surv logical. If TRUE, survival is calculated as cumulative survival up to the current step. cum.surv = TRUE by default.
+#' @param surv.sep1 logical. If TRUE, NAs in SurvSep1 are filtered out, so it may serve as a response variable. surv.sep1 = FALSE by default.
+#' @param surv.sep2 logical. If TRUE, NAs in SurvSep2 are filtered out, so it may serve as a response variable. surv.sep2 = FALSE by default.
 #'
 #' @returns a list containing a series of potential response variables, individual and population covariates related to reproductive success.
 #' @export
 #'
 #' @examples
 
-wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
+wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 6,
                            known.age = FALSE, cum.surv = TRUE,
                            surv.sep1 = FALSE, surv.sep2 = FALSE){
 
@@ -255,28 +256,28 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   
   ## Return (mostly) scaled data -----------------------------------------------
   
-  # TEMPORARY
   rs <- rs %>% filter(Year > 2007)
   
   id.R   <- as.integer(rs$ID)
   id.R   <- match(id.R, sort(unique(id.R)))
   year.R <- as.integer(factor(rs$Year))
+  age.R <- as.integer(rs$Age) # age in Sept before breeding!
   
-  age.R <- as.integer(rs$Age) # now age in Sept before breeding season!
-  ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
+  # sort age classes
+  if(ageClasses == 5){
+      ageC.R = c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
+    }else if(ageClasses == 6){
+      ageC.R = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+    }else if(ageClasses == 12){
+      ageC.R = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
+    }else if(ageClasses == 19){
+    ageC.R = c(seq(from = 1, to = 19, by = 1), rep(19,21))
+  }
   
   nR    <- length(id.R)
   nID.R <- length(unique(id.R))
-  # nYear <- length(unique(year.R))
-  nAge  <- max(age.R)
-  nAgeC <- max(ageC)
-  
-  # teeth <- rs$Teeth      # unscaled!
-  # leg <- scale(rs$Leg)
-  # mass <- scale(rs$Mass)
-  # cond <- scale(rs$Cond)
-  # prs <- rs$PRS          # unscaled!
-  # xmed <- scale(rs$xMed)
+  nAgeC.R <- max(ageC.R)
+  nAge <- max(age.R)
   
   B <- rs$Repro
   surv7 <- rs$SurvLPY
@@ -284,20 +285,15 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(4:9),
   survS1 <- rs$SurvSep1
   survS2 <- rs$SurvSep2
   
-  # mcond <- scale(rs$mCond)
-  # pprime <- scale(rs$pPrime)
-  # ratio <- scale(rs$Ratio)
-  # pratio <- scale(rs$PRatio)
-  
   return(list(nR = nR,
               nID.R = nID.R,
-              nYear = 17,
+              nAgeC.R = nAgeC.R,
               nAge = nAge,
-              # nAgeC = nAgeC,
+              nYear = 17,
               id.R = id.R,
-              year.R = year.R,
               age.R = age.R,
-              # ageC = ageC,
+              ageC.R = ageC.R,
+              year.R = year.R,
               B = B,
               surv7 = surv7,
               surv21 = surv21,

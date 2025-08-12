@@ -22,16 +22,16 @@ writeCode <- function(){
   # nNoVeg = number of years for which available vegetation is unknown
   # nNoWin = number of years for which winter severity is unknown
   
-  # nYAF = number of young-at-foot (near pouch exit at 0 years old) in the population
-  # nYAFa = number of young-at-foot of mothers of each age class in the population
+  # nYF = number of young-at-foot (near pouch exit at 0 years old) in the population
+  # nYFa = number of young-at-foot of mothers of each age class in the population
   # nSA = number of subadults (1 year old) in the population
   # nAD = number of adults (2 through 19 years old) in the population
-  # nTOT = number of female kangaroos from YAF age onwards in the population
+  # nTOT = number of female kangaroos from YF age onwards in the population
   
   # S = year & age-specific survival probabilities from the Cormack-Jolly-Seber model
   # Bt = year-specific breeding rate, or probability of a female of any age producing a jellybean
-  # Ra = year & age-specific probability of successfully carrying a jellybean to its 1st Sept as a YAF
-  # sYAF = survival of young-at-foot to the 1st of Sept when they are 1 year old (ageC 1 in the CJS model)
+  # Ra = year & age-specific probability of successfully carrying a jellybean to its 1st Sept as a YF
+  # sYF = survival of young-at-foot to the 1st of Sept when they are 1 year old (ageC 1 in the CJS model)
   # sSA = survival of 1 year-olds to the 1st of Sept when they are 2 years old (ageC 2 in the CJS model)
   # sAD = survival of adult females of any age from one 1st of Sept to the next (ageC 2, 3, 4 & 5)
   
@@ -61,7 +61,7 @@ writeCode <- function(){
   # SigmaT.O = standard deviation of effect of year on probability of observation (was sd.p)
   
   # Mu.B = mean breeding rate, or probability of a female producing a jellybean
-  # Mu.R = mean probability of successfully turning a jellybean into a YAF
+  # Mu.R = mean probability of successfully turning a jellybean into a YF
   
   # BetaD.R = covariate effect of density (D) on reproductive success (R)
   # BetaV.R = covariate effect of vegetation (V) on reproductive success (R)
@@ -113,48 +113,55 @@ writeCode <- function(){
       for(m in 1:nNoWin){
         win[m] ~ dnorm(0, sd = 2)
       }
-      
-      for(m in 1:nNoProp){
-        propF[m] ~ T(dnorm(0.8, 0.2), 0, 1)
-      }
+    }
+    
+    for(p in 1:nNoProp){
+      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
     }
     
     
     ## POPULATION MODEL
     ## -------------------------------------------------------------------------
     
-    nAD[1, 1:nYear] <- 0
-    nTOT[1] <- nYAF[1] + nSA[1] + sum(nAD[2:nAge, 1])
+    nAD[1, 1:nYear] <- 0 # 1 y/o adults don't exist
+    nTOT[1] <- nYF[1] + nSA[1] + sum(nAD[2:nAge, 1])
     
     for(t in 1:(nYear-1)){
       # survival & birthdays
-      nSA[t+1] ~ dbin(sYAF[t], nYAF[t])
+      nSA[t+1] ~ dbin(sYF[t], nYF[t])
       nAD[2, t+1] ~ dbin(sSA[t], nSA[t])
+      
       for(a in 3:nAge){
         nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       }
+      
       # then reproductive success
       for(a in 3:nAge){
-        nYAFa[a, t+1] ~ dbin(0.5 * Bt[t] * rAD[a-1, t], nAD[a-1, t])
+        nYFa[a, t+1] ~ dbin(0.5 * Bt[t] * sPY[a-1, t], nAD[a-1, t])
       }
-      nYAF[t+1] <- sum(nYAFa[3:nAge, t+1]) # number of female YAFs
-      nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
+      
+      nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # number of female YFs
+      nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
     
     # priors
     for(t in 1:(nYear-1)){
       # survival by age
       # from estimates by age class
-      sYAF[t]   <- S[1, t]
+      sYF[t]    <- S[1, t]
       sSA[t]    <- S[2, t]
+      
       sAD[1, t] <- 0 # don't exist
       sAD[2, t] <- S[2, t]
+      
       for(a in 3:6){ # prime-aged
         sAD[a, t] <- S[3, t]
       }
+      
       for(a in 7:9){ # pre-senescent
         sAD[a, t] <- S[4, t]
       }
+      
       for(a in 10:nAge){ # senescent
         sAD[a, t] <- S[5, t]
       }
@@ -162,11 +169,12 @@ writeCode <- function(){
       # reproductive success by age
       # from estimates by age class
       for(a in 1:nAgeC.R){
-        rAD[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
+        sPY[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
       }
+      
       if(nAge > nAgeC.R){
         for(a in (nAgeC.R+1):nAge){
-          rAD[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
+          sPY[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
         }
       }
     }
@@ -199,7 +207,7 @@ writeCode <- function(){
     
     #### Constraints ####
     # survival function
-    for(a in 1:nAgeC.S){                               
+    for(a in 1:nAgeC.S){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- BetaA.S[a] +

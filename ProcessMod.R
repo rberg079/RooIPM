@@ -32,34 +32,25 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
 source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-                         known.age = TRUE)
+                         ageClasses = 12, known.age = TRUE)
 
 source('wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2023.xlsx",
-                         known.age = TRUE, cum.surv = FALSE)
-
-# sort age classes!
-# TO BE MADE INTO SOME SORT OF TOGGLE?
-ageC.S <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC.S
-ageC.R <- c(seq(from = 1, to = 19, by = 1), rep(19, times = 21)); ageC.R
-# ageC.R <- c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29)); ageC.R
-
-nAgeC.S <- max(ageC.S)
-nAgeC.R <- max(ageC.R)
+                         ageClasses = 12, known.age = TRUE, cum.surv = FALSE)
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 state = svData$state,
                 age.S = svData$age.S,
-                ageC.S = ageC.S,
+                ageC.S = svData$ageC.S,
                 
                 B = rsData$B,
                 R = rsData$survS1,
                 id.R = rsData$id.R,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
-                ageC.R = ageC.R,
+                ageC.R = rsData$ageC.R,
                 
                 ab = enData$ab,
                 abE = enData$abE,
@@ -75,16 +66,16 @@ myConst <- list(nR = rsData$nR,
                 nID.R = rsData$nID,
                 nYear = svData$nYear,
                 nAge = rsData$nAge,
-                nAgeC.S = nAgeC.S,
-                nAgeC.R = nAgeC.R,
+                nAgeC.S = svData$nAgeC.S,
+                nAgeC.R = rsData$nAgeC.R,
                 nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
                 nNoProp = enData$nNoProp,
                 first = svData$first,
                 last = svData$last,
-                W = diag(nAgeC.S),
-                DF = nAgeC.S,
+                W = diag(svData$nAgeC.S),
+                DF = svData$nAgeC.S,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR)
 
@@ -126,12 +117,12 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'rAD', 'sYAF', 'sSA', 'sAD',   # yearly vital rates
-  'nYAF', 'nSA', 'nAD', 'nTOT',             # population sizes
+  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD',    # yearly vital rates
+  'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
   
   # Survival model
   'dens.hat', 'veg.hat', 'BetaA.S',         # latent environment
-  'Mu.O', 'EpsilonT.O', 'SigmaT.O',           # observation parameters
+  'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
   
   # Reproductive success model
@@ -258,11 +249,11 @@ if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'
 MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('Bt', 'rAD'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Bt', 'sPY'), n.eff = TRUE, round = 2)
 if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
 
 # chainplots
@@ -275,7 +266,7 @@ MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
 if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)}
 MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('nYAF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, pdf = T)
@@ -313,7 +304,7 @@ out.mat <- as.matrix(out.mcmc)
 
 # parameters to include
 table.params <- c(
-  paste0('nYAF[', 1:nYear, ']'),
+  paste0('nYF[', 1:nYear, ']'),
   paste0('nSA[', 1:nYear, ']'),
   paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'),
   paste0('nTOT[', 1:nYear, ']'))
@@ -329,7 +320,7 @@ for(i in 1:length(table.params)){
 }
 
 # plot results
-nYAF <- grep("^nYAF\\[", colnames(out.mcmc[[1]])); nYAF
+nYF <- grep("^nYF\\[", colnames(out.mcmc[[1]])); nYF
 nSA <- grep("^nSA\\[", colnames(out.mcmc[[1]])); nSA
 nAD <- grep("^nAD\\[", colnames(out.mcmc[[1]])); nAD
 nTOT <- grep("^nTOT\\[", colnames(out.mcmc[[1]])); nTOT

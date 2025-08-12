@@ -223,8 +223,8 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   }
   
   ## Population model
-  # survival of YAFs to 2nd Sept 1 when they become SA1s
-  sYAF <- S[1, 1:(nYear-1)]
+  # survival of YFs to 2nd Sept 1 when they become SA1s
+  sYF <- S[1, 1:(nYear-1)]
   
   # survival of SA1s to SA2 (now AD2)
   sSA <- S[2, 1:(nYear-1)]
@@ -244,13 +244,13 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   }
   
   # reproductive success
-  rAD <- matrix(0, nrow = nAge, ncol = nYear-1)
+  sPY <- matrix(0, nrow = nAge, ncol = nYear-1)
   for(a in 1:nAgeC.R){
-    rAD[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
+    sPY[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
   }
   if(nAge > nAgeC.R){
     for(a in (nAgeC.R+1):nAge){
-      rAD[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
+      sPY[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
     }
   }
   
@@ -267,33 +267,33 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   ## Simulate initial population sizes -----------------------------------------
   
   # Actual numbers in 2008:
-  # 5 female YAFs in Sept, 6 SA1s, 5 SA2s, 21 adults
+  # 5 female YFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
   
-  nYAF  <- c(5*5, rep(NA, times = nYear-1)); nYAF
-  nYAFa <- matrix(1, nrow = nAge, ncol = nYear)
-  nYAFa[1:2,] <- 0; nYAFa
+  nYF  <- c(5*5, rep(NA, times = nYear-1)); nYF
+  nYFa <- matrix(1, nrow = nAge, ncol = nYear)
+  nYFa[1:2,] <- 0; nYFa
   
   nSA <- c(6*5, rep(NA, times = nYear-1)); nSA
   
   nAD     <- matrix(NA, nrow = nAge, ncol = nYear)
   nAD[,1] <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10)); nAD
   
-  nTOT <- c(nYAF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1)); nTOT
+  nTOT <- c(nYF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1)); nTOT
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
-    nSA[t+1] <- pmax(10, rbinom(1, nYAF[t], sYAF[t]))
+    nSA[t+1] <- pmax(10, rbinom(1, nYF[t], sYF[t]))
     nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
     for(a in 3:nAge){
       nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
     }
     # then reproductive success
     for(a in 3:nAge){
-      nYAFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * rAD[a-1, t]))
+      nYFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * sPY[a-1, t]))
     }
-    nYAF[t+1] <- sum(nYAFa[3:nAge, t+1])
-    nTOT[t+1] <- nYAF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
+    nYF[t+1] <- sum(nYFa[3:nAge, t+1])
+    nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
   ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
@@ -301,7 +301,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # pmax(..., 1) returns 1 if ab falls below it
   # so propF is at least 40% & ab at least 1
   
-  # nYAF; nSA; nAD; nTOT; ab
+  # nYF; nSA; nAD; nTOT; ab
   
   ## Assemble myinits list -----------------------------------------------------
   
@@ -336,10 +336,10 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     Bt = Bt,
     Ri = Ri,
     Ra = Ra,
-    rAD = rAD,
     
     S = S,
-    sYAF = sYAF,
+    sPY = sPY,
+    sYF = sYF,
     sSA = sSA,
     sAD = sAD,
     
@@ -348,8 +348,8 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     EpsilonT.O = EpsilonT.O,
     SigmaT.O = SigmaT.O,
     
-    nYAF = nYAF,
-    nYAFa = nYAFa,
+    nYF = nYF,
+    nYFa = nYFa,
     nSA = nSA,
     nAD = nAD,
     nTOT = nTOT,

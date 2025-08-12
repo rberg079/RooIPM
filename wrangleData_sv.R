@@ -1,20 +1,25 @@
 #' Wrangle survival data
 #'
-#' @param surv.data path to xlsx file of survival data to use. As of Apr 2025: "data/PromSurvivalOct24.xlsx".
-#' @param yafs.data path to xlsx file of RS data to use for survival of YAFs. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
-#' @param surv.sheet sheet to select from survival spreadsheet. surv.sheet = "YEARLY SURV" by default.
+#' @param surv.data character string. Path to xlsx file of survival data to use. As of Apr 2025: "data/PromSurvivalOct24.xlsx".
+#' @param yafs.data character string. Path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
+#' @param surv.sheet character string. Sheet to select from Excel spreadsheet of survival data. surv.sheet = "YEARLY SURV" by default.
+#' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 5 by default.
+#' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #'
 #' @returns a list containing the obs, state, & age matrices & other parameters needed for the CJS survival model.
 #' @export
 #'
 #' @examples
 
-wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV", known.age = FALSE){
+wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
+                           ageClasses = 5, known.age = FALSE){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalOct24.xlsx"
   # yafs.data = "data/RSmainRB_Mar25.xlsx"
   # surv.sheet = "YEARLY SURV"
+  # ageClasses = 12
+  # known.age = TRUE
   
   
   ## Set up --------------------------------------------------------------------
@@ -255,12 +260,22 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV", kno
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
   age.S <- unname(as.matrix(age[!noInfo,])+1) # so age starts at 1 rather than 0
-  # ageC  <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
   
-  nID.S <- nrow(state)
+  # sort age classes
+  if(ageClasses == 5){
+    ageC.S = c(1,2,2,3,3,3,3,4,4,4, rep(5,30))
+  }else if(ageClasses == 6){
+    ageC.S = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+  }else if(ageClasses == 12){
+    ageC.S = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
+  }else if(ageClasses == 19){
+    ageC.S = c(seq(from = 1, to = 19, by = 1), rep(19,21))
+  }
+  
   nYear <- ncol(state)
+  nID.S <- nrow(state)
+  nAgeC.S  <- max(ageC.S, na.rm = T)
   
-  # nAgeC  <- max(ageC, na.rm = T)
   noAge   <- which(is.na(age.S[,ncol(age)]))
   nNoAge <- length(noAge)
   
@@ -269,22 +284,20 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV", kno
   uka   <- id$uka[!noInfo]
   id    <- as.numeric(id$ID[!noInfo])
   
-  return(list(obs = obs,
-              state = state,
-              age.S = age.S,
-              # ageC = ageC,
+  return(list(first = first,
+              last = last,
               
               nID.S = nID.S,
+              nAgeC.S = nAgeC.S,
               nYear = nYear,
               
-              # nAgeC = nAgeC,
-              noAge = noAge,
-              nNoAge = nNoAge,
+              obs = obs,
+              state = state,
+              age.S = age.S,
+              ageC.S = ageC.S,
               
-              first = first,
-              last = last,
-              uka = uka,
-              id = id))
+              noAge = noAge,
+              nNoAge = nNoAge))
   
 }
 

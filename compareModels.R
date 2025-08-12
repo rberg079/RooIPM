@@ -107,18 +107,18 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('ab|Bt|EpsilonT|Gamma|nSA|nTOT|nYAF|propF|sYAF|sSA', Parameter) ~ Idx1,
-                               grepl('nAD|Ra|rAD|S|sAD', Parameter) ~ Idx2), # Ra to be removed!
-           AgeIdx  = case_when(grepl('ab|BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nSA|nTOT|nYAF|propF|SigmaT|sSA|sYAF', Parameter) ~ NA_real_,
-                               grepl('BetaA.S|BetaD.S|BetaV.S|Mu.R|nAD|Ra|rAD|S|sAD|Sigma.S|Xi.S', Parameter) ~ Idx1,  # Ra to be removed!
+                               grepl('ab|Bt|EpsilonT|Gamma|nSA|nTOT|nYF|propF|sYF|sSA', Parameter) ~ Idx1,
+                               grepl('nAD|Ra|sPY|S|sAD', Parameter) ~ Idx2), # Ra to be removed!
+           AgeIdx  = case_when(grepl('ab|BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nSA|nTOT|nYF|propF|SigmaT|sSA|sYF', Parameter) ~ NA_real_,
+                               grepl('BetaA.S|BetaD.S|BetaV.S|Mu.R|nAD|Ra|sPY|S|sAD|Sigma.S|Xi.S', Parameter) ~ Idx1,  # Ra to be removed!
                                grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.R|nAD|Ra|rAD|sAD', Parameter) ~ AgeIdx, # Ra to be removed!
-                            grepl('nYAF|sYAF', Parameter) ~ 0,
+           Age  = case_when(grepl('Mu.R|nAD|Ra|sPY|sAD', Parameter) ~ AgeIdx, # Ra to be removed!
+                            grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
            ParamName = word(Parameter, 1, sep = "\\["),
-           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'rAD', 'Ra') & AgeIdx %in% plotAges,
+           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'sPY', 'Ra') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
   sum.dat <- sum.dat %>%
@@ -154,14 +154,14 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                   pull(param)),
     
     RSestrA = c(expand.grid(a = plotAges, t = plotYears) %>%
-                  mutate(param = paste0('rAD[', a, ', ', t, ']')) %>%
+                  mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
                   pull(param)),
     
     POPestNA = c(expand.grid(a = plotAges, t = plotYears) %>%
                    mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
                    pull(param)),
     
-    POPestNT = c(paste0('nYAF[', plotYears, ']'),
+    POPestNT = c(paste0('nYF[', plotYears, ']'),
                  paste0('nSA[', plotYears, ']'),
                  paste0('nTOT[', plotYears, ']')),
     
@@ -171,12 +171,12 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
   plotTS.VRs <- list(
     ParamNames = c('Bt',
                    expand.grid(a = plotAges) %>% 
-                     mutate(param = paste0('rAD[', a, ']')) %>%
+                     mutate(param = paste0('sPY[', a, ']')) %>%
                      pull(param),
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('Ra[', a, ']')) %>%
                      pull(param),
-                   'sYAF',
+                   'sYF',
                    'sSA', 
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('sAD[', a, ']')) %>%
@@ -196,7 +196,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                       pull(name)))
   
   plotTS.Ns <- list(
-    ParamNames = c('nYAF',
+    ParamNames = c('nYF',
                    'nSA',
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('nAD[', a, ']')) %>% 
