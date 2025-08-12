@@ -131,7 +131,7 @@ params <- c(
   
   # Survival model
   'dens.hat', 'veg.hat', 'BetaA.S',         # latent environment
-  'Mu.O', 'Epsilon.O', 'Sigma.O',           # observation parameters
+  'Mu.O', 'EpsilonT.O', 'SigmaT.O',           # observation parameters
   'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
   
   # Reproductive success model
@@ -241,7 +241,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_RSfix2.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_WidePriors.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -255,7 +255,7 @@ library(scales)
 # summaries
 MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)}
-MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('Bt', 'rAD'), n.eff = TRUE, round = 2)
@@ -268,7 +268,7 @@ MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
 # chainplots
 MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
 if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)}
-MCMCtrace(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)

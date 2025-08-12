@@ -260,8 +260,8 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # Recapture probabilities (CJS)
   O <- runif(nYear, 0.1, 0.9)
   Mu.O <- runif(1, 0.1, 0.9)
-  Epsilon.O <- rnorm(nYear, 0, 0.2)
-  Sigma.O <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
+  EpsilonT.O <- rnorm(nYear, 0, 0.2)
+  SigmaT.O <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
   
   
   ## Simulate initial population sizes -----------------------------------------
@@ -345,8 +345,8 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     
     O = O,
     Mu.O = Mu.O,
-    Epsilon.O = Epsilon.O,
-    Sigma.O = Sigma.O,
+    EpsilonT.O = EpsilonT.O,
+    SigmaT.O = SigmaT.O,
     
     nYAF = nYAF,
     nYAFa = nYAFa,

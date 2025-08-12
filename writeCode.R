@@ -57,8 +57,8 @@ writeCode <- function(){
   
   # O = probability of observation in each year considered in the Cormack-Jolly-Seber model (was p)
   # Mu.O = mean probability of observation (was mu.p)
-  # Epsilon.O = random effect of year on prob. of observation (was year.p)
-  # Sigma.O = standard deviation of effect of year on probability of observation (was sd.p)
+  # EpsilonT.O = random effect of year on prob. of observation (was year.p)
+  # SigmaT.O = standard deviation of effect of year on probability of observation (was sd.p)
   
   # Mu.B = mean breeding rate, or probability of a female producing a jellybean
   # Mu.R = mean probability of successfully turning a jellybean into a YAF
@@ -215,8 +215,8 @@ writeCode <- function(){
 
     # observation function
     for(t in 1:nYear){
-      Epsilon.O[t] ~ dnorm(0, sd = Sigma.O)
-      logit(O[t]) <- logit(Mu.O) + Epsilon.O[t]
+      EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+      logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
     }
     
     #### Priors ####
@@ -249,7 +249,7 @@ writeCode <- function(){
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
-    Sigma.O ~ dunif(0.01, 10) # or dunif(0, 10)
+    SigmaT.O ~ dunif(0.01, 10) # or dunif(0, 10)
     
     
     ## REPRODUCTIVE SUCCESS MODEL

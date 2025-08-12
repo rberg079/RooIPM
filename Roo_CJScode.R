@@ -118,8 +118,8 @@ myCode = nimbleCode({
   
   # observation function
   for(t in 1:nYear){
-    Epsilon.O[t] ~ dnorm(0, sd = Sigma.O)
-    logit(O[t]) <- logit(Mu.O) + Epsilon.O[t]
+    EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+    logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
   }
   
   #### Priors ####
@@ -152,7 +152,7 @@ myCode = nimbleCode({
   
   # observation
   Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
-  Sigma.O ~ dunif(0.01, 10) # or dunif(0, 10)
+  SigmaT.O ~ dunif(0.01, 10) # or dunif(0, 10)
   
 })
 
@@ -180,8 +180,8 @@ myInits[[c]] <- list(
   O = runif(myConst$nYear, 0.1, 0.9),
   
   Mu.O = runif(1, 0.1, 0.9),
-  Epsilon.O = rnorm(myConst$nYear, 0, 0.2),
-  Sigma.O = runif(1, 0.01, 2),
+  EpsilonT.O = rnorm(myConst$nYear, 0, 0.2),
+  SigmaT.O = runif(1, 0.01, 2),
   
   Xi.S = rnorm(myConst$nAgeC, 1, 0.1),
   Epsilon.S = matrix(rnorm((myConst$nYear-1) * myConst$nAgeC, 0, 0.1),
@@ -194,7 +194,7 @@ myInits[[c]] <- list(
 # select parameters to monitors
 params <- c('S', 'BetaA.S',
             # 'BetaV.S', # 'BetaD.S', 'BetaW.S',
-            'Mu.O', 'Epsilon.O', 'Sigma.O',
+            'Mu.O', 'EpsilonT.O', 'SigmaT.O',
             'Gamma.S', 'Xi.S', 'Sigma.S')
 
 # select MCMC settings
@@ -298,13 +298,13 @@ library(patchwork)
 # summaries
 MCMCsummary(out.mcmc, params = c('S', 'BetaA.S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('S', 'BetaA.S'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Mu.O', 'Epsilon.O', 'Sigma.O'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
 
