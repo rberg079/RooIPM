@@ -138,18 +138,58 @@ writeCode <- function(){
       nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
     
-    # priors
+    # # priors
+    # for(t in 1:(nYear-1)){
+    #   # survival by age
+    #   # from estimates by age class
+    #   sYF[t]    <- S[1, t]
+    #   sSA[t]    <- S[2, t]
+    #   
+    #   sAD[1, t] <- 0 # don't exist
+    #   sAD[2, t] <- S[2, t]
+    #   for(a in 3:6) sAD[a, t] <- S[3, t] # prime-aged
+    #   for(a in 7:9) sAD[a, t] <- S[4, t] # pre-senescent
+    #   for(a in 10:nAge) sAD[a, t] <- S[5, t] # senescent
+    # }
+    
+    # survival by age
+    # from estimates by age class
     for(t in 1:(nYear-1)){
-      # survival by age
-      # from estimates by age class
-      sYF[t]    <- S[1, t]
-      sSA[t]    <- S[2, t]
+      sYF[t] <- S[1, t]
+      sSA[t] <- S[2, t]
+      sAD[1, t] <- 0
       
-      sAD[1, t] <- 0 # don't exist
-      sAD[2, t] <- S[2, t]
-      for(a in 3:6) sAD[a, t] <- S[3, t] # prime-aged
-      for(a in 7:9) sAD[a, t] <- S[4, t] # pre-senescent
-      for(a in 10:nAge) sAD[a, t] <- S[5, t] # senescent
+      if(nAgeC.S == 6){
+        sAD[2, t] <- S[3, t]
+        for(a in 3:6) sAD[a, t] <- S[4, t] # prime-aged
+        for(a in 7:9) sAD[a, t] <- S[5, t] # pre-senescent
+        for(a in 10:nAge) sAD[a, t] <- S[6, t] # senescent
+        
+      }else if(nAgeC.S == 12){
+        for(a in 2:11) sAD[a, t] <- S[a+1, t] # other adults
+        for(a in 12:nAge) sAD[a, t] <- S[13, t] # greybeards
+        
+      }else if(nAgeC.S == 19){
+        for(a in 2:19) sAD[a, t] <- S[a+1, t] # adults
+      }
+    }
+    
+    # reproductive success by age
+    # from estimates by age class
+    for(t in 1:(nYear-1)){
+      if(nAgeC.R == 6){
+        for(a in 2:4) sPY[a, t] <- Ra[a-1, t]
+        for(a in 5:6) sPY[a, t] <- Ra[4, t]
+        for(a in 7:10) sPY[a, t] <- Ra[5, t]
+        for(a in 11:nAge) sPY[a, t] <- Ra[6, t]
+        
+      }else if(nAgeC.R == 12){
+        for(a in 2:11) sPY[a, t] <- Ra[a-1, t]
+        for(a in 12:nAge) sPY[a, t] <- Ra[11, t]
+        
+      }else if(nAgeC.R == 19){
+        for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
+      }
     }
       
 
