@@ -32,12 +32,12 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
 source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-                         ageClasses = 12, known.age = TRUE)
+                         ageClasses = 6, known.age = TRUE)
 
 source('wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2023.xlsx",
-                         ageClasses = 12, known.age = TRUE, cum.surv = FALSE)
+                         ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -220,7 +220,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_OnlyVeg.rds', compress = 'xz')
+# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_OnlyVeg.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

@@ -269,7 +269,7 @@ writeCode <- function(){
     # age-specific RS function
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
-    Mu.R[1] <- 0
+    # Mu.R[1] <- 0
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
@@ -287,7 +287,7 @@ writeCode <- function(){
 
     ##### Priors ####
     # priors for fixed effects
-    for(a in 2:nAgeC.R){
+    for(a in 1:nAgeC.R){
       Mu.R[a] ~ dunif(0, 1)
     }
     Mu.B ~ dunif(0, 1)

@@ -39,17 +39,15 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   #                          obs.data  = "data/PromObs_2008-2023.xlsx",
   #                          list      = "data/PromlistAllOct24.xlsx")
   # 
-  # source("wrangleData_rs.R")
+  # source('wrangleData_sv.R')
+  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
+  #                          yafs.data = "data/RSmainRB_Mar25.xlsx",
+  #                          ageClasses = 6, known.age = TRUE)
+  # 
+  # source('wrangleData_rs.R')
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
   #                          obs.data = "data/PromObs_2008-2023.xlsx",
-  #                          known.age = TRUE, cum.surv = FALSE)
-  # 
-  # source("wrangleData_sv.R")
-  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-  #                          yafs.data = "data/RSmainRB_Mar25.xlsx")
-  # 
-  # ageC.S <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)); ageC.S
-  # ageC.R <- c(seq(from = 1, to = 19, by = 1), rep(19, times = 21)); ageC.R
+  #                          ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
   # 
   # nYear <- rsData$nYear
   # nAge <- rsData$nAge
@@ -59,6 +57,8 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # year.R <- rsData$year.R
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R
+  # ageC.S <- svData$ageC.S
+  # ageC.R <- rsData$ageC.R
   # dens <- enData$dens
   # veg <- enData$veg
   # win <- enData$win
@@ -81,9 +81,9 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
   
   # true environment
-  dens.hat <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
-  veg.hat  <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
-  win.hat  <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
+  dens.hat <- dens
+  veg.hat  <- veg
+  win.hat  <- win
   
   # latent states
   Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
@@ -96,11 +96,28 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   nAgeC.R = max(ageC.R)
   
   ## Survival model
-  BetaA.S <- c(rnorm(1, 1.0, 0.2),
-               rnorm(1, 2.4, 0.2),
-               rnorm(1, 2.8, 0.2),
-               rnorm(1, 2.4, 0.2),
-               rnorm(1, 1.0, 0.2))
+  if(nAgeC.S == 6){
+    BetaA.S <- c(rnorm(1, 1.0, 0.2),
+                 rnorm(1, 1.0, 0.2),
+                 rnorm(1, 2.4, 0.2),
+                 rnorm(1, 2.8, 0.2),
+                 rnorm(1, 2.4, 0.2),
+                 rnorm(1, 1.0, 0.2))
+  }else if(nAgeC.S == 12){
+    BetaA.S <- c(rnorm(1, 1.0, 0.2), rnorm(1, 1.0, 0.2),
+                 rnorm(1, 2.4, 0.2), rnorm(1, 2.8, 0.2),
+                 rnorm(1, 2.8, 0.2), rnorm(1, 2.8, 0.2),
+                 rnorm(1, 2.8, 0.2), rnorm(1, 2.4, 0.2),
+                 rnorm(1, 2.4, 0.2), rnorm(1, 2.4, 0.2),
+                 rep(rnorm(1, 1.0, 0.2), 10))
+  }else if(nAgeC.S == 19){
+    BetaA.S <- c(rnorm(1, 1.0, 0.2), rnorm(1, 1.0, 0.2),
+                 rnorm(1, 2.4, 0.2), rnorm(1, 2.8, 0.2),
+                 rnorm(1, 2.8, 0.2), rnorm(1, 2.8, 0.2),
+                 rnorm(1, 2.8, 0.2), rnorm(1, 2.4, 0.2),
+                 rnorm(1, 2.4, 0.2), rnorm(1, 2.4, 0.2),
+                 rep(rnorm(1, 1.0, 0.2), 10)) 
+  }
   
   if(envEffectsS){
     BetaD.S <- runif(nAgeC.S, -5, 5)
@@ -173,7 +190,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # Reproductive success model
   # age-specific reproductive success
   Mu.B <- runif(1, 0.4, 1)
-  Mu.R <- c(0, rep(runif(nAgeC.R-1, 0, 1)))
+  Mu.R <- c(rep(runif(nAgeC.R, 0, 1)))
 
   Bi <- numeric(nR)
   for(x in 1:nR){
@@ -223,34 +240,47 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   }
   
   ## Population model
-  # survival of YFs to 2nd Sept 1 when they become SA1s
+  # priors for survival
   sYF <- S[1, 1:(nYear-1)]
-  
-  # survival of SA1s to SA2 (now AD2)
   sSA <- S[2, 1:(nYear-1)]
-  
-  # survival of all ADs
   sAD <- matrix(0, nrow = nAge, ncol = nYear-1)
-  sAD[2, 1:(nYear-1)] <- S[2, 1:(nYear-1)]
-  
-  for(a in 3:6){ # prime-aged
-    sAD[a, 1:(nYear-1)] <- S[3, 1:(nYear-1)]
+
+  if(nAgeC.S == 6){
+    for(t in 1:(nYear-1)){
+      sAD[2, t] <- S[3, t]
+      for(a in 3:6) sAD[a, t] <- S[4, t] # prime-aged
+      for(a in 7:9) sAD[a, t] <- S[5, t] # pre-senescent
+      for(a in 10:nAge) sAD[a, t] <- S[6, t] # senescent
+    }
+  }else if(nAgeC.S == 12){
+    for(t in 1:(nYear-1)){
+      for(a in 2:11) sAD[a, t] <- S[a+1, t] # other adults
+      for(a in 12:nAge) sAD[a, t] <- S[13, t] # greybeards
+    }
+  }else if(nAgeC.S == 19){
+    for(t in 1:(nYear-1)){
+      for(a in 2:19) sAD[a, t] <- S[a+1, t] # adults
+    }
   }
-  for(a in 7:9){ # pre-senescent
-    sAD[a, 1:(nYear-1)] <- S[4, 1:(nYear-1)]
-  }
-  for(a in 10:nAge){ # senescent
-    sAD[a, 1:(nYear-1)] <- S[5, 1:(nYear-1)]
-  }
-  
-  # reproductive success
+
+  # priors for reproductive success
   sPY <- matrix(0, nrow = nAge, ncol = nYear-1)
-  for(a in 1:nAgeC.R){
-    sPY[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
-  }
-  if(nAge > nAgeC.R){
-    for(a in (nAgeC.R+1):nAge){
-      sPY[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
+  
+  if(nAgeC.R == 6){
+    for(t in 1:(nYear-1)){
+      for(a in 2:4) sPY[a, t] <- Ra[a-1, t]
+      for(a in 5:6) sPY[a, t] <- Ra[4, t]
+      for(a in 7:10) sPY[a, t] <- Ra[5, t]
+      for(a in 11:nAge) sPY[a, t] <- Ra[6, t]
+    }
+  }else if(nAgeC.R == 12){
+    for(t in 1:(nYear-1)){
+      for(a in 2:11) sPY[a, t] <- Ra[a-1, t]
+      for(a in 12:nAge) sPY[a, t] <- Ra[11, t]
+    }
+  }else if(nAgeC.R == 19){
+    for(t in 1:(nYear-1)){
+      for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
     }
   }
   
@@ -269,30 +299,23 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # Actual numbers in 2008:
   # 5 female YFs in Sept, 6 SA1s, 5 SA2s, 21 adults
   # Wendy estimated 22.6% of the population was marked
-  
-  nYF  <- c(5*5, rep(NA, times = nYear-1)); nYF
-  nYFa <- matrix(1, nrow = nAge, ncol = nYear)
-  nYFa[1:2,] <- 0; nYFa
-  
-  nSA <- c(6*5, rep(NA, times = nYear-1)); nSA
-  
-  nAD     <- matrix(NA, nrow = nAge, ncol = nYear)
-  nAD[,1] <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10)); nAD
-  
-  nTOT <- c(nYF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1)); nTOT
+  nYF        <- c(5*5, rep(NA, times = nYear-1))
+  nYFa       <- matrix(1, nrow = nAge, ncol = nYear)
+  nYFa[1:2,] <- 0 # too young to already have a YAF
+  nSA        <- c(6*5, rep(NA, times = nYear-1))
+  nAD        <- matrix(NA, nrow = nAge, ncol = nYear)
+  nAD[,1]    <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10))
+  nTOT       <- c(nYF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1))
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
     nSA[t+1] <- pmax(10, rbinom(1, nYF[t], sYF[t]))
     nAD[2, t+1] <- pmax(10, rbinom(1, nSA[t], sSA[t]))
-    for(a in 3:nAge){
-      nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
-    }
+    for(a in 3:nAge) nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
+    
     # then reproductive success
-    for(a in 3:nAge){
-      nYFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * sPY[a-1, t]))
-    }
-    nYF[t+1] <- sum(nYFa[3:nAge, t+1])
+    for(a in 3:nAge) nYFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * sPY[a-1, t]))
+    nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # total number of female YAFs every year
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   

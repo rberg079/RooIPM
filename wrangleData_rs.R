@@ -265,11 +265,11 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 6,
   
   # sort age classes
   if(ageClasses == 6){
-    ageC.R = c(1,2,3,4,4,4,5,5,5,5, rep(6,30))
+    ageC.R = c(0,1,2,3,4,4,5,5,5,5, rep(6,30))
   }else if(ageClasses == 12){
-    ageC.R = c(1,2,3,4,5,6,7,8,9,10,11, rep(12,29))
+    ageC.R = c(0,1,2,3,4,5,6,7,8,9,10, rep(11,29))
   }else if(ageClasses == 19){
-    ageC.R = c(seq(from = 1, to = 19, by = 1), rep(19,21))
+    ageC.R = c(seq(from = 0, to = 18, by = 1), rep(18,21))
   }
   
   nR    <- length(id.R)
