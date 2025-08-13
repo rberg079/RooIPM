@@ -177,6 +177,8 @@ writeCode <- function(){
     # reproductive success by age
     # from estimates by age class
     for(t in 1:(nYear-1)){
+      sPY[1, t] <- 0 # 1 y/os don't reproduce
+      
       if(nAgeC.R == 6){
         for(a in 2:4) sPY[a, t] <- Ra[a-1, t]
         for(a in 5:6) sPY[a, t] <- Ra[4, t]
