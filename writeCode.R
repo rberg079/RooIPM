@@ -26,11 +26,11 @@ writeCode <- function(){
   # nYFa = number of young-at-foot of mothers of each age class in the population
   # nSA = number of subadults (1 year old) in the population
   # nAD = number of adults (2 through 19 years old) in the population
-  # nTOT = number of female kangaroos from YF age onwards in the population
+  # nTOT = number of female kangaroos from YAF age onwards in the population
   
   # S = year & age-specific survival probabilities from the Cormack-Jolly-Seber model
   # Bt = year-specific breeding rate, or probability of a female of any age producing a jellybean
-  # Ra = year & age-specific probability of successfully carrying a jellybean to its 1st Sept as a YF
+  # Ra = year & age-specific probability of successfully carrying a jellybean to its 1st Sept as a YAF
   # sYF = survival of young-at-foot to the 1st of Sept when they are 1 year old (ageC 1 in the CJS model)
   # sSA = survival of 1 year-olds to the 1st of Sept when they are 2 years old (ageC 2 in the CJS model)
   # sAD = survival of adult females of any age from one 1st of Sept to the next (ageC 2, 3, 4 & 5)
@@ -61,7 +61,7 @@ writeCode <- function(){
   # SigmaT.O = standard deviation of effect of year on probability of observation (was sd.p)
   
   # Mu.B = mean breeding rate, or probability of a female producing a jellybean
-  # Mu.R = mean probability of successfully turning a jellybean into a YF
+  # Mu.R = mean probability of successfully turning a jellybean into a YAF
   
   # BetaD.R = covariate effect of density (D) on reproductive success (R)
   # BetaV.R = covariate effect of vegetation (V) on reproductive success (R)
@@ -130,17 +130,11 @@ writeCode <- function(){
       # survival & birthdays
       nSA[t+1] ~ dbin(sYF[t], nYF[t])
       nAD[2, t+1] ~ dbin(sSA[t], nSA[t])
-      
-      for(a in 3:nAge){
-        nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
-      }
+      for(a in 3:nAge) nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       
       # then reproductive success
-      for(a in 3:nAge){
-        nYFa[a, t+1] ~ dbin(0.5 * Bt[t] * sPY[a-1, t], nAD[a-1, t])
-      }
-      
-      nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # number of female YFs
+      for(a in 3:nAge) nYFa[a, t+1] ~ dbin(0.5 * Bt[t] * sPY[a-1, t], nAD[a-1, t])
+      nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # total number of female YAFs every year
       nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
     
@@ -153,33 +147,12 @@ writeCode <- function(){
       
       sAD[1, t] <- 0 # don't exist
       sAD[2, t] <- S[2, t]
-      
-      for(a in 3:6){ # prime-aged
-        sAD[a, t] <- S[3, t]
-      }
-      
-      for(a in 7:9){ # pre-senescent
-        sAD[a, t] <- S[4, t]
-      }
-      
-      for(a in 10:nAge){ # senescent
-        sAD[a, t] <- S[5, t]
-      }
-      
-      # reproductive success by age
-      # from estimates by age class
-      for(a in 1:nAgeC.R){
-        sPY[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
-      }
-      
-      if(nAge > nAgeC.R){
-        for(a in (nAgeC.R+1):nAge){
-          sPY[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
-        }
-      }
+      for(a in 3:6) sAD[a, t] <- S[3, t] # prime-aged
+      for(a in 7:9) sAD[a, t] <- S[4, t] # pre-senescent
+      for(a in 10:nAge) sAD[a, t] <- S[5, t] # senescent
     }
+      
 
-    
     ## ABUNDANCE MODEL
     ## -------------------------------------------------------------------------
     

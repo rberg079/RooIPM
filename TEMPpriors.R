@@ -34,37 +34,30 @@ if(nAgeC.S == 6){
 }
 
 # nAgeC.R == 6
-ageC.R = c(1,2,3,4,4,4,5,5,5,5, 6, 6, 6, 6, 6, 6, 6, 6, 6 )
-trueAR = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)
+ageC.R = c(0,1,2,3,4,4,5,5,5,5 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 )
+trueAR = c(  2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)
 
 # nAgeC.R == 12
-ageC.R = c(1,2,3,4,5,6,7,8,9,10,11,12,12,12,12,12,12,12,12)
-trueAR = c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)
+ageC.R = c(0,1,2,3,4,5,6,7,8,9 ,10,11,11,11,11,11,11,11,11)
+trueAR = c(  2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19)
 
 # reproductive success by age
 # from estimates by age class
 if(nAgeC.R == 6){
-  
   for(t in 1:(nYear-1)){
-    
+    for(a in 2:4) sPY[a, t] <- Ra[a-1, t]
+    for(a in 5:6) sPY[a, t] <- Ra[4, t]
+    for(a in 7:10) sPY[a, t] <- Ra[5, t]
+    for(a in 11:nAge) sPY[a, t] <- Ra[6, t]
   }
-  
 }else if(nAgeC.R == 12){
-  
+  for(t in 1:(nYear-1)){
+    for(a in 2:11) sPY[a, t] <- Ra[a-1, t]
+    for(a in 12:nAge) sPY[a, t] <- Ra[11, t]
+  }
 }else if(nAgeC.R == 19){
-  
-}
-
-
-for(t in 1:(nYear-1)){
-
-  for(a in 1:nAgeC.R){
-    sPY[a, 1:(nYear-1)] <- Ra[a, 1:(nYear-1)]
-  }
-  
-  if(nAge > nAgeC.R){
-    for(a in (nAgeC.R+1):nAge){
-      sPY[a, 1:(nYear-1)] <- Ra[nAgeC.R, 1:(nYear-1)]
-    }
+  for(t in 1:(nYear-1)){
+    for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
   }
 }
+
