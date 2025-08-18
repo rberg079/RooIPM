@@ -5,10 +5,11 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
+ageClasses <- 12
 
 # load packages
 library(tidyverse)
@@ -32,12 +33,12 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
 source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-                         ageClasses = 6, known.age = TRUE)
+                         ageClasses = ageClasses, known.age = TRUE)
 
 source('wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2023.xlsx",
-                         ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
+                         ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -76,7 +77,8 @@ myConst <- list(nR = rsData$nR,
                 W = diag(svData$nAgeC.S),
                 DF = svData$nAgeC.S,
                 envEffectsS = envEffectsS,
-                envEffectsR = envEffectsR)
+                envEffectsR = envEffectsR,
+                ageClasses = ageClasses)
 
 
 ## Assemble --------------------------------------------------------------------
@@ -96,13 +98,14 @@ for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
     nYear = myConst$nYear,
     nAge = myConst$nAge,
-    nR = rsData$nR,
+    ageClasses = ageClasses,
     nID.S = myConst$nID.S,
+    ageC.S = myData$ageC.S,
+    nR = myConst$nR,
     nID.R = myConst$nID.R,
     year.R = myData$year.R,
     id.R = myData$id.R,
     age.R = myData$age.R,
-    ageC.S = myData$ageC.S,
     ageC.R = myData$ageC.R,
     dens = myData$dens,
     veg = myData$veg,
@@ -120,22 +123,23 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat', 'BetaA.S',         # latent environment
+  'dens.hat', 'veg.hat', 'win.hat',         # latent environment
+  'BetaA.S',                                # covariate effect of age
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
   
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
   'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', # random effects
-  'SigmaT.B', 'SigmaI.R', 'SigmaT.R'        # random effects
+  'SigmaT.B', 'SigmaI.R', 'SigmaT.R',       # random effects
   
-  # # Abundance model
-  # 'ab'
+  # Abundance model
+  'propF'
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
-if(envEffectsR){params <- c(params, 'BetaV.R')} # 'BetaD.R', 'BetaW.R'
+if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
+if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
 
 # select MCMC settings
 if(testRun){
@@ -244,17 +248,16 @@ library(scales)
 
 # summaries
 MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
-if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2)}
+MCMCsummary(out.mcmc, params = c('BetaA.S'), n.eff = TRUE, round = 2)
+if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('Bt', 'sPY'), n.eff = TRUE, round = 2)
-# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
-if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaV.R'), n.eff = TRUE, round = 2)}
+if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 
-MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('ab', 'propF'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), n.eff = TRUE, round = 2)
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)

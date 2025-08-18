@@ -3,7 +3,7 @@
 #' @param rs.data character string. Path to xlsx file of reproductive success data to use. As of Apr 2025: "data/RSmainRB_Mar25.xlsx".
 #' @param obs.data character string. Path to xlsx file of observation data to use. As of Aug 2025: "data/PromObs_2008-2023.xlsx".
 #' @param prime integer vector. Age range which should be considered prime age for reproductive success. prime = c(5:11) by default.
-#' @param ageClasses integer. Number of age classes to be considered in the reproductive success model. ageClasses = 6 by default.
+#' @param ageClasses integer. Number of age classes to be considered in the reproductive success model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #' @param cum.surv logical. If TRUE, survival is calculated as cumulative survival up to the current step. cum.surv = TRUE by default.
 #' @param surv.sep1 logical. If TRUE, NAs in SurvSep1 are filtered out, so it may serve as a response variable. surv.sep1 = FALSE by default.
@@ -14,7 +14,7 @@
 #'
 #' @examples
 
-wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 6,
+wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
                            known.age = FALSE, cum.surv = TRUE,
                            surv.sep1 = FALSE, surv.sep2 = FALSE){
 
@@ -268,7 +268,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 6,
     ageC.R = c(0,1,2,3,4,4,5,5,5,5, rep(6,30))
   }else if(ageClasses == 12){
     ageC.R = c(0,1,2,3,4,5,6,7,8,9,10, rep(11,29))
-  }else if(ageClasses == 19){
+  }else if(ageClasses == 20){
     ageC.R = c(seq(from = 0, to = 18, by = 1), rep(18,21))
   }
   

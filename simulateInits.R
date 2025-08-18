@@ -2,30 +2,30 @@
 #'
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
-#' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
+#' @param ageClasses integer. Number of age classes to be considered. ageClasses = 20 by default.
 #' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
+#' @param ageC.S integer vector. Age classes to assign to actual ages in survival model.
+#' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
 #' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
-#' @param year.R vector of length nR of years in the reproductive success analysis.
-#' @param id.R vector of length nR of IDs of individuals in the reproductive success analysis.
-#' @param age.R vector of length nR of age of individuals in the reproductive success analysis.
-#' @param ageC.S vector of age classes to assign to actual ages in survival model.
-#' @param ageC.R vector of age classes to assign to actual ages in reproductive success model.
+#' @param year.R integer vector. Year of each event in the reproductive success analysis.
+#' @param id.R integer vector. Maternal ID of each event in the reproductive success analysis.
+#' @param age.R integer vector. Maternal age of each event in the reproductive success analysis.
+#' @param ageC.R integer vector. Age classes to assign to actual ages in reproductive success model.
 #' @param dens vector of length nYear of population density data.
 #' @param veg vector of length nYear of available vegetation data.
 #' @param win vector of length nYear of winter severity data.
 #' @param propF vector of length nYear of proportion of observations belonging to females.
-#' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
 #' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
+#' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
 #'
 #' @returns a list containing all initial values needed for the IPM.
 #' @export
 #'
 #' @examples
 
-simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
-                          year.R = 0, id.R = 0, age.R = 0, ageC.S, ageC.R,
-                          dens, veg, win, propF = 0,
-                          envEffectsS = TRUE, envEffectsR = TRUE){
+simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, ageC.S,
+                          nR = 0, nID.R = 0, year.R = 0, id.R = 0, age.R = 0, ageC.R,
+                          dens, veg, win, propF = 0, envEffectsS = TRUE, envEffectsR = TRUE){
   
   # # for testing purposes
   # library(readxl)
@@ -42,29 +42,32 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   # source('wrangleData_sv.R')
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          ageClasses = 6, known.age = TRUE)
+  #                          ageClasses = 12, known.age = TRUE)
   # 
   # source('wrangleData_rs.R')
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
   #                          obs.data = "data/PromObs_2008-2023.xlsx",
-  #                          ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
+  #                          ageClasses = 12, known.age = TRUE, cum.surv = FALSE)
   # 
   # nYear <- rsData$nYear
   # nAge <- rsData$nAge
+  # ageClasses <- 12
+  # nID.S <- svData$nID.S
+  # ageC.S <- svData$ageC.S
+  # nAgeC.S <- svData$nAgeC.S
   # nR <- rsData$nR
-  # nID.S <- svData$nID
-  # nID.R <- rsData$nID
+  # nID.R <- rsData$nID.R
   # year.R <- rsData$year.R
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R
-  # ageC.S <- svData$ageC.S
   # ageC.R <- rsData$ageC.R
+  # nAgeC.R <- rsData$nAgeC.R
   # dens <- enData$dens
   # veg <- enData$veg
   # win <- enData$win
   # propF <- enData$propF
-  # envEffectsS <- TRUE
   # envEffectsR <- TRUE
+  # envEffectsS <- TRUE
   # 
   # if(missing(age.R))  age.R  <- integer(nR)
   # if(missing(year.R)) year.R <- integer(nR)
@@ -103,25 +106,24 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   
   ## Simulate vital rate covariate effects -------------------------------------
   
-  nAgeC.S = max(ageC.S)
-  nAgeC.R = max(ageC.R)
+  nAgeC.S <- max(ageC.S)
+  nAgeC.R <- max(ageC.R)
   
   ## Survival model
-  if(nAgeC.S == 6){
+  if(ageClasses == 6){
     BetaA.S <- c(rnorm(1, 1.0, 0.2),
                  rnorm(1, 1.0, 0.2),
                  rnorm(1, 2.4, 0.2),
                  rnorm(1, 2.8, 0.2),
                  rnorm(1, 2.4, 0.2),
                  rnorm(1, 1.0, 0.2))
-  }else if(nAgeC.S == 12){
-    BetaA.S <- c(rnorm(1, 1.0, 0.2), rnorm(1, 1.0, 0.2),
-                 rnorm(1, 2.4, 0.2), rnorm(1, 2.8, 0.2),
-                 rnorm(1, 2.8, 0.2), rnorm(1, 2.8, 0.2),
-                 rnorm(1, 2.8, 0.2), rnorm(1, 2.4, 0.2),
-                 rnorm(1, 2.4, 0.2), rnorm(1, 2.4, 0.2),
-                 rep(rnorm(1, 1.0, 0.2), 10))
-  }else if(nAgeC.S == 19){
+  }else if(ageClasses == 12){
+    BetaA.S <- c(rnorm(2, 1.0, 0.2),
+                 rnorm(1, 2.4, 0.2),
+                 rnorm(4, 2.8, 0.2),
+                 rnorm(3, 2.4, 0.2),
+                 rnorm(3, 1.0, 0.2))
+  }else if(ageClasses == 20){
     BetaA.S <- c(rnorm(1, 1.0, 0.2), rnorm(1, 1.0, 0.2),
                  rnorm(1, 2.4, 0.2), rnorm(1, 2.8, 0.2),
                  rnorm(1, 2.8, 0.2), rnorm(1, 2.8, 0.2),
@@ -269,7 +271,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
       for(a in 2:11) sAD[a, t] <- S[a+1, t] # other adults
       for(a in 12:nAge) sAD[a, t] <- S[13, t] # greybeards
     }
-  }else if(nAgeC.S == 19){
+  }else if(nAgeC.S == 20){
     for(t in 1:(nYear-1)){
       for(a in 2:19) sAD[a, t] <- S[a+1, t] # adults
     }
@@ -290,7 +292,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
       for(a in 2:11) sPY[a, t] <- Ra[a-1, t]
       for(a in 12:nAge) sPY[a, t] <- Ra[11, t]
     }
-  }else if(nAgeC.R == 19){
+  }else if(nAgeC.R == 20){
     for(t in 1:(nYear-1)){
       for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
     }
@@ -331,7 +333,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
-  area <- rep(76.2, 17)
+  area <- rep(76.2, nYear)
   
   # ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
   # # pmax(propF, .4) returns .4 if propF falls below it
@@ -353,6 +355,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     
     Mu.Sp = Mu.Sp,
     Mu.Op = Mu.Op,
+    BetaA.S = BetaA.S,
     
     Xi.S = Xi.S,
     Epsilon.S = Epsilon.S,
@@ -395,9 +398,9 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   
   if(envEffectsS){
     initList <- c(initList, list(
-      BetaA.S = BetaA.S,
       BetaD.S = BetaD.S,
-      BetaV.S = BetaV.S
+      BetaV.S = BetaV.S,
+      BetaW.S = BetaW.S
     ))
   }
   

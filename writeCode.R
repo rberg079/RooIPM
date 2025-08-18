@@ -98,21 +98,9 @@ writeCode <- function(){
     
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-        veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-        win.hat[t]  ~ dnorm(win[t], sd = 1)
-      }
-      
-      for(m in 1:nNoVeg){
-        veg[m] ~ dnorm(0, sd = 2)
-      }
-      
-      for(m in 1:nNoDens){
-        dens[m] ~ dnorm(0, sd = 2)
-      }
-      
-      for(m in 1:nNoWin){
-        win[m] ~ dnorm(0, sd = 2)
+        dens[t] ~ dnorm(dens.hat[t], sd = densE[t])
+        veg[t]  ~ dnorm(veg.hat[t], sd = vegE[t])
+        win[t]  ~ dnorm(win.hat[t], sd = 1)
       }
     }
     
@@ -146,17 +134,17 @@ writeCode <- function(){
       sSA[t] <- S[2, t]
       sAD[1, t] <- 0
       
-      if(nAgeC.S == 6){
+      if(ageClasses == 6){
         sAD[2, t] <- S[3, t]
         for(a in 3:6) sAD[a, t] <- S[4, t] # prime-aged
         for(a in 7:9) sAD[a, t] <- S[5, t] # pre-senescent
         for(a in 10:nAge) sAD[a, t] <- S[6, t] # senescent
         
-      }else if(nAgeC.S == 12){
+      }else if(ageClasses == 12){
         for(a in 2:11) sAD[a, t] <- S[a+1, t] # younger adults
         for(a in 12:nAge) sAD[a, t] <- S[13, t] # greybeards
         
-      }else if(nAgeC.S == 19){
+      }else if(ageClasses == 20){
         for(a in 2:19) sAD[a, t] <- S[a+1, t] # adults
       }
     }
@@ -166,17 +154,17 @@ writeCode <- function(){
     for(t in 1:(nYear-1)){
       sPY[1, t] <- 0 # 1 y/os don't reproduce
       
-      if(nAgeC.R == 6){
+      if(ageClasses == 6){
         for(a in 2:4) sPY[a, t] <- Ra[a-1, t]
         for(a in 5:6) sPY[a, t] <- Ra[4, t]
         for(a in 7:10) sPY[a, t] <- Ra[5, t]
         for(a in 11:nAge) sPY[a, t] <- Ra[6, t]
         
-      }else if(nAgeC.R == 12){
+      }else if(ageClasses == 12){
         for(a in 2:11) sPY[a, t] <- Ra[a-1, t]
         for(a in 12:nAge) sPY[a, t] <- Ra[11, t]
         
-      }else if(nAgeC.R == 19){
+      }else if(ageClasses == 20){
         for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
       }
     }
@@ -187,10 +175,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      # ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
-      
-      # IN PROGRESS
-      dens[t] = (nTOT[t] / propF[t]) / area[t]
+      dens.hat[t] <- (nTOT[t] / propF[t]) / area[t]
     }
     
     
