@@ -155,9 +155,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   # calculate Nixon-Smith Chill Index (BOM working paper, 1972)
   # C = (11.7 + 3.1(wind^0.5))(40 - T) + 481 + 418(1 - e^-0.04*R)
-  env <- suppressWarnings(env %>% 
-    mutate(Chill = ((11.7 + 3.1*(sqrt(Gusts)))*(40 - Min)) +
-             418 + (418*(1 - exp(-0.04*Rain))),
+  env <- suppressWarnings(env %>%
+    mutate(Chill = ((11.7 + 3.1*(sqrt(Gusts)))*(40 - Min)) + 418 + (418*(1 - exp(-0.04*Rain))),
            Warn.18 = ifelse(Chill >= 1000, 1, 0)) %>%  # 0.82 percentile
            # Warn.10 = ifelse(Chill >= 1062, 1, 0),    # 0.90 percentile
            # Warn.05 = ifelse(Chill >= 1124, 1, 0),    # 0.95 percentile
@@ -196,10 +195,10 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   win <- env %>% 
     filter(Year > 2007) %>% 
-    select(Year, Warns.18) %>% 
+    distinct(Year, Month, Warns.18) %>% 
     group_by(Year) %>% 
     mutate(Win = sum(Warns.18),
-           Win = ifelse(Year == 2024, NA, Win)) %>% 
+           Win = ifelse(Year > 2022, NA, Win)) %>% 
     ungroup() %>% 
     distinct(Year, Win)
   
@@ -213,19 +212,22 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     left_join(obs, by = "Year")
   
   
-  ## Return scaled data --------------------------------------------------------
+  ## Return clean data ---------------------------------------------------------
   
   year <- seq(from = 1, to = 17, by = 1)
   
   ab   <- as.numeric(env$Ab)
-  dens <- as.numeric(scale(env$Dens))
-  veg  <- as.numeric(scale(env$Veg))
-  win <- as.numeric(scale(env$Win))
+  dens <- as.numeric(env$Dens)
+  veg  <- as.numeric(env$Veg)
+  win <- as.numeric(env$Win)
   propF <- as.numeric(env$PropF)
   
   abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE))
-  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T)))
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
+  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE))
+  vegE <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE))
+  
+  # densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T)))
+  # vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
   
   nNoDens <- sum(is.na(dens))
   nNoVeg  <- sum(is.na(veg))
