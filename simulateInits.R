@@ -72,13 +72,24 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
   
   
   ## Simulate latent states for input data -------------------------------------
-
+  
+  # Function to centre and scale data
+  sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
+  
   ## Survival model
   # missing values
-  dens <- ifelse(is.na(dens), rnorm(nYear-1, 0, .1), dens)
-  veg <- ifelse(is.na(veg), rnorm(nYear-1, 0, .1), veg)
-  win <- ifelse(is.na(win), rnorm(nYear-1, 0, .1), win)
-  propF <- ifelse(is.na(propF), rnorm(nYear, .7, .05), propF)
+  nNoDens <- sum(is.na(dens))
+  nNoVeg  <- sum(is.na(veg))
+  nNoWin  <- sum(is.na(win))
+  nNoProp <- sum(is.na(propF))
+  
+  veg <- sc(veg)
+  win <- sc(win)
+  
+  dens <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
+  veg <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
+  win <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
+  propF <- round(ifelse(is.na(propF), rnorm(nYear, .7, .1), propF), 4)
   
   # true environment
   dens.hat <- dens
@@ -178,6 +189,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
           BetaA.S[a] +
             BetaD.S[a] * dens.hat[t] +
             BetaV.S[a] * veg.hat[t] +
+            BetaW.S[a] * win.hat[t] +
             Gamma.S[t, a])
       }else{
         S[a, t] <- plogis(
@@ -319,11 +331,13 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
-  ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
-  # pmax(propF, .4) returns .4 if propF falls below it
-  # pmax(..., 1) returns 1 if ab falls below it
-  # so propF is at least 40% & ab at least 1
+  area <- rep(76.2, 17)
   
+  # ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
+  # # pmax(propF, .4) returns .4 if propF falls below it
+  # # pmax(..., 1) returns 1 if ab falls below it
+  # # so propF is at least 40% & ab at least 1
+
   # nYF; nSA; nAD; nTOT; ab
   
   ## Assemble myinits list -----------------------------------------------------
@@ -376,7 +390,7 @@ simulateInits <- function(nYear = 17, nAge = 19, nR = 0, nID.S = 0, nID.R = 0,
     nSA = nSA,
     nAD = nAD,
     nTOT = nTOT,
-    ab = ab
+    area = area
   )
   
   if(envEffectsS){

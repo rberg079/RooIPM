@@ -139,20 +139,6 @@ writeCode <- function(){
       nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
     
-    # # priors
-    # for(t in 1:(nYear-1)){
-    #   # survival by age
-    #   # from estimates by age class
-    #   sYF[t]    <- S[1, t]
-    #   sSA[t]    <- S[2, t]
-    #   
-    #   sAD[1, t] <- 0 # don't exist
-    #   sAD[2, t] <- S[2, t]
-    #   for(a in 3:6) sAD[a, t] <- S[3, t] # prime-aged
-    #   for(a in 7:9) sAD[a, t] <- S[4, t] # pre-senescent
-    #   for(a in 10:nAge) sAD[a, t] <- S[5, t] # senescent
-    # }
-    
     # survival by age
     # from estimates by age class
     for(t in 1:(nYear-1)){
@@ -167,7 +153,7 @@ writeCode <- function(){
         for(a in 10:nAge) sAD[a, t] <- S[6, t] # senescent
         
       }else if(nAgeC.S == 12){
-        for(a in 2:11) sAD[a, t] <- S[a+1, t] # other adults
+        for(a in 2:11) sAD[a, t] <- S[a+1, t] # younger adults
         for(a in 12:nAge) sAD[a, t] <- S[13, t] # greybeards
         
       }else if(nAgeC.S == 19){
@@ -201,7 +187,10 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
+      # ab[t] ~ dnorm((nTOT[t] / propF[t]), sd = abE[t])
+      
+      # IN PROGRESS
+      dens[t] = (nTOT[t] / propF[t]) / area[t]
     }
     
     
@@ -229,6 +218,7 @@ writeCode <- function(){
           logit(S[a, t]) <- BetaA.S[a] +
             BetaD.S[a] * dens.hat[t] +
             BetaV.S[a] * veg.hat[t] +
+            BetaW.S[a] * win.hat[t] +
             Gamma.S[t, a]
         }else{
           logit(S[a, t]) <- BetaA.S[a] +
@@ -250,6 +240,7 @@ writeCode <- function(){
       if(envEffectsS){
         BetaD.S[a] ~ dunif(-5, 5)
         BetaV.S[a] ~ dunif(-5, 5)
+        BetaW.S[a] ~ dunif(-5, 5)
       }
     }
     
@@ -296,9 +287,9 @@ writeCode <- function(){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          # BetaD.R * dens.hat[year.R[x]] +
+          BetaD.R * dens.hat[year.R[x]] +
           BetaV.R * veg.hat[year.R[x]] +
-          # BetaW.R * win.hat[year.R[x]] +
+          BetaW.R * win.hat[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
@@ -317,9 +308,9 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            # BetaD.R * dens.hat[t] +
+            BetaD.R * dens.hat[t] +
             BetaV.R * veg.hat[t] +
-            # BetaW.R * win.hat[t] +
+            BetaW.R * win.hat[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
@@ -336,9 +327,9 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      # BetaD.R ~ dunif(-5, 5)
+      BetaD.R ~ dunif(-5, 5)
       BetaV.R ~ dunif(-5, 5)
-      # BetaW.R ~ dunif(-5, 5)
+      BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects
@@ -352,8 +343,8 @@ writeCode <- function(){
     }
 
     # priors for sigma
-    SigmaI.R <- 0
-    # SigmaI.R ~ dunif(0, 100)
+    # SigmaI.R <- 0
+    SigmaI.R ~ dunif(0, 100)
     SigmaT.R ~ dunif(0, 100)
     SigmaT.B ~ dunif(0, 100)
     

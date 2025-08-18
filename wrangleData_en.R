@@ -234,8 +234,10 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoWin  <- sum(is.na(win))
   nNoProp <- sum(is.na(propF))
   
+  area = rep(76.2, 17)
+  
   return(list(year = year,
-              ab = ab,
+              area = area,
               dens = dens,
               veg = veg,
               win = win,

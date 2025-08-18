@@ -52,8 +52,7 @@ myData  <- list(obs = svData$obs,
                 age.R = rsData$age.R,
                 ageC.R = rsData$ageC.R,
                 
-                ab = enData$ab,
-                abE = enData$abE,
+                area = enData$area,
                 propF = enData$propF,
                 dens = enData$dens,
                 densE = enData$densE,
@@ -128,10 +127,10 @@ params <- c(
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
   'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', # random effects
-  'SigmaT.B', 'SigmaI.R', 'SigmaT.R',       # random effects
+  'SigmaT.B', 'SigmaI.R', 'SigmaT.R'        # random effects
   
-  # Abundance model
-  'ab'
+  # # Abundance model
+  # 'ab'
 )
 
 # conditionally add covariate effects
