@@ -13,27 +13,29 @@ writeCode <- function(){
   # nR = number of events in the reproductive success dataset (was N)
   # nID.S = number of unique kangaroos in the survival dataset (was nind)
   # nID.R = number of unique kangaroos in the reproductive success dataset (was N.id)
-  # nYear = number of years in the dataset (was ntimes or N.year)
-  # nAge = number of ages or maximum age in the analysis
-  # nAgeC = number of age classes in the analysis
+  # nYear = number of years in the population model (was ntimes or N.year)
+  # nAge = number of ages or maximum age in the population model
+  # nAgeC.S = number of age classes in the survival model (was nAgeC)
+  # nAgeC.R = number of age classes in the reproductive success model
   
   # nNoAge = number of individuals for which age is unknown
   # nNoDens = number of years for which population density is unknown
   # nNoVeg = number of years for which available vegetation is unknown
   # nNoWin = number of years for which winter severity is unknown
   
-  # nYF = number of young-at-foot (near pouch exit at 0 years old) in the population
-  # nYFa = number of young-at-foot of mothers of each age class in the population
+  # nYF = number of young-at-foot (near pouch exit at 0 years old) in the population (was nYAF)
+  # nYFa = number of young-at-foot of mothers of each age in the population (was nYAFa)
   # nSA = number of subadults (1 year old) in the population
   # nAD = number of adults (2 through 19 years old) in the population
   # nTOT = number of female kangaroos from YAF age onwards in the population
   
-  # S = year & age-specific survival probabilities from the Cormack-Jolly-Seber model
-  # Bt = year-specific breeding rate, or probability of a female of any age producing a jellybean
-  # Ra = year & age-specific probability of successfully carrying a jellybean to its 1st Sept as a YAF
-  # sYF = survival of young-at-foot to the 1st of Sept when they are 1 year old (ageC 1 in the CJS model)
-  # sSA = survival of 1 year-olds to the 1st of Sept when they are 2 years old (ageC 2 in the CJS model)
-  # sAD = survival of adult females of any age from one 1st of Sept to the next (ageC 2, 3, 4 & 5)
+  # S = year & age-specific survival probabilities from the Cormack-Jolly-Seber (CJS) model
+  # Bt = year-specific probability of a female of any age producing a jellybean, from the reproductive success (RS) model
+  # Ra = year & age-specific probability of successfully bringing a jellybean to its 1st Sept as a YAF from the RS model
+  # sPY = survival of pouch young/jellybean to their 1st Sept as YAF in the population model (taken from the RS model's Ra)
+  # sYF = survival of young-at-foot to their 1st Sept as 1-year-old subadults in the population model (taken from the CJS model's S)
+  # sSA = survival of 1-year-old subadults to their 1st Sept as 2-year-olds in the population model (taken from the CJS model's S)
+  # sAD = survival of adult females from one Sept to the next in the population model (taken from the CJS model's S)
   
   # Mu.Sp = mean latent state for CJS model (was mu1)
   # Mu.Op = mean latent observation for CJS model (was mu2)
@@ -41,13 +43,12 @@ writeCode <- function(){
   # BetaA.S = covariate effect of age (A) on survival (s) (was B.age)
   # BetaD.S = covariate effect of density (D) on survival (s) (was B.dens)
   # BetaV.S = covariate effect of vegetation (V) on survival (s) (was B.veg)
-  # BetaDV.S = covariate effect of interacting density & vegetation (DV) on survival (s) (was B.densVeg)
-  # BetaVR.S = covariate effect of vegetation per capita, or kangaroo (VR) on survival (s) (was B.vegRoo)
+  # BetaW.S = covariate effect of weather harshness (W) on survival (S)
   
   # dens.hat = "true" yearly population density, from which the observed value was hypothetically sampled
   # veg.hat = "true" yearly available vegetation, from which the observed value was hypothetically sampled
-  # noAge = indexes of individuals who are of unknown age
-  # ageM = estimated ages of unknown-aged individuals
+  # noAge = indexes of individuals who are of unknown age in the survival model
+  # ageM = estimated ages of unknown-aged individuals in the survival model
   
   # Gamma.S = correlated random effect of year on probability of survival (was gamma)
   # Xi.S = scaling factor for how big the random effect variation is per age class (was xi)
@@ -55,17 +56,17 @@ writeCode <- function(){
   # Tau.S = precision matrix (inverse of covariance) describing variance & correlation among age classes (was Tau.raw)
   # Sigma.S = covariance matrix (inverse of precision) describing variance & covariance among age classes (was Sigma.raw)
   
-  # O = probability of observation in each year considered in the Cormack-Jolly-Seber model (was p)
-  # Mu.O = mean probability of observation (was mu.p)
-  # EpsilonT.O = random effect of year on prob. of observation (was year.p)
-  # SigmaT.O = standard deviation of effect of year on probability of observation (was sd.p)
+  # O = probability of observation each year in the survival model (was p)
+  # Mu.O = mean probability of observation in the survival model (was mu.p)
+  # EpsilonT.O = random effect of year on prob. of observation in the survival model (was year.p)
+  # SigmaT.O = standard deviation of effect of year on probability of observation in the survival model (was sd.p)
   
-  # Mu.B = mean breeding rate, or probability of a female producing a jellybean
-  # Mu.R = mean probability of successfully turning a jellybean into a YAF
+  # Mu.B = mean breeding rate, or probability of a female producing a jellybean, in the reproductive success model
+  # Mu.R = mean probability of successfully turning a jellybean into a YAF, in the reproductive success model
   
   # BetaD.R = covariate effect of density (D) on reproductive success (R)
   # BetaV.R = covariate effect of vegetation (V) on reproductive success (R)
-  # BetaW.R = covariate effect of winter severity (W) on reproductive success (R)
+  # BetaW.R = covariate effect of weather harshness (W) on reproductive success (R)
   
   # EpsilonI.R = random effect of mother's identity (I) on reproductive success (Ri)
   # EpsilonT.R = random effect of year (T) on reproductive success (Ri & Ra)
