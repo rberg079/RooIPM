@@ -214,20 +214,21 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   ## Return clean data ---------------------------------------------------------
   
+  # centre and scale data
+  sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
+  
   year <- seq(from = 1, to = 17, by = 1)
   
-  ab   <- as.numeric(env$Ab)
   dens <- as.numeric(env$Dens)
-  veg  <- as.numeric(env$Veg)
-  win <- as.numeric(env$Win)
+  veg  <- as.numeric(sc(env$Veg))
+  win <- as.numeric(sc(env$Win))
   propF <- as.numeric(env$PropF)
   
-  abE   <- as.numeric(ifelse(is.na(env$AbE), 2, env$AbE))
-  densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE))
-  vegE <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE))
+  densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
+  # vegE <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE))
   
-  # densE <- as.numeric(ifelse(is.na(env$DensE), 2, env$DensE/sd(env$Dens, na.rm = T)))
-  # vegE  <- as.numeric(ifelse(is.na(env$VegSE), 2, env$VegSE/sd(env$Veg, na.rm = T)))
+  # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE/sd(env$Dens, na.rm = T)))
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE/sd(env$Veg, na.rm = T)))
   
   nNoDens <- sum(is.na(dens))
   nNoVeg  <- sum(is.na(veg))
@@ -242,7 +243,6 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               veg = veg,
               win = win,
               propF = propF,
-              abE = abE,
               densE = densE,
               vegE = vegE,
               nNoDens = nNoDens,

@@ -45,8 +45,8 @@ writeCode <- function(){
   # BetaV.S = covariate effect of vegetation (V) on survival (s) (was B.veg)
   # BetaW.S = covariate effect of weather harshness (W) on survival (S)
   
-  # dens.hat = "true" yearly population density, from which the observed value was hypothetically sampled
-  # veg.hat = "true" yearly available vegetation, from which the observed value was hypothetically sampled
+  # dens.true = "true" yearly population density, from which the observed value was hypothetically sampled
+  # veg.true = "true" yearly available vegetation, from which the observed value was hypothetically sampled
   # noAge = indexes of individuals who are of unknown age in the survival model
   # ageM = estimated ages of unknown-aged individuals in the survival model
   
@@ -98,9 +98,9 @@ writeCode <- function(){
     
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        dens[t] ~ dnorm(dens.hat[t], sd = densE[t])
-        veg[t]  ~ dnorm(veg.hat[t], sd = vegE[t])
-        win[t]  ~ dnorm(win.hat[t], sd = 1)
+        dens[t] ~ dnorm(dens.true[t], sd = densE[t])
+        veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
+        win[t]  ~ dnorm(win.true[t], sd = 1)
       }
     }
     
@@ -175,7 +175,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      dens.hat[t] <- (nTOT[t] / propF[t]) / area[t]
+      dens.true[t] <- (nTOT[t] / propF[t]) / area[t]
     }
     
     
@@ -201,9 +201,9 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- BetaA.S[a] +
-            BetaD.S[a] * dens.hat[t] +
-            BetaV.S[a] * veg.hat[t] +
-            BetaW.S[a] * win.hat[t] +
+            BetaD.S[a] * dens.true[t] +
+            BetaV.S[a] * veg.true[t] +
+            BetaW.S[a] * win.true[t] +
             Gamma.S[t, a]
         }else{
           logit(S[a, t]) <- BetaA.S[a] +
@@ -272,9 +272,9 @@ writeCode <- function(){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.hat[year.R[x]] +
-          BetaV.R * veg.hat[year.R[x]] +
-          BetaW.R * win.hat[year.R[x]] +
+          BetaD.R * dens.true[year.R[x]] +
+          BetaV.R * veg.true[year.R[x]] +
+          BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
@@ -293,9 +293,9 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.hat[t] +
-            BetaV.R * veg.hat[t] +
-            BetaW.R * win.hat[t] +
+            BetaD.R * dens.true[t] +
+            BetaV.R * veg.true[t] +
+            BetaW.R * win.true[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +

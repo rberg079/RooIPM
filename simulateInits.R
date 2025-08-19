@@ -76,9 +76,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   
   ## Simulate latent states for input data -------------------------------------
   
-  # Function to centre and scale data
-  sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
-  
   ## Survival model
   # missing values
   nNoDens <- sum(is.na(dens))
@@ -86,18 +83,15 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   nNoWin  <- sum(is.na(win))
   nNoProp <- sum(is.na(propF))
   
-  veg <- sc(veg)
-  win <- sc(win)
-  
   dens <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
   veg <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
   win <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
   propF <- round(ifelse(is.na(propF), rnorm(nYear, .7, .1), propF), 4)
   
   # true environment
-  dens.hat <- dens
-  veg.hat  <- veg
-  win.hat  <- win
+  dens.true <- dens
+  veg.true  <- veg
+  win.true  <- win
   
   # latent states
   Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
@@ -189,9 +183,9 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       if(envEffectsS){
         S[a, t] <- plogis(
           BetaA.S[a] +
-            BetaD.S[a] * dens.hat[t] +
-            BetaV.S[a] * veg.hat[t] +
-            BetaW.S[a] * win.hat[t] +
+            BetaD.S[a] * dens.true[t] +
+            BetaV.S[a] * veg.true[t] +
+            BetaW.S[a] * win.true[t] +
             Gamma.S[t, a])
       }else{
         S[a, t] <- plogis(
@@ -222,9 +216,9 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     if(envEffectsR){
       Ri[x] <- plogis(
         qlogis(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.hat[year.R[x]] +
-          BetaV.R * veg.hat[year.R[x]] +
-          BetaW.R * win.hat[year.R[x]] +
+          BetaD.R * dens.true[year.R[x]] +
+          BetaV.R * veg.true[year.R[x]] +
+          BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]])
     }else{
@@ -241,9 +235,9 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       if(envEffectsR){
         Ra[a, t] <- plogis(
           qlogis(Mu.R[a]) +
-            BetaD.R * dens.hat[t] +
-            BetaV.R * veg.hat[t] +
-            BetaW.R * win.hat[t] +
+            BetaD.R * dens.true[t] +
+            BetaV.R * veg.true[t] +
+            BetaW.R * win.true[t] +
             EpsilonT.R[t])
       }else{
         Ra[a, t] <- plogis(
@@ -349,9 +343,9 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     veg = veg,
     win = win,
     propF = propF,
-    dens.hat = dens.hat,
-    veg.hat = veg.hat,
-    win.hat = win.hat,
+    dens.true = dens.true,
+    veg.true = veg.true,
+    win.true = win.true,
     
     Mu.Sp = Mu.Sp,
     Mu.Op = Mu.Op,

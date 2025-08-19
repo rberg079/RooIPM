@@ -123,7 +123,7 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
   
   # Survival model
-  'dens.hat', 'veg.hat', 'win.hat',         # latent environment
+  'dens.true', 'veg.true', 'win.true',      # latent environment
   'BetaA.S',                                # covariate effect of age
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
