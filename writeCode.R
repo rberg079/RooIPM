@@ -102,13 +102,25 @@ writeCode <- function(){
         veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
         win[t]  ~ dnorm(win.true[t], sd = 1)
       }
+      
+      # for(m in 1:nNoDens){
+      #   dens.true[noDens[m]] ~ dnorm(0, sd = 1)
+      # }
+      
+      for(m in 1:nNoVeg){
+        veg.true[noVeg[m]] ~ dnorm(0, sd = 1)
+      }
+      
+      for(m in 1:nNoWin){
+        win.true[noWin[m]] ~ dnorm(0, sd = 1)
+      }
     }
     
-    for(p in 1:nNoProp){
-      propF[p] ~ T(dnorm(0.8, 0.2), 0, 1)
+    for(m in 1:nNoProp){
+      propF[noProp[m]] ~ T(dnorm(0.8, 0.2), 0, 1)
     }
     
-    
+      
     ## POPULATION MODEL
     ## -------------------------------------------------------------------------
     

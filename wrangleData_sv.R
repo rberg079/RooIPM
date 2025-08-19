@@ -259,7 +259,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
-  age.S <- unname(as.matrix(age[!noInfo,]))
+  age.S <- unname(as.matrix(age[!noInfo,]+1)) # so age starts at 1!
   
   # sort age classes
   if(ageClasses == 6){

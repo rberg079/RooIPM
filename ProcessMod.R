@@ -9,7 +9,7 @@ testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
-ageClasses <- 12
+ageClasses <- 6
 
 # load packages
 library(tidyverse)
@@ -68,14 +68,18 @@ myConst <- list(nR = rsData$nR,
                 nAge = rsData$nAge,
                 nAgeC.S = svData$nAgeC.S,
                 nAgeC.R = rsData$nAgeC.R,
-                nNoDens = enData$nNoDens,
-                nNoVeg = enData$nNoVeg,
-                nNoWin = enData$nNoWin,
-                nNoProp = enData$nNoProp,
                 first = svData$first,
                 last = svData$last,
                 W = diag(svData$nAgeC.S),
                 DF = svData$nAgeC.S,
+                noDens = enData$noDens,
+                noVeg = enData$noVeg,
+                noWin = enData$noWin,
+                noProp = enData$noProp,
+                nNoDens = enData$nNoDens,
+                nNoVeg = enData$nNoVeg,
+                nNoWin = enData$nNoWin,
+                nNoProp = enData$nNoProp,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
                 ageClasses = ageClasses)

@@ -230,10 +230,15 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE/sd(env$Dens, na.rm = T)))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE/sd(env$Veg, na.rm = T)))
   
-  nNoDens <- sum(is.na(dens))
-  nNoVeg  <- sum(is.na(veg))
-  nNoWin  <- sum(is.na(win))
-  nNoProp <- sum(is.na(propF))
+  noDens <- which(is.na(dens))
+  noVeg  <- which(is.na(veg))
+  noWin  <- which(is.na(win))
+  noProp <- which(is.na(propF))
+  
+  nNoDens <- length(noDens)
+  nNoVeg  <- length(noVeg)
+  nNoWin  <- length(noWin)
+  nNoProp <- length(noProp)
   
   area = rep(76.2, 17)
   
@@ -245,6 +250,10 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               propF = propF,
               densE = densE,
               vegE = vegE,
+              noDens = noDens,
+              noVeg = noVeg,
+              noWin = noWin,
+              noProp = noProp,
               nNoDens = nNoDens,
               nNoVeg = nNoVeg,
               nNoWin = nNoWin,
