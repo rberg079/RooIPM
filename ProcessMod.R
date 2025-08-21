@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -152,7 +152,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 160000
+  nburnin <- 80000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -227,7 +227,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-# saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_OnlyVeg.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
