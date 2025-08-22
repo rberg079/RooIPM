@@ -331,19 +331,32 @@ writeCode <- function(){
     
     # priors for random effects
     for(i in 1:nID.R){
-      EpsilonI.R[i] ~ dnorm(0, sd = SigmaI.R)
+      XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
     }
 
     for(t in 1:(nYear-1)){
-      EpsilonT.R[t] ~ dnorm(0, sd = SigmaT.R)
-      EpsilonT.B[t] ~ dnorm(0, sd = SigmaT.B)
+      XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
+      XiT.B[t] ~ dnorm(0, sd = 1) # latent standard norma
     }
-
-    # priors for sigma
+    
+    # GammaI.R <- 0
+    EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
+    EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
+    EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
+    
+    # this way sampler can move Xi & Sigma independently
+    # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
+    # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
+    
+    # scales
     # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 10)
-    SigmaT.R ~ dunif(0, 10)
-    SigmaT.B ~ dunif(0, 10)
+    SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    SigmaT.R ~ dunif(0, 10) # scale of the random effect
+    SigmaT.B ~ dunif(0, 10) # scale of the random effect
+    
+    # NOTES:
+    # Survival: interpret Gamma & summarize variation using Sigma (correlated SDs per age class)
+    # Reproduction: interpret Epsilons & summarize variation using Sigmas (uncorrelated SDs)
     
   }) # nimbleCode
   

@@ -144,11 +144,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   
   ## Survival model
   # variance-covariance matrix
-  zero  <- rep(0, nAgeC.S)
   Xi.S <- rnorm(nAgeC.S, 1, 0.1)
   
   Epsilon.S <- matrix(rnorm((nYear-1)*nAgeC.S, 0, 0.1),
-                       ncol = nAgeC.S, nrow = (nYear-1))
+                      nrow = (nYear-1), ncol = nAgeC.S)
   
   Gamma.S <- matrix(NA, ncol = nAgeC.S, nrow = nYear-1)
   
@@ -167,13 +166,20 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
   
   ## Reproductive success model
-  EpsilonI.R <- rnorm(nID.R, 0, 1)
-  EpsilonT.R <- rnorm(nYear-1, 0, 1)
-  EpsilonT.B <- rnorm(nYear-1, 0, 1)
+  # latent standard normals
+  XiI.R <- rnorm(nID.R, 0, 1)
+  XiT.R <- rnorm(nYear-1, 0, 1)
+  XiT.B <- rnorm(nYear-1, 0, 1)
 
-  SigmaI.R <- runif(1, .1, 1)
-  SigmaT.R <- runif(1, .1, 1)
-  SigmaT.B <- runif(1, .1, 1)
+  # scales
+  SigmaI.R <- runif(1, .5, 2)
+  SigmaT.R <- runif(1, .5, 2)
+  SigmaT.B <- runif(1, .5, 2)
+  
+  # scaled random effects
+  EpsilonI.R <- XiI.R * SigmaI.R
+  EpsilonT.R <- XiT.R * SigmaT.R
+  EpsilonT.B <- XiT.B * SigmaT.B
 
   
   ## Simulate yearly vital rates -----------------------------------------------
