@@ -250,6 +250,8 @@ library(scales)
 #   }
 # }
 
+# MCMCtrace(out.mcmc, pdf = T)
+
 # summaries
 MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('BetaA.S'), n.eff = TRUE, round = 2)
