@@ -42,16 +42,16 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # source('wrangleData_sv.R')
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          ageClasses = 12, known.age = TRUE)
+  #                          ageClasses = 6, known.age = TRUE)
   # 
   # source('wrangleData_rs.R')
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
   #                          obs.data = "data/PromObs_2008-2023.xlsx",
-  #                          ageClasses = 12, known.age = TRUE, cum.surv = FALSE)
+  #                          ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
   # 
   # nYear <- rsData$nYear
   # nAge <- rsData$nAge
-  # ageClasses <- 12
+  # ageClasses <- 6
   # nID.S <- svData$nID.S
   # ageC.S <- svData$ageC.S
   # nAgeC.S <- svData$nAgeC.S
@@ -86,7 +86,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   dens <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
   veg <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
   win <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
-  propF <- round(ifelse(is.na(propF), rnorm(nYear, .7, .1), propF), 4)
+  propF <- round(ifelse(is.na(propF), pmax(pmin(rnorm(nYear, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   dens.true <- dens
@@ -127,16 +127,16 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   }
   
   if(envEffectsS){
-    BetaD.S <- runif(nAgeC.S, -5, 5)
-    BetaV.S <- runif(nAgeC.S, -5, 5)
-    BetaW.S <- runif(nAgeC.S, -5, 5)
+    BetaD.S <- runif(nAgeC.S, -1, 1)
+    BetaV.S <- runif(nAgeC.S, -1, 1)
+    BetaW.S <- runif(nAgeC.S, -1, 1)
   }
   
   ## Reproductive success model
   if(envEffectsR){
-    BetaD.R <- runif(1, -2, 2)
-    BetaV.R <- runif(1, -2, 2)
-    BetaW.R <- runif(1, -2, 2)
+    BetaD.R <- runif(1, -1, 1)
+    BetaV.R <- runif(1, -1, 1)
+    BetaW.R <- runif(1, -1, 1)
   }
   
   
@@ -158,18 +158,22 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     }
   }
   
-  Tau.S <- diag(nAgeC.S) + rnorm(nAgeC.S^2, 0, 0.1)
-  Tau.S <- matrix(Tau.S, nrow = nAgeC.S)
-  Tau.S <- (Tau.S + t(Tau.S)) / 2
+  # Tau.S <- diag(nAgeC.S) + rnorm(nAgeC.S^2, 0, 0.1)
+  # Tau.S <- (Tau.S + t(Tau.S)) / 2
+  
+  # alternative init Tau.S that guarantees positive-definite values
+  # (apparently potentially problematic the way I had it above)
+  A <- matrix(rnorm(nAgeC.S^2, 0, 0.1), nAgeC.S, nAgeC.S)
+  Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
   
   ## Reproductive success model
   EpsilonI.R <- rnorm(nID.R, 0, 1)
   EpsilonT.R <- rnorm(nYear-1, 0, 1)
   EpsilonT.B <- rnorm(nYear-1, 0, 1)
 
-  SigmaI.R <- runif(1, 0, 5)
-  SigmaT.R <- runif(1, 0, 5)
-  SigmaT.B <- runif(1, 0, 5)
+  SigmaI.R <- runif(1, .1, 1)
+  SigmaT.R <- runif(1, .1, 1)
+  SigmaT.B <- runif(1, .1, 1)
 
   
   ## Simulate yearly vital rates -----------------------------------------------

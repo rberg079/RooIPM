@@ -117,7 +117,7 @@ writeCode <- function(){
     }
     
     for(m in 1:nNoProp){
-      propF[noProp[m]] ~ T(dnorm(0.8, 0.2), 0, 1)
+      propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     }
     
       
@@ -341,9 +341,9 @@ writeCode <- function(){
 
     # priors for sigma
     # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 100)
-    SigmaT.R ~ dunif(0, 100)
-    SigmaT.B ~ dunif(0, 100)
+    SigmaI.R ~ dunif(0, 10)
+    SigmaT.R ~ dunif(0, 10)
+    SigmaT.B ~ dunif(0, 10)
     
   }) # nimbleCode
   
