@@ -366,6 +366,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     Gamma.S = Gamma.S,
     Tau.S = Tau.S,
     
+    XiI.R = XiI.R,
+    XiT.R = XiT.R,
+    XiT.B = XiT.B,
+    
     EpsilonI.R = EpsilonI.R,
     EpsilonT.R = EpsilonT.R,
     EpsilonT.B = EpsilonT.B,

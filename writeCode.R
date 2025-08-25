@@ -235,7 +235,7 @@ writeCode <- function(){
     for(a in 1:nAgeC.S){
       BetaA.S[a] ~ dunif(-5, 5)
       if(envEffectsS){
-        BetaD.S[a] ~ dunif(-5, 5)
+        BetaD.S[a] ~ dunif(-1, 1) # now that dens is not centered & scaled
         BetaV.S[a] ~ dunif(-5, 5)
         BetaW.S[a] ~ dunif(-5, 5)
       }
@@ -324,7 +324,7 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
+      BetaD.R ~ dunif(-1, 1) # now that dens is not centered & scaled
       BetaV.R ~ dunif(-5, 5)
       BetaW.R ~ dunif(-5, 5)
     }

@@ -127,10 +127,10 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
   
   # Survival model
-  'dens.true', 'veg.true', 'win.true',      # latent environment
-  'BetaA.S',                                # covariate effect of age
+  'BetaA.S',                                # covariate effect
+  'Gamma.S', 'Sigma.S',                     # random effects
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
-  'Gamma.S', 'Xi.S', 'Sigma.S',             # random effects
+  'dens.true', 'veg.true', 'win.true',      # latent true environment
   
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
@@ -227,7 +227,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_newREonRS.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
