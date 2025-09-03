@@ -224,6 +224,9 @@ writeCode <- function(){
             BetaV.S[a] * veg.true[t] +
             BetaW.S[a] * win.true[t] +
             Gamma.S[t, a]
+          #*CRN: All of the covariate effects AND the random effect are age-dependent. 
+          #* No further constraints about that age dependence are made. 
+          #* I think that may be too many parameters. 
         }else{
           logit(S[a, t]) <- BetaA.S[a] +
             Gamma.S[t, a]
