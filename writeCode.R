@@ -40,7 +40,7 @@ writeCode <- function(){
   # Mu.Sp = mean latent state for CJS model (was mu1)
   # Mu.Op = mean latent observation for CJS model (was mu2)
   
-  # BetaA.S = covariate effect of age (A) on survival (s) (was B.age)
+  # Mu.S = age-specific mean survival probability
   # BetaD.S = covariate effect of density (D) on survival (s) (was B.dens)
   # BetaV.S = covariate effect of vegetation (V) on survival (s) (was B.veg)
   # BetaW.S = covariate effect of weather harshness (W) on survival (S)
@@ -219,7 +219,7 @@ writeCode <- function(){
     for(a in 1:nAgeC.S){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
-          logit(S[a, t]) <- BetaA.S[a] +
+          logit(S[a, t]) <- logit(Mu.S[a]) +
             BetaD.S[a] * dens.true[t] +
             BetaV.S[a] * veg.true[t] +
             BetaW.S[a] * win.true[t] +
@@ -228,7 +228,7 @@ writeCode <- function(){
           #* No further constraints about that age dependence are made. 
           #* I think that may be too many parameters. 
         }else{
-          logit(S[a, t]) <- BetaA.S[a] +
+          logit(S[a, t]) <- logit(Mu.S[a]) +
             Gamma.S[t, a]
         }
       }
@@ -243,7 +243,7 @@ writeCode <- function(){
     #### Priors ####
     # for fixed effects
     for(a in 1:nAgeC.S){
-      BetaA.S[a] ~ dunif(-5, 5)
+      Mu.S[a] ~ dunif(0, 1)
       if(envEffectsS){
         BetaD.S[a] ~ dunif(-1, 1) # now that dens is not centered & scaled
         BetaV.S[a] ~ dunif(-5, 5)
