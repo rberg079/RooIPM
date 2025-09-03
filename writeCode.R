@@ -243,15 +243,15 @@ writeCode <- function(){
     
     # for random effects
     # variance-covariance matrix
-    for(i in 1:nAgeC.S){
-      zero[i] <- 0
-      Xi.S[i] ~ dunif(0, 2)
+    for(a in 1:nAgeC.S){
+      zero[a] <- 0
+      Xi.S[a] ~ dunif(0, 2)
     }
     
     for(t in 1:(nYear-1)){
       Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
-      for(i in 1:nAgeC.S){
-        Gamma.S[t, i] <- Xi.S[i] * Epsilon.S[t, i]
+      for(a in 1:nAgeC.S){
+        Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
       }
     }
     
