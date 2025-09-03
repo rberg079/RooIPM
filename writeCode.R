@@ -194,6 +194,9 @@ writeCode <- function(){
       dens.true[t] <- (nTOT[t] / propF[t]) / area[t]
     }
     
+    #*CRN: It will help with convergence if this density is at the very least centered, maybe even scaled too. 
+    #* The way I would approach it is calculate a rough mean dens.true for the whole time period from a whole model run, and use that as an offset (passed via constants).
+    #* In your case, it probably will also work if you use calculated mean (and potentially sd) from the input time series (myData$dens)
     
     ## SURVIVAL MODEL (CJS)
     ## -------------------------------------------------------------------------
