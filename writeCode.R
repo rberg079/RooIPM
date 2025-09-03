@@ -291,7 +291,7 @@ writeCode <- function(){
     for(x in 1:nR){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) + #*CRN: Recommend setting up ageC.R as a vector with length "nR" up externally to avoid the double-nested indexing (should not change anything, but slightly less prone to errors when working on code)
           BetaD.R * dens.true[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
