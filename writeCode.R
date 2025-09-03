@@ -98,9 +98,13 @@ writeCode <- function(){
     
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        dens[t] ~ dnorm(dens.true[t], sd = densE[t])
-        veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
-        win[t]  ~ dnorm(win.true[t], sd = 1)
+        dens[t] ~ dnorm(dens.true[t], sd = densE[t]) #*CRN: This is the data likelihood for the population density estimates (i.e. DS data). We need it.
+        
+        #veg[t]  ~ dnorm(veg.true[t], sd = vegE[t]) #* CRN: This is an additional level of stochasticity you impose, assuming that vegetation is observed with a known error. This makes sense to include, but perhaps only once everything else works. 
+        veg[t] <- veg.true[t]
+        
+        #win[t]  ~ dnorm(win.true[t], sd = 1) #* CRN: This is an additional level of stochasticity you impose, assuming that vegetation is observed with an error whose sd you force to 1. This is a very big error. Unless we have an a priori known error, we should ignore uncertainty in covariate values for this one.
+        win[t] <- win.true[t]
       }
       
       # for(m in 1:nNoDens){
