@@ -270,9 +270,7 @@ writeCode <- function(){
     #### Likelihood & constraints ####
     # yearly birth rate
     for(x in 1:nR){
-      B[x] ~ dbern(Bi[x])
-      logit(Bi[x]) <- logit(Mu.B) +
-        EpsilonT.B[year.R[x]]
+      B[x] ~ dbern(Bt[year.R[x]])
     }
 
     for(t in 1:(nYear-1)){
