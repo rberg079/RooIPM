@@ -191,7 +191,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      dens.true[t] <- (nTOT[t] / propF[t]) / area[t]
+      dens.true[t] <- (nTOT[t] / propF[t]) / area[t] #*CRN: Shouldn't this be nTOT*propF ? 
     }
     
     #*CRN: It will help with convergence if this density is at the very least centered, maybe even scaled too. 
