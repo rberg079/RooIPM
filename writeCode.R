@@ -191,9 +191,12 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      dens.true[t] <- (nTOT[t] / propF[t]) / area[t]
+      dens.true[t] <- (nTOT[t] / propF[t]) / area[t] #*CRN: Shouldn't this be nTOT*propF ? 
     }
     
+    #*CRN: It will help with convergence if this density is at the very least centered, maybe even scaled too. 
+    #* The way I would approach it is calculate a rough mean dens.true for the whole time period from a whole model run, and use that as an offset (passed via constants).
+    #* In your case, it probably will also work if you use calculated mean (and potentially sd) from the input time series (myData$dens)
     
     ## SURVIVAL MODEL (CJS)
     ## -------------------------------------------------------------------------
@@ -221,6 +224,9 @@ writeCode <- function(){
             BetaV.S[a] * veg.true[t] +
             BetaW.S[a] * win.true[t] +
             Gamma.S[t, a]
+          #*CRN: All of the covariate effects AND the random effect are age-dependent. 
+          #* No further constraints about that age dependence are made. 
+          #* I think that may be too many parameters. 
         }else{
           logit(S[a, t]) <- BetaA.S[a] +
             Gamma.S[t, a]
@@ -285,7 +291,7 @@ writeCode <- function(){
     for(x in 1:nR){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) + #*CRN: Recommend setting up ageC.R as a vector with length "nR" up externally to avoid the double-nested indexing (should not change anything, but slightly less prone to errors when working on code)
           BetaD.R * dens.true[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
