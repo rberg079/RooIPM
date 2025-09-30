@@ -230,6 +230,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE/sd(env$Dens, na.rm = T)))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE/sd(env$Veg, na.rm = T)))
   
+  densM <- mean(dens, na.rm = T)
+  
   noDens <- which(is.na(dens))
   noVeg  <- which(is.na(veg))
   noWin  <- which(is.na(win))
@@ -248,6 +250,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               veg = veg,
               win = win,
               propF = propF,
+              densM = densM,
               densE = densE,
               vegE = vegE,
               noDens = noDens,

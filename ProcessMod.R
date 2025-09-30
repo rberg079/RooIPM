@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -72,6 +72,7 @@ myConst <- list(nR = rsData$nR,
                 last = svData$last,
                 W = diag(svData$nAgeC.S),
                 DF = svData$nAgeC.S,
+                densM = enData$densM,
                 noDens = enData$noDens,
                 noVeg = enData$noVeg,
                 noWin = enData$noWin,
@@ -127,7 +128,7 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
   
   # Survival model
-  'BetaA.S',                                # covariate effect
+  'Mu.S',                                   # mean survival
   'Gamma.S', 'Sigma.S',                     # random effects
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   'dens.true', 'veg.true', 'win.true',      # latent true environment

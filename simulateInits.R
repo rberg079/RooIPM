@@ -52,9 +52,11 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # nYear <- rsData$nYear
   # nAge <- rsData$nAge
   # ageClasses <- 6
+  # 
   # nID.S <- svData$nID.S
   # ageC.S <- svData$ageC.S
   # nAgeC.S <- svData$nAgeC.S
+  # 
   # nR <- rsData$nR
   # nID.R <- rsData$nID.R
   # year.R <- rsData$year.R
@@ -62,6 +64,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # age.R <- rsData$age.R
   # ageC.R <- rsData$ageC.R
   # nAgeC.R <- rsData$nAgeC.R
+  # 
   # dens <- enData$dens
   # veg <- enData$veg
   # win <- enData$win
@@ -83,13 +86,14 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   nNoWin  <- sum(is.na(win))
   nNoProp <- sum(is.na(propF))
   
-  dens <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
-  veg <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
-  win <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
+  dens  <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
+  veg   <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
+  win   <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
   propF <- round(ifelse(is.na(propF), pmax(pmin(rnorm(nYear, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   dens.true <- dens
+  dens.cov  <- dens - mean(dens)
   veg.true  <- veg
   win.true  <- win
   
@@ -193,7 +197,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       if(envEffectsS){
         S[a, t] <- plogis(
           BetaA.S[a] +
-            BetaD.S[a] * dens.true[t] +
+            BetaD.S[a] * dens.cov[t] +
             BetaV.S[a] * veg.true[t] +
             BetaW.S[a] * win.true[t] +
             Gamma.S[t, a])
@@ -210,12 +214,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   Mu.B <- runif(1, 0.4, 1)
   Mu.R <- c(rep(runif(nAgeC.R, 0, 1)))
 
-  Bi <- numeric(nR)
-  for(x in 1:nR){
-    Bi[x] <- plogis(
-      qlogis(Mu.B) + EpsilonT.B[year.R[x]])
-  }
-
   Bt <- numeric(nYear-1)
   for(t in 1:(nYear-1)){
     Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
@@ -226,7 +224,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     if(envEffectsR){
       Ri[x] <- plogis(
         qlogis(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.true[year.R[x]] +
+          BetaD.R * dens.cov[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
@@ -245,7 +243,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       if(envEffectsR){
         Ra[a, t] <- plogis(
           qlogis(Mu.R[a]) +
-            BetaD.R * dens.true[t] +
+            BetaD.R * dens.cov[t] +
             BetaV.R * veg.true[t] +
             BetaW.R * win.true[t] +
             EpsilonT.R[t])
@@ -380,7 +378,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     
     Mu.B = Mu.B,
     Mu.R = Mu.R,
-    Bi = Bi,
     Bt = Bt,
     Ri = Ri,
     Ra = Ra,

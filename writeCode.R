@@ -40,12 +40,13 @@ writeCode <- function(){
   # Mu.Sp = mean latent state for CJS model (was mu1)
   # Mu.Op = mean latent observation for CJS model (was mu2)
   
-  # Mu.S = age-specific mean survival probability
-  # BetaD.S = covariate effect of density (D) on survival (s) (was B.dens)
-  # BetaV.S = covariate effect of vegetation (V) on survival (s) (was B.veg)
+  # Mu.S = age-specific mean probability of survival (S)
+  # BetaD.S = covariate effect of density (D) on survival (S) (was B.dens)
+  # BetaV.S = covariate effect of vegetation (V) on survival (S) (was B.veg)
   # BetaW.S = covariate effect of weather harshness (W) on survival (S)
   
   # dens.true = "true" yearly population density, from which the observed value was hypothetically sampled
+  # dens.cov = centered "true" yearly population density, for its use as a covariate in survival & reproductive success models
   # veg.true = "true" yearly available vegetation, from which the observed value was hypothetically sampled
   # noAge = indexes of individuals who are of unknown age in the survival model
   # ageM = estimated ages of unknown-aged individuals in the survival model
@@ -190,6 +191,7 @@ writeCode <- function(){
     #### Likelihood ####
     for(t in 1:nYear){
       dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
+      dens.cov[t] <- dens.true[t] - densM # center dens for its use as a covariate
     }
     
     # CRN: It will help with convergence if this density is at the very least centered, maybe even scaled too. 
@@ -218,7 +220,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            BetaD.S[a] * dens.true[t] +
+            BetaD.S[a] * dens.cov[t] +
             BetaV.S[a] * veg.true[t] +
             BetaW.S[a] * win.true[t] +
             Gamma.S[t, a]
@@ -290,7 +292,7 @@ writeCode <- function(){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) + # CRN: Recommend setting up ageC.R as a vector with length "nR" up externally to avoid the double-nested indexing (should not change anything, but slightly less prone to errors when working on code)
-          BetaD.R * dens.true[year.R[x]] +
+          BetaD.R * dens.cov[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
@@ -311,7 +313,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.true[t] +
+            BetaD.R * dens.cov[t] +
             BetaV.R * veg.true[t] +
             BetaW.R * win.true[t] +
             EpsilonT.R[t]
