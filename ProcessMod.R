@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -153,7 +153,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 4
-  nburnin <- 160000
+  nburnin <- 40000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -228,7 +228,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_newREonRS2.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_simpleEnv.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -255,7 +255,7 @@ library(scales)
 
 # summaries
 MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('BetaA.S'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.S'), n.eff = TRUE, round = 2)
 if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)

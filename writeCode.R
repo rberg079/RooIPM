@@ -241,33 +241,47 @@ writeCode <- function(){
     }
     
     #### Priors ####
-    # for fixed effects
+    # for age-dependent fixed effects
     for(a in 1:nAgeC.S){
       Mu.S[a] ~ dunif(0, 1)
       if(envEffectsS){
-        BetaD.S[a] ~ dunif(-1, 1) # now that dens is not centered & scaled
+        BetaD.S[a] ~ dunif(-5, 5)
         BetaV.S[a] ~ dunif(-5, 5)
         BetaW.S[a] ~ dunif(-5, 5)
       }
     }
     
-    # for random effects
+    # # for age-independent fixed effects
+    # if(envEffectsS){
+    #   BetaD.S ~ dunif(-5, 5)
+    #   BetaV.S ~ dunif(-5, 5)
+    #   BetaW.S ~ dunif(-5, 5)
+    # }
+    
+    # for age-dependent random effects
     # variance-covariance matrix
     for(a in 1:nAgeC.S){
       zero[a] <- 0
       Xi.S[a] ~ dunif(0, 2)
     }
-    
+
     for(t in 1:(nYear-1)){
       Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
       for(a in 1:nAgeC.S){
         Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
       }
     }
-    
+
     # precision matrix
     Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
     Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
+    
+    # # for age-independent random effects
+    # for(t in 1:(nYear-1)){
+    #   Gamma.S[t] ~ dnorm(0, sd = SigmaT.S)
+    # }
+    # SigmaT.S ~ dunif(0, 10)
+    
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -332,7 +346,7 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-1, 1) # now that dens is not centered & scaled
+      BetaD.R ~ dunif(-5, 5)
       BetaV.R ~ dunif(-5, 5)
       BetaW.R ~ dunif(-5, 5)
     }
