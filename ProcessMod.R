@@ -129,7 +129,8 @@ params <- c(
   
   # Survival model
   'Mu.S',                                   # mean survival
-  'Gamma.S', 'Sigma.S',                     # random effects
+  # 'Gamma.S', 'Sigma.S',                     # random effects (correlated)
+  'EpsilonT.S', 'SigmaT.S',                 # random effects (uncorrelated)
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   'dens.true', 'veg.true', 'win.true',      # latent true environment
   
@@ -228,7 +229,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_simpleEnv.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -239,8 +240,8 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-# # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_WidePriors.rds')
+# load results
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -255,10 +256,9 @@ library(scales)
 
 # summaries
 MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Mu.S'), n.eff = TRUE, round = 2)
+MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
 if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)}
 MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
-MCMCsummary(out.mcmc, params = c('Sigma.S'), n.eff = TRUE, round = 2)
 
 MCMCsummary(out.mcmc, params = c('Bt', 'sPY'), n.eff = TRUE, round = 2)
 if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
@@ -268,16 +268,15 @@ MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), n.eff = 
 
 # chainplots
 MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
-if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaA.S', 'BetaD.S', 'BetaV.S'), pdf = FALSE)}
+MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
+if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), pdf = FALSE)}
 MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('Sigma.S'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('Bt', 'Ra'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('Bt', 'sPY'), pdf = FALSE)
 if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)}
 MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
 
-MCMCtrace(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT'), pdf = FALSE)
-MCMCtrace(out.mcmc, params = c('ab', 'propF'), pdf = FALSE)
+MCMCtrace(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), pdf = FALSE)
 
 MCMCtrace(out.mcmc, pdf = T)
 

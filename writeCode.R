@@ -57,6 +57,10 @@ writeCode <- function(){
   # Tau.S = precision matrix (inverse of covariance) describing variance & correlation among age classes (was Tau.raw)
   # Sigma.S = covariance matrix (inverse of precision) describing variance & covariance among age classes (was Sigma.raw)
   
+  # EpsilonT.S = random effect of year (T) on survival (S), for uncorrelated random effect
+  # XiT.S = latent standard normal scale of the random effect, for uncorrelated random effect
+  # SigmaT.S = standard deviation of effect of year (T) on survival, for uncorrelated random effect
+  
   # O = probability of observation each year in the survival model (was p)
   # Mu.O = mean probability of observation in the survival model (was mu.p)
   # EpsilonT.O = random effect of year on prob. of observation in the survival model (was year.p)
@@ -72,6 +76,10 @@ writeCode <- function(){
   # EpsilonI.R = random effect of mother's identity (I) on reproductive success (Ri)
   # EpsilonT.R = random effect of year (T) on reproductive success (Ri & Ra)
   # EpsilonT.B = random effect of year (T) on breeding rate (Bt)
+  
+  # XiI.R = latent standard normal scale of the random effect of mother's identity (I) on reproductive success (R)
+  # XiT.R = latent standard normal scale of the random effect of year (T) on reproductive success (R)
+  # XiT.B = latent standard normal scale of the random effect of year (T) on breeding rate (Bt)
   
   # SigmaI.R = standard deviation of effect of mother's identity (I) on reproductive success (Ri)
   # SigmaT.R = standard deviation of effect of year (T) on reproductive success (Ri & Ra)
@@ -220,16 +228,18 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            BetaD.S[a] * dens.cov[t] +
-            BetaV.S[a] * veg.true[t] +
-            BetaW.S[a] * win.true[t] +
-            Gamma.S[t, a]
+            BetaD.S * dens.cov[t] +
+            BetaV.S * veg.true[t] +
+            BetaW.S * win.true[t] +
+            # Gamma.S[t, a] +
+            EpsilonT.S[t]
           # CRN: All of the covariate effects AND the random effect are age-dependent. 
           # No further constraints about that age dependence are made. 
           # I think that may be too many parameters. 
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            Gamma.S[t, a]
+            # Gamma.S[t, a] +
+            EpsilonT.S[t]
         }
       }
     }
@@ -241,47 +251,51 @@ writeCode <- function(){
     }
     
     #### Priors ####
-    # for age-dependent fixed effects
+    # survival
     for(a in 1:nAgeC.S){
       Mu.S[a] ~ dunif(0, 1)
-      if(envEffectsS){
-        BetaD.S[a] ~ dunif(-5, 5)
-        BetaV.S[a] ~ dunif(-5, 5)
-        BetaW.S[a] ~ dunif(-5, 5)
-      }
     }
     
-    # # for age-independent fixed effects
+    # # for age-dependent fixed effects
     # if(envEffectsS){
-    #   BetaD.S ~ dunif(-5, 5)
-    #   BetaV.S ~ dunif(-5, 5)
-    #   BetaW.S ~ dunif(-5, 5)
+    #   for(a in 1:nAgeC.S){
+    #     BetaD.S[a] ~ dunif(-5, 5)
+    #     BetaV.S[a] ~ dunif(-5, 5)
+    #     BetaW.S[a] ~ dunif(-5, 5)
+    #   }
     # }
     
-    # for age-dependent random effects
-    # variance-covariance matrix
-    for(a in 1:nAgeC.S){
-      zero[a] <- 0
-      Xi.S[a] ~ dunif(0, 2)
+    # for age-independent fixed effects
+    if(envEffectsS){
+      BetaD.S ~ dunif(-5, 5)
+      BetaV.S ~ dunif(-5, 5)
+      BetaW.S ~ dunif(-5, 5)
     }
-
-    for(t in 1:(nYear-1)){
-      Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
-      for(a in 1:nAgeC.S){
-        Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
-      }
-    }
-
-    # precision matrix
-    Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
-    Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
     
-    # # for age-independent random effects
+    # # for age-dependent random effects
+    # # variance-covariance matrix
+    # for(a in 1:nAgeC.S){
+    #   zero[a] <- 0
+    #   Xi.S[a] ~ dunif(0, 2)
+    # }
+    # 
     # for(t in 1:(nYear-1)){
-    #   Gamma.S[t] ~ dnorm(0, sd = SigmaT.S)
+    #   Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
+    #   for(a in 1:nAgeC.S){
+    #     Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
+    #   }
     # }
-    # SigmaT.S ~ dunif(0, 10)
+    # 
+    # # precision matrix
+    # Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
+    # Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
     
+    # for age-independent random effects
+    for(t in 1:(nYear-1)){
+      XiT.S[t] ~ dnorm(0, sd = 1) # latent standard normal
+      EpsilonT.S[t] <- SigmaT.S * XiT.S[t] # actual random effect
+    }
+    SigmaT.S ~ dunif(0, 10) # scale of the random effect
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -370,7 +384,6 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    # scales
     # SigmaI.R <- 0
     SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
@@ -378,7 +391,7 @@ writeCode <- function(){
     
     # NOTES:
     # Survival: interpret Gamma & summarize variation using Sigma (correlated SDs per age class)
-    # Reproduction: interpret Epsilons & summarize variation using Sigmas (uncorrelated SDs)
+    # Reproduction or Survival: interpret Epsilons & summarize variation using Sigmas (uncorrelated SDs)
     
   }) # nimbleCode
   

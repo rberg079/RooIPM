@@ -108,32 +108,16 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   nAgeC.R <- max(ageC.R)
   
   ## Survival model
-  if(ageClasses == 6){
-    BetaA.S <- c(rnorm(1, 1.0, 0.2),
-                 rnorm(1, 1.0, 0.2),
-                 rnorm(1, 2.4, 0.2),
-                 rnorm(1, 2.8, 0.2),
-                 rnorm(1, 2.4, 0.2),
-                 rnorm(1, 1.0, 0.2))
-  }else if(ageClasses == 12){
-    BetaA.S <- c(rnorm(2, 1.0, 0.2),
-                 rnorm(1, 2.4, 0.2),
-                 rnorm(4, 2.8, 0.2),
-                 rnorm(3, 2.4, 0.2),
-                 rnorm(3, 1.0, 0.2))
-  }else if(ageClasses == 20){
-    BetaA.S <- c(rnorm(1, 1.0, 0.2), rnorm(1, 1.0, 0.2),
-                 rnorm(1, 2.4, 0.2), rnorm(1, 2.8, 0.2),
-                 rnorm(1, 2.8, 0.2), rnorm(1, 2.8, 0.2),
-                 rnorm(1, 2.8, 0.2), rnorm(1, 2.4, 0.2),
-                 rnorm(1, 2.4, 0.2), rnorm(1, 2.4, 0.2),
-                 rep(rnorm(1, 1.0, 0.2), 10)) 
-  }
-  
   if(envEffectsS){
-    BetaD.S <- runif(nAgeC.S, -1, 1)
-    BetaV.S <- runif(nAgeC.S, -1, 1)
-    BetaW.S <- runif(nAgeC.S, -1, 1)
+    # # for age-dependent fixed effects
+    # BetaD.S <- runif(nAgeC.S, -1, 1)
+    # BetaV.S <- runif(nAgeC.S, -1, 1)
+    # BetaW.S <- runif(nAgeC.S, -1, 1)
+    
+    # for age-independent fixed effects
+    BetaD.S <- runif(1, -1, 1)
+    BetaV.S <- runif(1, -1, 1)
+    BetaW.S <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
@@ -147,27 +131,33 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   ## Simulate vital rate random effects ----------------------------------------
   
   ## Survival model
-  # variance-covariance matrix
-  Xi.S <- rnorm(nAgeC.S, 1, 0.1)
+  # # for age-dependent random effects
+  # # variance-covariance matrix
+  # Xi.S <- rnorm(nAgeC.S, 1, 0.1)
+  # 
+  # Epsilon.S <- matrix(rnorm((nYear-1)*nAgeC.S, 0, 0.1),
+  #                     nrow = (nYear-1), ncol = nAgeC.S)
+  # 
+  # Gamma.S <- matrix(NA, ncol = nAgeC.S, nrow = nYear-1)
+  # 
+  # for(t in 1:(nYear-1)){
+  #   for(a in 1:nAgeC.S){
+  #     Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
+  #   }
+  # }
+  # 
+  # # Tau.S <- diag(nAgeC.S) + rnorm(nAgeC.S^2, 0, 0.1)
+  # # Tau.S <- (Tau.S + t(Tau.S)) / 2
+  # 
+  # # alternative init Tau.S that guarantees positive-definite values
+  # # (apparently potentially problematic the way I had it above)
+  # A <- matrix(rnorm(nAgeC.S^2, 0, 0.1), nAgeC.S, nAgeC.S)
+  # Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
   
-  Epsilon.S <- matrix(rnorm((nYear-1)*nAgeC.S, 0, 0.1),
-                      nrow = (nYear-1), ncol = nAgeC.S)
-  
-  Gamma.S <- matrix(NA, ncol = nAgeC.S, nrow = nYear-1)
-  
-  for(t in 1:(nYear-1)){
-    for(a in 1:nAgeC.S){
-      Gamma.S[t,a] <- Xi.S[a] * Epsilon.S[t,a]
-    }
-  }
-  
-  # Tau.S <- diag(nAgeC.S) + rnorm(nAgeC.S^2, 0, 0.1)
-  # Tau.S <- (Tau.S + t(Tau.S)) / 2
-  
-  # alternative init Tau.S that guarantees positive-definite values
-  # (apparently potentially problematic the way I had it above)
-  A <- matrix(rnorm(nAgeC.S^2, 0, 0.1), nAgeC.S, nAgeC.S)
-  Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
+  # for age-independent random effect
+  XiT.S <- rnorm(nYear-1, 0, 1)
+  SigmaT.S <- runif(1, .5, 2)
+  EpsilonT.S <- XiT.S * SigmaT.S
   
   ## Reproductive success model
   # latent standard normals
@@ -190,33 +180,58 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   
   ## Survival model
   # age-class-specific survival
-  S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
+  Mu.S <- c(rep(runif(nAgeC.S, 0.1, 0.9)))
   
+  # # for age-dependent fixed effects
+  # S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
+  # for(a in 1:nAgeC.S){
+  #   for(t in 1:(nYear - 1)){
+  #     if(envEffectsS){
+  #       S[a, t] <- plogis(
+  #         qlogis(Mu.S[a]) +
+  #           BetaD.S[a] * dens.cov[t] +
+  #           BetaV.S[a] * veg.true[t] +
+  #           BetaW.S[a] * win.true[t] +
+  #           Gamma.S[t]) # [t, a]
+  #     }else{
+  #       S[a, t] <- plogis(
+  #         qlogis(Mu.S[a]) +
+  #           Gamma.S[t]) # [t, a]
+  #     }
+  #   }
+  # }
+  
+  # for age-independent fixed effects
+  S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
   for(a in 1:nAgeC.S){
     for(t in 1:(nYear - 1)){
       if(envEffectsS){
         S[a, t] <- plogis(
-          BetaA.S[a] +
-            BetaD.S[a] * dens.cov[t] +
-            BetaV.S[a] * veg.true[t] +
-            BetaW.S[a] * win.true[t] +
-            Gamma.S[t, a])
+          qlogis(Mu.S[a]) +
+            BetaD.S * dens.cov[t] +
+            BetaV.S * veg.true[t] +
+            BetaW.S * win.true[t] +
+            # Gamma.S[t, a] +
+            EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
-          BetaA.S[a] +
-            Gamma.S[t, a])
+          qlogis(Mu.S[a]) +
+            # Gamma.S[t, a] +
+            EpsilonT.S[t])
       }
     }
   }
-
-  # Reproductive success model
+  
+  ## Reproductive success model
   # age-specific reproductive success
   Mu.B <- runif(1, 0.4, 1)
-  Mu.R <- c(rep(runif(nAgeC.R, 0, 1)))
+  Mu.R <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
 
   Bt <- numeric(nYear-1)
   for(t in 1:(nYear-1)){
-    Bt[t] <- plogis(qlogis(Mu.B) + EpsilonT.B[t])
+    Bt[t] <- plogis(
+      qlogis(Mu.B) +
+        EpsilonT.B[t])
   }
   
   Ri <- numeric(nR)
@@ -342,7 +357,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # # pmax(..., 1) returns 1 if ab falls below it
   # # so propF is at least 40% & ab at least 1
 
-  # nYF; nSA; nAD; nTOT; ab
+  # nYF; nSA; nAD; nTOT
   
   ## Assemble myinits list -----------------------------------------------------
   
@@ -352,29 +367,34 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     win = win,
     propF = propF,
     dens.true = dens.true,
+    dens.cov = dens.cov,
     veg.true = veg.true,
     win.true = win.true,
     
     Mu.Sp = Mu.Sp,
     Mu.Op = Mu.Op,
-    BetaA.S = BetaA.S,
+    Mu.S = Mu.S,
     
-    Xi.S = Xi.S,
-    Epsilon.S = Epsilon.S,
-    Gamma.S = Gamma.S,
-    Tau.S = Tau.S,
+    # Xi.S = Xi.S,
+    # Epsilon.S = Epsilon.S,
+    # Gamma.S = Gamma.S,
+    # Tau.S = Tau.S,
+    
+    XiT.S = XiT.S,
+    SigmaT.S = SigmaT.S,
+    EpsilonT.S = EpsilonT.S,
     
     XiI.R = XiI.R,
     XiT.R = XiT.R,
     XiT.B = XiT.B,
     
-    EpsilonI.R = EpsilonI.R,
-    EpsilonT.R = EpsilonT.R,
-    EpsilonT.B = EpsilonT.B,
-    
     SigmaI.R = SigmaI.R,
     SigmaT.R = SigmaT.R,
     SigmaT.B = SigmaT.B,
+    
+    EpsilonI.R = EpsilonI.R,
+    EpsilonT.R = EpsilonT.R,
+    EpsilonT.B = EpsilonT.B,
     
     Mu.B = Mu.B,
     Mu.R = Mu.R,
@@ -390,8 +410,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     
     O = O,
     Mu.O = Mu.O,
-    EpsilonT.O = EpsilonT.O,
     SigmaT.O = SigmaT.O,
+    EpsilonT.O = EpsilonT.O,
     
     nYF = nYF,
     nYFa = nYFa,
