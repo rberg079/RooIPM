@@ -240,8 +240,8 @@ library(corrplot)
 library(ggplot2)
 library(scales)
 
-# load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds')
+# # load results
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs

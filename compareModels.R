@@ -21,22 +21,20 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # # for testing purposes
-  # nYear = 17
-  # minYear = 2008
-  # maxYear = minYear + nYear - 1
-  # nAgeC.S = 5
-  # plotAges = c(2, 6, 10, 14)
-  # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_WidePriors.rds",
-  #               "results/IPM_CJSen_RSen_AB_NoSigI.rds",
-  #               "results/IPM_CJSen_RSen_AB_OnlyVeg.rds")
-  # modelNames = c("IPM_RSbug_WidePriorBetas",
-  #                "IPM_RSbug_NoIndividualRE",
-  #                "IPM_RSbug_Only1EnvCov(V)")
-  # plotFolder = c("figures/RSdebugging")
-  # returnSumData = TRUE
-  # nModels <- length(modelNames)
+  # for testing purposes
+  nYear = 17
+  minYear = 2008
+  maxYear = minYear + nYear - 1
+  nAgeC.S = 6
+  plotAges = c(2, 6, 10, 14)
+  plotYears = c(2, 6, 10, 14)
+  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_simpleEnv.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds")
+  modelNames = c("IPM_simpleEnv",
+                 "IPM_simpleSurv")
+  plotFolder = c("figures/ConvergenceBug")
+  returnSumData = TRUE
+  nModels <- length(modelNames)
 
   ## Set up --------------------------------------------------------------------
 
@@ -107,18 +105,18 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('ab|Bt|EpsilonT|Gamma|nSA|nTOT|nYF|propF|sYF|sSA', Parameter) ~ Idx1,
-                               grepl('nAD|Ra|sPY|S|sAD', Parameter) ~ Idx2), # Ra to be removed!
-           AgeIdx  = case_when(grepl('ab|BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nSA|nTOT|nYF|propF|SigmaT|sSA|sYF', Parameter) ~ NA_real_,
-                               grepl('BetaA.S|BetaD.S|BetaV.S|Mu.R|nAD|Ra|sPY|S|sAD|Sigma.S|Xi.S', Parameter) ~ Idx1,  # Ra to be removed!
-                               grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
+                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA', Parameter) ~ Idx1,
+                               grepl('nAD|sPY|S|sAD', Parameter) ~ Idx2),
+           AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
+                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|sPY|sAD', Parameter) ~ Idx1),
+                               # grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.R|nAD|Ra|sPY|sAD', Parameter) ~ AgeIdx, # Ra to be removed!
+           Age  = case_when(grepl('Mu.R|nAD|sPY|sAD', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
            ParamName = word(Parameter, 1, sep = "\\["),
-           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'sPY', 'Ra') & AgeIdx %in% plotAges,
+           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
   sum.dat <- sum.dat %>%
@@ -129,16 +127,24 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJScovEF = c(paste0('BetaA.S[', 1:nAgeC.S, ']'),
-                 paste0('BetaD.S[', 1:nAgeC.S, ']'),
-                 paste0('BetaV.S[', 1:nAgeC.S, ']')),
+    CJScovEFage = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
+                    paste0('BetaD.S[', 1:nAgeC.S, ']'),
+                    paste0('BetaV.S[', 1:nAgeC.S, ']'),
+                    paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
-    CJSranEF = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
+    CJScovEF = c('BetaD.S', 'BetaV.S', 'BetaW.S'),
+    
+    CJSranEFage = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
+    
+    CJSranEF = c(paste0('EpsilonT.S[', plotYears, ']'),
+                 'SigmaT.S'),
     
     CJSestO = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
-    CJSestS = c(expand.grid(a = 1:nAgeC.S, t = plotYears) %>% 
-                  mutate(param = paste0('S[', a, ', ', t, ']')) %>% 
+    RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
+    
+    RSestrA = c(expand.grid(a = plotAges, t = plotYears) %>%
+                  mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
                   pull(param)),
     
     RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
@@ -147,34 +153,19 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                 paste0('EpsilonT.B[', plotYears, ']'),
                 'SigmaT.R', 'SigmaT.B'),
     
-    RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
-    
-    RSestRa = c(expand.grid(a = plotAges, t = plotYears) %>% # Ra to be removed!
-                  mutate(param = paste0('Ra[', a, ', ', t, ']')) %>%
-                  pull(param)),
-    
-    RSestrA = c(expand.grid(a = plotAges, t = plotYears) %>%
-                  mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
-                  pull(param)),
-    
     POPestNA = c(expand.grid(a = plotAges, t = plotYears) %>%
                    mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
                    pull(param)),
     
     POPestNT = c(paste0('nYF[', plotYears, ']'),
                  paste0('nSA[', plotYears, ']'),
-                 paste0('nTOT[', plotYears, ']')),
-    
-    ABestAB = c(paste0('ab[', 1:nYear, ']')))
+                 paste0('nTOT[', plotYears, ']')))
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
     ParamNames = c('Bt',
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('sPY[', a, ']')) %>%
-                     pull(param),
-                   expand.grid(a = plotAges) %>% 
-                     mutate(param = paste0('Ra[', a, ']')) %>%
                      pull(param),
                    'sYF',
                    'sSA', 
@@ -183,9 +174,6 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                      pull(param)),
     
     ParamLabels = c('Breeding rate',
-                    expand.grid(a = plotAges) %>% 
-                      mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
-                      pull(name),
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
                       pull(name),
@@ -201,16 +189,14 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('nAD[', a, ']')) %>% 
                      pull(param),
-                   'nTOT',
-                   'ab'),
+                   'nTOT'),
     
     ParamLabels = c('# of young-at-foot',
                     '# of subadults',
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('# of adults(', a, ' yrs)')) %>% 
                       pull(name),
-                    'Total # of females',
-                    'Abundance'))
+                    'Total # of females'))
   
   # set plotting colors
   plot.cols <- paletteer_c("grDevices::Temps", nModels)
