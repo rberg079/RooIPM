@@ -220,6 +220,10 @@ writeCode <- function(){
         obs[i, t] ~ dbern(Mu.Op[i, t])
         Mu.Op[i, t] <- O[t] * state[i, t]
       }
+      
+      # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
+      # Try to implement nimbleEcology::dCJS_vv()
+      # Documentation here: https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html
     }
     
     #### Constraints ####
