@@ -30,6 +30,12 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          obs.data  = "data/PromObs_2008-2023.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
+# CRN: Double-check this wrangling pipeline. 
+# It looks like the reason why sPY[1:5] get stuck at 1 is because the values for
+# "veg" for the early years are VERY much higher than for all subsequant years. 
+# Is something wrong with the data wrangling? Check what happens if you treat all
+# of the first 5 years as NA (i.e. get the model to estimate them).
+
 source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
