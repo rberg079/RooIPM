@@ -346,6 +346,13 @@ writeCode <- function(){
           EpsilonT.R[year.R[x]]
       }
     }
+    
+    # CRN: Posteriors and traceplots indicate that this model is too complex. 
+    # We may have to figure out which aspect is pushing it too much. 
+    # Try to run some alternatives: 
+    # a) No individual random effect
+    # b) No density effect
+    # c) No covariate effects at all
 
     # age-specific RS function
     # use parameters estimated from individual data above
