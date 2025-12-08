@@ -6,6 +6,8 @@
 # set toggles
 testRun <- FALSE
 parallelRun <- TRUE
+envEffectsS <- TRUE
+ageClasses <- 6
 
 # load packages
 library(tidyverse)
@@ -16,6 +18,7 @@ library(boot)
 library(coda)
 library(nimble)
 library(parallel)
+library(nimbleEcology)
 
 # load data
 source('wrangleData_en.R')
@@ -29,35 +32,48 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
 source('wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-                         known.age = TRUE)
+                         ageClasses = ageClasses, known.age = TRUE)
 
-# to play around with age classes!
-# ageC <- c(1,2,2,3,3,3,3,4,4,4, rep(5,30)) # default
-# ageC <- c(seq(from = 1, to = 20, by = 1), rep(20, times = 20)); ageC
-ageC <- c(1,2,3,4,5,6,7,8,9,10,11,12, rep(13,28)); ageC
+# center & scale data
+sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
+
+# center & scale density
+dens  <- as.numeric(sc(enData$dens))
+densE <- as.numeric(enData$densE/sd(enData$dens, na.rm = T))
 
 # create Nimble lists
-myData  <- list(obs   = svData$obs,
-                state = svData$state,
-                age.S = svData$age.S,
-                ageC  = ageC,
+myData  <- list(obs    = svData$obs,
+                state  = svData$state,
+                age.S  = svData$age.S,
+                ageC.S = svData$ageC.S,
                 
-                dens  = enData$dens[1:16],
-                densE = enData$densE[1:16],
+                dens  = dens[1:16],
+                densE = densE[1:16],
                 veg   = enData$veg[1:16],
                 vegE  = enData$vegE[1:16],
                 win   = enData$win[1:16])
 
-myConst <- list(nID.S = svData$nID.S,
-                nYear = svData$nYear,
-                nAgeC = max(ageC),
+myConst <- list(nID.S   = svData$nID,
+                nYear   = svData$nYear,
+                nAgeC.S = svData$nAgeC.S,
+                
+                first = svData$first,
+                last  = svData$last,
+                W     = diag(svData$nAgeC.S),
+                DF    = svData$nAgeC.S,
+                
+                noDens  = enData$noDens,
+                noVeg   = enData$noVeg,
+                noWin   = enData$noWin,
                 nNoDens = enData$nNoDens,
                 nNoVeg  = enData$nNoVeg,
                 nNoWin  = enData$nNoWin,
-                first = svData$first,
-                last  = svData$last,
-                W     = diag(max(ageC)),
-                DF    = max(ageC))
+                
+                envEffectsS = envEffectsS,
+                ageClasses  = ageClasses)
+
+# list2env(myData, envir = .GlobalEnv)
+# list2env(myConst, envir = .GlobalEnv)
 
 # # checks
 # sapply(1:nrow(myData$state), function (i) myData$state[i, myConst$first[i]]) %>% table(useNA = 'a') # should all be 1
@@ -75,7 +91,7 @@ myCode = nimbleCode({
     for(t in (first[i] + 1):last[i]){
       # state process
       state[i, t] ~ dbern(Mu.Sp[i, t])
-      Mu.Sp[i, t] <- S[ageC[age.S[i, t-1]], t-1] * state[i, t-1]
+      Mu.Sp[i, t] <- S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1]
       
       # observation process
       obs[i, t] ~ dbern(Mu.Op[i, t])
@@ -83,38 +99,35 @@ myCode = nimbleCode({
     }
   }
   
+  # #S_ind[i, 1:(first[i]-1)] <- 0
+  # for(t in first[i]:(last[i]-1)){
+  #   S_ind[i, t] <- S[ageC.S[age.S[i, t]], t] 
+  # }
+  # #S_ind[i, (last[i]-1):(nYear-1)] <- 0
+  # 
+  # obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
+  #                                    probCapture = O[first[i]:last[i]], 
+  #                                    len = last[i] - first[i] + 1)
+  # #TODO: Find out how to make one-dimensional matrix into vector for dCJS_vv
+  
   #### Constraints ####
   # survival function
-  for(a in 1:nAgeC){                               
+  for(a in 1:nAgeC.S){                               
     for(t in 1:(nYear-1)){
-      logit(S[a, t]) <- BetaA.S[a] +
-        # BetaD.S[a] * dens.hat[t] +
-        # BetaV.S[a] * veg.hat[t] +
-        # BetaW.S[a] * win.hat[t] +
-        # BetaDV.S[a] * (dens.hat[t] * veg.hat[t]) +
-        # BetaVR.S[a] * (veg.hat[t] / dens.hat[t]) +
-        Gamma.S[t, a]
+      if(envEffectsS){
+        logit(S[a, t]) <- logit(Mu.S[a]) +
+          BetaD.S * dens.true[t] +
+          BetaV.S * veg.true[t] +
+          BetaW.S * win.true[t] +
+          # Gamma.S[t, a]
+          EpsilonT.S[t]
+      }else{
+        logit(S[a, t]) <- logit(Mu.S[a]) +
+          # Gamma.S[t, a]
+          EpsilonT.S[t]
+      }
     }
   }
-  
-  # # missing environment
-  # for(t in 1:(nYear-1)){
-  #   # dens.hat[t] ~ dnorm(dens[t], sd = densE[t])
-  #   veg.hat[t]  ~ dnorm(veg[t], sd = vegE[t])
-  #   # win.hat[t]  ~ dnorm(win[t], sd = 1)
-  # }
-  
-  # for(m in 1:nNoDens){
-  #   dens[m] ~ dnorm(0, sd = 2)
-  # }
-  
-  # for(m in 1:nNoVeg){
-  #   veg[m] ~ dnorm(0, sd = 2)
-  # }
-
-  # for(m in 1:nNoWin){
-  #   win[m] ~ dnorm(0, sd = 2)
-  # }
   
   # observation function
   for(t in 1:nYear){
@@ -122,33 +135,73 @@ myCode = nimbleCode({
     logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
   }
   
-  #### Priors ####
-  # for fixed effects
-  for(a in 1:nAgeC){
-    BetaA.S[a] ~ dunif(-5, 5)
-    # BetaD.S[a] ~ dunif(-5, 5)
-    # BetaV.S[a] ~ dunif(-5, 5)
-    # BetaW.S[a] ~ dunif(-5, 5)
-    # BetaDV.S[a] ~ dunif(-5, 5)
-  }
-  
-  # for random effects
-  # variance-covariance matrix
-  for(i in 1:nAgeC){
-    zero[i] <- 0
-    Xi.S[i] ~ dunif(0, 2)
-  }
-  
-  for(t in 1:(nYear-1)){
-    Epsilon.S[t, 1:nAgeC] ~ dmnorm(zero[1:nAgeC], Tau.S[1:nAgeC, 1:nAgeC])
-    for(i in 1:nAgeC){
-      Gamma.S[t, i] <- Xi.S[i] * Epsilon.S[t, i]
+  # missing environment
+  if(envEffectsS){
+    for(t in 1:(nYear-1)){
+      dens[t] <- dens.true[t]
+      veg[t] <- veg.true[t]
+      win[t] <- win.true[t]
+    }
+    
+    for(m in 1:nNoDens){
+      dens.true[noDens[m]] ~ dnorm(0, sd = 1)
+    }
+    
+    for(m in 1:nNoVeg){
+      veg.true[noVeg[m]] ~ dnorm(0, sd = 1)
+    }
+    
+    for(m in 1:nNoWin){
+      win.true[noWin[m]] ~ dnorm(0, sd = 1)
     }
   }
   
-  # precision matrix
-  Tau.S[1:nAgeC, 1:nAgeC] ~ dwish(W[1:nAgeC, 1:nAgeC], DF)
-  Sigma.S[1:nAgeC, 1:nAgeC] <- inverse(Tau.S[1:nAgeC, 1:nAgeC])
+  #### Priors ####
+  # for intercepts
+  for(a in 1:nAgeC.S){
+    Mu.S[a] ~ dunif(0.01, 0.99)
+  }
+  
+  # # for age-dependent fixed effects
+  # if(envEffectsS){
+  #   for(a in 1:nAgeC.S){
+  #     BetaD.S[a] ~ dunif(-5, 5)
+  #     BetaV.S[a] ~ dunif(-5, 5)
+  #     BetaW.S[a] ~ dunif(-5, 5)
+  #   }
+  # }
+  
+  # for age-independent fixed effects
+  if(envEffectsS){
+    BetaD.S ~ dunif(-5, 5)
+    BetaV.S ~ dunif(-5, 5)
+    BetaW.S ~ dunif(-5, 5)
+  }
+  
+  # # for age-dependent random effects
+  # # variance-covariance matrix
+  # for(a in 1:nAgeC.S){
+  #   zero[a] <- 0
+  #   Xi.S[a] ~ dunif(0, 2)
+  # }
+  # 
+  # for(t in 1:(nYear-1)){
+  #   Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
+  #   for(a in 1:nAgeC.S){
+  #     Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
+  #   }
+  # }
+  # 
+  # # precision matrix
+  # Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
+  # Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
+  
+  # for age-independent random effects
+  for(t in 1:(nYear-1)){
+    XiT.S[t] ~ dnorm(0, sd = 1) # latent standard normal
+    EpsilonT.S[t] <- SigmaT.S * XiT.S[t] # actual random effect
+  }
+  SigmaT.S ~ dunif(0, 10) # scale of the random effect
   
   # observation
   Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -163,39 +216,54 @@ nchains   <- 4
 seedMod   <- 1:nchains
 seedInits <- 1
 
-Tau.S = diag(myConst$nAgeC) + rnorm(myConst$nAgeC^2, 0, 0.1)
-Tau.S = inverse((Tau.S + t(Tau.S))/2)
+# Tau.S = diag(myConst$nAgeC.S) + rnorm(myConst$nAgeC.S^2, 0, 0.1)
+# Tau.S = (Tau.S + t(Tau.S))/2
+
+# # alternative init Tau.S that guarantees positive-definite values
+# # (apparently potentially problematic the way I had it above)
+# A <- matrix(rnorm(nAgeC.S^2, 0, 0.1), nAgeC.S, nAgeC.S)
+# Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
+
+XiT.S = rnorm(myConst$nYear-1, 0, 1)
+SigmaT.S = runif(1, .5, 2)
+EpsilonT.S = XiT.S * SigmaT.S
 
 set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
 myInits[[c]] <- list(
-  dens = ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens),
-  veg = ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg),
-  dens.hat = ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens),
-  veg.hat = ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg),
+  dens = round(ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens), 4),
+  veg  = round(ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg), 4),
+  win  = round(ifelse(is.na(myData$win), rnorm(myConst$nYear-1, 0, .1), myData$win), 4),
   
-  BetaA.S = rnorm(myConst$nAgeC, 0, 1),
+  Mu.S = rep(runif(myConst$nAgeC.S, 0.1, 0.9)),
   
   O = runif(myConst$nYear, 0.1, 0.9),
-  
   Mu.O = runif(1, 0.1, 0.9),
   EpsilonT.O = rnorm(myConst$nYear, 0, 0.2),
   SigmaT.O = runif(1, 0.01, 2),
   
-  Xi.S = rnorm(myConst$nAgeC, 1, 0.1),
-  Epsilon.S = matrix(rnorm((myConst$nYear-1) * myConst$nAgeC, 0, 0.1),
-                     nrow = myConst$nYear-1,
-                     ncol = myConst$nAgeC),
+  # # for age-dependent random effect
+  # Xi.S = rnorm(myConst$nAgeC.S, 1, 0.1),
+  # Epsilon.S = matrix(rnorm((myConst$nYear-1) * myConst$nAgeC.S, 0, 0.1),
+  #                    nrow = myConst$nYear-1, ncol = myConst$nAgeC.S),
+  # Tau.S = Tau.S
   
-  Tau.S = Tau.S
+  # for age-independent random effect
+  XiT.S = XiT.S,
+  SigmaT.S = SigmaT.S,
+  EpsilonT.S = EpsilonT.S
 )}
 
 # select parameters to monitors
-params <- c('S', 'BetaA.S',
-            # 'BetaV.S', # 'BetaD.S', 'BetaW.S',
-            'Mu.O', 'EpsilonT.O', 'SigmaT.O',
-            'Gamma.S', 'Xi.S', 'Sigma.S')
+params <- c('S', 'Mu.S',
+            # 'Gamma.S', 'Sigma.S',            # random effects (correlated)
+            'EpsilonT.S', 'SigmaT.S',          # random effects (uncorrelated)
+            'Mu.O', 'EpsilonT.O', 'SigmaT.O'
+            # 'dens.true', 'veg.true', 'win.true'
+            )
+
+if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
 
 # select MCMC settings
 if(testRun){
@@ -279,7 +347,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/CJS_AgeC12_NoEnv.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/CJS_dCJSvv.rds', compress = 'xz')
 
 
 ## Checks ----------------------------------------------------------------------
@@ -319,15 +387,15 @@ corrplot(cor(out.mcmc[, grepl('Beta', colnames(out.mcmc[[1]]))] %>%
 
 # check random effects among demographic rates
 # check variance-correlation matrix, with Sigma.S on diagonal
-varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
+varCorrMatrix <- array(NA, dim = c(myConst$nAgeC.S, myConst$nAgeC.S, nrow(out.dat)))
 
-for(i in 1:myConst$nAgeC){
+for(i in 1:myConst$nAgeC.S){
   varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.S[', i,']')]*
     sqrt(out.dat[, paste0('Sigma.S[', i,', ', i,']')])
 }
 
-for(j in 1:(myConst$nAgeC-1)){
-  for(i in (j+1):myConst$nAgeC){
+for(j in 1:(myConst$nAgeC.S-1)){
+  for(i in (j+1):myConst$nAgeC.S){
     varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.S[', i, ', ', j, ']')])/
       sqrt(out.dat[, paste0('Sigma.S[', j, ', ', j, ']')]*
              out.dat[, paste0('Sigma.S[', i, ', ', i, ']')])
@@ -343,9 +411,9 @@ df <- expand.grid(age = 1:20, year = 1:16)
 S.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
 
 for(i in 1:nrow(df)){
-  S.pred[i, ] <- out.dat[, paste0('BetaA.S[', myData$ageC[df$age[i]], ']')] +
-    out.dat[, paste0('Gamma.S[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
-  df$ageC[i] <- myData$ageC[df$age[i]]
+  S.pred[i, ] <- out.dat[, paste0('BetaA.S[', myData$ageC.S[df$age[i]], ']')] +
+    out.dat[, paste0('Gamma.S[', df$year[i], ', ', myData$ageC.S[df$age[i]], ']')]
+  df$ageC.S[i] <- myData$ageC.S[df$age[i]]
 }
 
 df$S = inv.logit(apply(S.pred, 1, mean))
@@ -354,10 +422,10 @@ df$sUCI = inv.logit(apply(S.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
-  mutate(ageC = as.factor(ageC)) %>% 
+  mutate(ageC.S = as.factor(ageC.S)) %>% 
   ggplot(aes(x = year, y = S)) +
-  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.1) +
-  geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
+  geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC.S), alpha = 0.1) +
+  geom_line(aes(colour = ageC.S), linewidth = 1, show.legend = F) +
   labs(x = "Year", y = "Survival", fill = "Age class") +
   # scale_x_continuous(breaks = pretty_breaks()) +
   scale_y_continuous(breaks = pretty_breaks()) +
