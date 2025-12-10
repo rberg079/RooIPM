@@ -20,6 +20,8 @@ library(nimble)
 library(parallel)
 library(nimbleEcology)
 
+# registerDistributions(nimbleEcology)
+
 # load data
 source('wrangleData_en.R')
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
@@ -43,7 +45,7 @@ densE <- as.numeric(enData$densE/sd(enData$dens, na.rm = T))
 
 # create Nimble lists
 myData  <- list(obs    = svData$obs,
-                state  = svData$state,
+                # state  = svData$state,
                 age.S  = svData$age.S,
                 ageC.S = svData$ageC.S,
                 
@@ -53,7 +55,7 @@ myData  <- list(obs    = svData$obs,
                 vegE  = enData$vegE,
                 win   = enData$win)
 
-myConst <- list(nID.S   = svData$nID,
+myConst <- list(nID.S   = svData$nID.S,
                 nYear   = svData$nYear,
                 nAgeC.S = svData$nAgeC.S,
                 
@@ -70,7 +72,9 @@ myConst <- list(nID.S   = svData$nID,
                 nNoWin  = enData$nNoWin,
                 
                 envEffectsS = envEffectsS,
-                ageClasses  = ageClasses)
+                ageClasses  = ageClasses,
+                Si = rep(0, svData$nYear-1) # may not be necessary?
+                )
 
 # list2env(myData, envir = .GlobalEnv)
 # list2env(myConst, envir = .GlobalEnv)
@@ -86,29 +90,48 @@ myConst <- list(nID.S   = svData$nID,
 
 myCode = nimbleCode({
   
-  #### Likelihood ####
-  for(i in 1:nID.S){
-    for(t in (first[i] + 1):last[i]){
-      # state process
-      state[i, t] ~ dbern(Mu.Sp[i, t])
-      Mu.Sp[i, t] <- S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1]
-      
-      # observation process
-      obs[i, t] ~ dbern(Mu.Op[i, t])
-      Mu.Op[i, t] <- O[t] * state[i, t]
-    }
-  }
-  
-  # #S_ind[i, 1:(first[i]-1)] <- 0
-  # for(t in first[i]:(last[i]-1)){
-  #   S_ind[i, t] <- S[ageC.S[age.S[i, t]], t] 
+  # #### Likelihood ####
+  # for(i in 1:nID.S){
+  #   for(t in (first[i] + 1):last[i]){
+  #     # state process
+  #     state[i, t] ~ dbern(Mu.Sp[i, t])
+  #     Mu.Sp[i, t] <- S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1]
+  #     
+  #     # observation process
+  #     obs[i, t] ~ dbern(Mu.Op[i, t])
+  #     Mu.Op[i, t] <- O[t] * state[i, t]
+  #   }
   # }
-  # #S_ind[i, (last[i]-1):(nYear-1)] <- 0
-  # 
-  # obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
-  #                                    probCapture = O[first[i]:last[i]], 
-  #                                    len = last[i] - first[i] + 1)
-  # #TODO: Find out how to make one-dimensional matrix into vector for dCJS_vv
+  
+  # Using nimbleEcology
+  for(i in 1:nID.S){
+    
+    # # ATTEMPT 1
+    # Has everyone on the full timescale of 1:nYear
+    # Does not work because most first[i] is often not at t = 1
+    # Nimble therefore does not accept this because obs is often not 1 at t = 1
+    
+    # for(t in 1:(nYear-1)){
+    #   Si[t] <- S[ageC.S[age.S[i, t]], t] * (t >= first[i] & t <= (last[i]-1))
+    # }
+    # 
+    # obs[i, 1:nYear] ~ dCJS_vv(probSurvive = Si[1:(nYear-1)],
+    #                           probCapture = O[1:nYear],
+    #                           len = nYear)
+    
+    # # ATTEMPT 2
+    # Has every roo on its own timescale of first:last
+    # Does not work because probSurvive requires a true 1-D vector
+    # & simply refuses to see Si[first[i]:(last[i]-1)] as a vector
+    
+    for(t in first[i]:(last[i]-1)){
+      Si[t] <- S[ageC.S[age.S[i, t]], t]
+    }
+    
+    obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = Si[first[i]:(last[i]-1)],
+                                       probCapture = O[first[i]:last[i]],
+                                       len = last[i] - first[i] + 1)
+  }
   
   #### Constraints ####
   # survival function
@@ -137,17 +160,9 @@ myCode = nimbleCode({
   
   # missing environment
   if(envEffectsS){
-    for(m in 1:nNoDens){
-      dens[noDens[m]] ~ dnorm(0, sd = 1)
-    }
-    
-    for(m in 1:nNoVeg){
-      veg[noVeg[m]] ~ dnorm(0, sd = 1)
-    }
-    
-    for(m in 1:nNoWin){
-      win[noWin[m]] ~ dnorm(0, sd = 1)
-    }
+    for(m in 1:nNoDens) dens[noDens[m]] ~ dnorm(0, sd = 1)
+    for(m in 1:nNoVeg) veg[noVeg[m]] ~ dnorm(0, sd = 1)
+    for(m in 1:nNoWin) win[noWin[m]] ~ dnorm(0, sd = 1)
   }
   
   #### Priors ####
@@ -197,7 +212,7 @@ myCode = nimbleCode({
   }
   SigmaT.S ~ dunif(0, 10) # scale of the random effect
   
-  # observation
+  # for observation
   Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
   SigmaT.O ~ dunif(0.01, 10) # or dunif(0, 10)
   
@@ -279,10 +294,12 @@ if(parallelRun){
                        niter, nburnin, nthin, seed){
     
     library(nimble)
+    library(nimbleEcology)
+    
     set.seed(seed)
     inits <- myInits[[chainID]]
     
-    model <- nimbleModel(code = myCode, data = myData, constants = myConst, inits = inits)
+    model <- nimbleModel(code = code, data = data, constants = const, inits = inits)
     cModel <- compileNimble(model)
     conf <- configureMCMC(model, monitors = params)
     mcmc <- buildMCMC(conf)
