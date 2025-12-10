@@ -73,7 +73,8 @@ myConst <- list(nID.S   = svData$nID.S,
                 
                 envEffectsS = envEffectsS,
                 ageClasses  = ageClasses,
-                Si = rep(0, svData$nYear-1) # may not be necessary?
+                # Si = rep(0, svData$nYear-1) # may not be necessary?
+                Si <- matrix(0, nrow = svData$nID.S, ncol = svData$nYear - 1)
                 )
 
 # list2env(myData, envir = .GlobalEnv)
@@ -84,6 +85,58 @@ myConst <- list(nID.S   = svData$nID.S,
 # sapply(1:nrow(myData$state), function (i) myData$state[i, myConst$last[i]]) %>% table(useNA = 'a')  # should be mostly 0s & NAs
 # sapply(1:nrow(myData$state), function (i) myData$age[i, myConst$first[i]]) %>% table(useNA = 'a')   # should all be >= 1
 # table(myConst$first >= myConst$last, useNA = 'a')                                                   # should all be F
+
+dCJS_row <- nimbleFunction(
+  run = function(x = double(1), phiMat = double(2), p = double(1), len = integer(0), log = integer(0)){
+    returnType(double(0))
+    
+    # coerce phiMat (possibly a 1D matrix) to a vector
+    phi <- c(phiMat)
+    
+    # defensive: if len <= 0, return 0 log-likelihood
+    if(len <= 0) return(0.0)
+    
+    # forward algorithm for CJS conditional on first capture at ch[1]
+    # compute joint probability of the observed history up to last occasion
+    # alpha_alive := prob(alive & history up to current occasion)
+    # alpha_dead := prob(dead & history up to current occasion)
+    alpha_alive <- 1.0 # condition on first capture being alive
+    alpha_dead  <- 0.0
+    
+    for(j in 2:len){
+      surv <- phi[j-1] # survival probability between j-1 & j
+      pj   <- p[j]     # detection prob at occasion j
+      
+      # if observed at j:
+      if(ch[j] == 1){
+        alpha_alive_new <- alpha_alive * surv * pj
+      }else{
+        # not observed at j:
+        alpha_alive_new <- alpha_alive * surv * (1.0 - pj)
+      }
+      # those that were alive & died between j-1 & j become dead & contribute to alpha_dead
+      alpha_dead_new <- alpha_dead + alpha_alive * (1.0 - surv)
+      
+      alpha_alive <- alpha_alive_new
+      alpha_dead <- alpha_dead_new
+    }
+    
+    prob <- alpha_alive + alpha_dead
+    if(prob <= 0.0){
+      return(-1e12)
+    }
+    return(log(prob))
+  }
+)
+
+# Register this nimbleFunction as a distribution named 'dCJS_row'
+registerDistributions(list(
+  dCJS_row = list(
+    BUGSdist = "dCJS_row(x, phiMat, p, len)",
+    Rdist    = "dCJS_row(x, phiMat, p, len)",
+    types    = c("x = double(1)", "phiMat = double(2)", "p = double(1)", "len = integer(0)")
+  )
+))
 
 
 ## Model -----------------------------------------------------------------------
@@ -124,13 +177,26 @@ myCode = nimbleCode({
     # Does not work because probSurvive requires a true 1-D vector
     # & simply refuses to see Si[first[i]:(last[i]-1)] as a vector
     
+    # for(t in first[i]:(last[i]-1)){
+    #   Si[t] <- S[ageC.S[age.S[i, t]], t]
+    # }
+    # 
+    # obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = Si[first[i]:(last[i]-1)],
+    #                                    probCapture = O[first[i]:last[i]],
+    #                                    len = last[i] - first[i] + 1)
+    
+    # ATTEMPT 3
+    # Customized nimbleFunction
+    # A Hail Mary, entirely chatGPT's concoction
+    
     for(t in first[i]:(last[i]-1)){
-      Si[t] <- S[ageC.S[age.S[i, t]], t]
+      Si[i, t] <- S[ageC.S[age.S[i, t]], t]
     }
     
-    obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = Si[first[i]:(last[i]-1)],
-                                       probCapture = O[first[i]:last[i]],
-                                       len = last[i] - first[i] + 1)
+    obs[i, first[i]:last[i]] ~ dCJS_row(x     = obs[i, first[i]:last[i]],
+                                        phiMat = Si[i, first[i]:(last[i]-1)],   # this is a 1xK matrix slice
+                                        p      = O[first[i]:last[i]],
+                                        len    = last[i] - first[i] + 1)
   }
   
   #### Constraints ####
