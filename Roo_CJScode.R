@@ -4,7 +4,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 ageClasses <- 6
@@ -47,11 +47,11 @@ myData  <- list(obs    = svData$obs,
                 age.S  = svData$age.S,
                 ageC.S = svData$ageC.S,
                 
-                dens  = dens[1:16],
-                densE = densE[1:16],
-                veg   = enData$veg[1:16],
-                vegE  = enData$vegE[1:16],
-                win   = enData$win[1:16])
+                dens  = dens,
+                densE = densE,
+                veg   = enData$veg,
+                vegE  = enData$vegE,
+                win   = enData$win)
 
 myConst <- list(nID.S   = svData$nID,
                 nYear   = svData$nYear,
@@ -116,9 +116,9 @@ myCode = nimbleCode({
     for(t in 1:(nYear-1)){
       if(envEffectsS){
         logit(S[a, t]) <- logit(Mu.S[a]) +
-          BetaD.S * dens.true[t] +
-          BetaV.S * veg.true[t] +
-          BetaW.S * win.true[t] +
+          BetaD.S * dens[t] +
+          BetaV.S * veg[t] +
+          BetaW.S * win[t] +
           # Gamma.S[t, a]
           EpsilonT.S[t]
       }else{
@@ -137,22 +137,16 @@ myCode = nimbleCode({
   
   # missing environment
   if(envEffectsS){
-    for(t in 1:(nYear-1)){
-      dens[t] <- dens.true[t]
-      veg[t] <- veg.true[t]
-      win[t] <- win.true[t]
-    }
-    
     for(m in 1:nNoDens){
-      dens.true[noDens[m]] ~ dnorm(0, sd = 1)
+      dens[noDens[m]] ~ dnorm(0, sd = 1)
     }
     
     for(m in 1:nNoVeg){
-      veg.true[noVeg[m]] ~ dnorm(0, sd = 1)
+      veg[noVeg[m]] ~ dnorm(0, sd = 1)
     }
     
     for(m in 1:nNoWin){
-      win.true[noWin[m]] ~ dnorm(0, sd = 1)
+      win[noWin[m]] ~ dnorm(0, sd = 1)
     }
   }
   
@@ -232,9 +226,9 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
 myInits[[c]] <- list(
-  dens = round(ifelse(is.na(myData$dens), rnorm(myConst$nYear-1, 0, .1), myData$dens), 4),
-  veg  = round(ifelse(is.na(myData$veg), rnorm(myConst$nYear-1, 0, .1), myData$veg), 4),
-  win  = round(ifelse(is.na(myData$win), rnorm(myConst$nYear-1, 0, .1), myData$win), 4),
+  dens = round(ifelse(is.na(myData$dens), rnorm(myConst$nYear, 0, .1), myData$dens), 4),
+  veg  = round(ifelse(is.na(myData$veg), rnorm(myConst$nYear, 0, .1), myData$veg), 4),
+  win  = round(ifelse(is.na(myData$win), rnorm(myConst$nYear, 0, .1), myData$win), 4),
   
   Mu.S = rep(runif(myConst$nAgeC.S, 0.1, 0.9)),
   
