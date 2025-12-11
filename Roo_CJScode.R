@@ -20,8 +20,6 @@ library(nimble)
 library(parallel)
 library(nimbleEcology)
 
-# registerDistributions(nimbleEcology)
-
 # load data
 source('wrangleData_en.R')
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
@@ -72,9 +70,8 @@ myConst <- list(nID.S   = svData$nID.S,
                 nNoWin  = enData$nNoWin,
                 
                 envEffectsS = envEffectsS,
-                ageClasses  = ageClasses,
-                # Si = rep(0, svData$nYear-1) # may not be necessary?
-                Si <- matrix(0, nrow = svData$nID.S, ncol = svData$nYear - 1)
+                ageClasses  = ageClasses
+                # Si = rep(0, svData$nYear-1)
                 )
 
 # list2env(myData, envir = .GlobalEnv)
@@ -86,36 +83,41 @@ myConst <- list(nID.S   = svData$nID.S,
 # sapply(1:nrow(myData$state), function (i) myData$age[i, myConst$first[i]]) %>% table(useNA = 'a')   # should all be >= 1
 # table(myConst$first >= myConst$last, useNA = 'a')                                                   # should all be F
 
-dCJS_row <- nimbleFunction(
-  run = function(x = double(1), phiMat = double(2), p = double(1), len = integer(0), log = integer(0)){
+# nimbleFunction to replace dCJS_vv
+dCJS_fun <- nimbleFunction(
+  run = function(x = double(2),
+                 probSurvive = double(2),
+                 probCapture = double(2),
+                 len = integer(0),
+                 log = logical(0)){
+    
     returnType(double(0))
     
-    # coerce phiMat (possibly a 1D matrix) to a vector
-    phi <- c(phiMat)
+    # coerce matrix slices into true vectors
+    vecX <- c(x)
+    vecS <- c(probSurvive)
+    vecC <- c(probCapture)
     
-    # defensive: if len <= 0, return 0 log-likelihood
     if(len <= 0) return(0.0)
     
-    # forward algorithm for CJS conditional on first capture at ch[1]
-    # compute joint probability of the observed history up to last occasion
-    # alpha_alive := prob(alive & history up to current occasion)
-    # alpha_dead := prob(dead & history up to current occasion)
-    alpha_alive <- 1.0 # condition on first capture being alive
+    # forward algorithm for CJS conditional on first capture at x[1]
+    # compute joint prob of the observed history up to last occasion
+    # alpha_alive: prob(alive & history up to current occasion)
+    # alpha_dead: prob(dead & history up to current occasion)
+    alpha_alive <- 1.0  # alive at first capture
     alpha_dead  <- 0.0
     
     for(j in 2:len){
-      surv <- phi[j-1] # survival probability between j-1 & j
-      pj   <- p[j]     # detection prob at occasion j
+      surv <- vecS[j-1] # survival prob between j-1 & j
+      capt <- vecC[j]   # detection prob at occasion j
       
-      # if observed at j:
-      if(ch[j] == 1){
-        alpha_alive_new <- alpha_alive * surv * pj
+      
+      if(vecX[j] == 1){
+        alpha_alive_new <- alpha_alive * surv * capt            # if observed at j
       }else{
-        # not observed at j:
-        alpha_alive_new <- alpha_alive * surv * (1.0 - pj)
+        alpha_alive_new <- alpha_alive * surv * (1.0 - capt)    # if not observed at j
       }
-      # those that were alive & died between j-1 & j become dead & contribute to alpha_dead
-      alpha_dead_new <- alpha_dead + alpha_alive * (1.0 - surv)
+      alpha_dead_new <- alpha_dead + alpha_alive * (1.0 - surv) # if died between j-1 & j
       
       alpha_alive <- alpha_alive_new
       alpha_dead <- alpha_dead_new
@@ -129,14 +131,15 @@ dCJS_row <- nimbleFunction(
   }
 )
 
-# Register this nimbleFunction as a distribution named 'dCJS_row'
+# Register this nimbleFunction as a distribution named 'dCJS_fun'
 registerDistributions(list(
-  dCJS_row = list(
-    BUGSdist = "dCJS_row(x, phiMat, p, len)",
-    Rdist    = "dCJS_row(x, phiMat, p, len)",
-    types    = c("x = double(1)", "phiMat = double(2)", "p = double(1)", "len = integer(0)")
-  )
-))
+  dCJS_fun = list(BUGSdist = "dCJS_fun(x, probSurvive, probCapture, len)",
+                  Rdist    = "dCJS_fun(x, probSurvive, probCapture, len, log)",
+                  types    = c("x = double(2)",
+                               "probSurvive = double(2)",
+                               "probCapture = double(2)",
+                               "len = integer(0)",
+                               "log = logical(0)"))))
 
 
 ## Model -----------------------------------------------------------------------
@@ -186,17 +189,17 @@ myCode = nimbleCode({
     #                                    len = last[i] - first[i] + 1)
     
     # ATTEMPT 3
-    # Customized nimbleFunction
-    # A Hail Mary, entirely chatGPT's concoction
+    # Customized nimbleFunction: a Hail Mary, entirely chatGPT's concoction
+    # Should be replicating dCJS_vv, & coercing matrix slices to vectors
+    # Does not work: "bad parameters for distribution dCJS_fun" error
     
     for(t in first[i]:(last[i]-1)){
       Si[i, t] <- S[ageC.S[age.S[i, t]], t]
     }
     
-    obs[i, first[i]:last[i]] ~ dCJS_row(x     = obs[i, first[i]:last[i]],
-                                        phiMat = Si[i, first[i]:(last[i]-1)],   # this is a 1xK matrix slice
-                                        p      = O[first[i]:last[i]],
-                                        len    = last[i] - first[i] + 1)
+    obs[i, first[i]:last[i]] ~ dCJS_fun(probSurvive = Si[i, first[i]:(last[i]-1)], # 1D matrix slice
+                                        probCapture = O[first[i]:last[i]],
+                                        len = last[i] - first[i] + 1)
   }
   
   #### Constraints ####
@@ -362,6 +365,15 @@ if(parallelRun){
     library(nimble)
     library(nimbleEcology)
     
+    registerDistributions(list(
+      dCJS_fun = list(BUGSdist = "dCJS_fun(x, probSurvive, probCapture, len)",
+                      Rdist    = "dCJS_fun(x, probSurvive, probCapture, len, log)",
+                      types    = c("x = double(2)",
+                                   "probSurvive = double(2)",
+                                   "probCapture = double(2)",
+                                   "len = integer(0)",
+                                   "log = logical(0)"))))
+    
     set.seed(seed)
     inits <- myInits[[chainID]]
     
@@ -384,7 +396,8 @@ if(parallelRun){
   cl <- makeCluster(nchains)
   clusterExport(cl, varlist = c("myCode", "myData", "myConst", "myInits", 
                                 "params", "nthin", "nburnin", "niter",
-                                "seedMod", "runChain"))
+                                "seedMod", "runChain",
+                                "dCJS_fun"))
 }
 
 if(parallelRun){
