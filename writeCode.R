@@ -202,9 +202,6 @@ writeCode <- function(){
       dens.cov[t] <- dens.true[t] - densM # center dens for its use as a covariate
     }
     
-    # CRN: It will help with convergence if this density is at the very least centered, maybe even scaled too. 
-    # The way I would approach it is calculate a rough mean dens.true for the whole time period from a whole model run, and use that as an offset (passed via constants).
-    # In your case, it probably will also work if you use calculated mean (and potentially sd) from the input time series (myData$dens)
     
     ## SURVIVAL MODEL (CJS)
     ## -------------------------------------------------------------------------
@@ -237,9 +234,6 @@ writeCode <- function(){
             BetaW.S * win.true[t] +
             # Gamma.S[t, a] +
             EpsilonT.S[t]
-          # CRN: All of the covariate effects AND the random effect are age-dependent. 
-          # No further constraints about that age dependence are made. 
-          # I think that may be too many parameters. 
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
             # Gamma.S[t, a] +
@@ -250,18 +244,18 @@ writeCode <- function(){
 
     # observation function
     for(t in 1:nYear){
-      EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+      # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
       logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
       
       # CRN: The model struggles with the estimation of random effects on O. 
       # Can try two alternative models here and see how it affects performance. 
       
       # 1) Constant model: 
-      #EpsilonT.O[t] <- 0
+      EpsilonT.O[t] <- 0
       
       # 2) Autoregressive model
-      #logit(O[1]) <- logit(Mu.O)
-      #logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
+      # logit(O[1]) <- logit(Mu.O)
+      # logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
     }
     
     #### Priors ####
