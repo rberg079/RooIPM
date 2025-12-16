@@ -28,11 +28,13 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
   nAgeC.S = 6
   plotAges = c(2, 6, 10, 14)
   plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_simpleEnv.rds",
+  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_autregObs.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_simpleObs.rds",
                 "results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds")
-  modelNames = c("IPM_simpleEnv",
+  modelNames = c("IPM_autregObs",
+                 "IPM_simpleObs",
                  "IPM_simpleSurv")
-  plotFolder = c("figures/ConvergenceBug")
+  plotFolder = c("figures/toConverge_II")
   returnSumData = TRUE
   nModels <- length(modelNames)
 
@@ -127,17 +129,20 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJScovEFage = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
-                    paste0('BetaD.S[', 1:nAgeC.S, ']'),
-                    paste0('BetaV.S[', 1:nAgeC.S, ']'),
-                    paste0('BetaW.S[', 1:nAgeC.S, ']')),
+    # # for age-dependent fixed effects
+    # CJScovEFage = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
+    #                 paste0('BetaD.S[', 1:nAgeC.S, ']'),
+    #                 paste0('BetaV.S[', 1:nAgeC.S, ']'),
+    #                 paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
-    CJScovEF = c('BetaD.S', 'BetaV.S', 'BetaW.S'),
+    # for age-independent fixed effects
+    CJScovEF = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaW.S'),
     
-    CJSranEFage = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
+    # # for age-dependent random effects
+    # CJSranEFage = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
     
-    CJSranEF = c(paste0('EpsilonT.S[', plotYears, ']'),
-                 'SigmaT.S'),
+    # for age-independent random effects
+    CJSranEF = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
     
     CJSestO = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
