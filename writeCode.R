@@ -243,19 +243,24 @@ writeCode <- function(){
     }
 
     # observation function
-    for(t in 1:nYear){
-      # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
-      logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
-      
-      # CRN: The model struggles with the estimation of random effects on O. 
-      # Can try two alternative models here and see how it affects performance. 
-      
-      # 1) Constant model: 
-      EpsilonT.O[t] <- 0
-      
-      # 2) Autoregressive model
-      # logit(O[1]) <- logit(Mu.O)
-      # logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
+    # for(t in 1:nYear){
+    #   # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+    #   # logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
+    #   
+    #   # CRN: The model struggles with the estimation of random effects on O. 
+    #   # Can try two alternative models here and see how it affects performance. 
+    #   
+    #   # 1) Constant model: 
+    #   EpsilonT.O[t] <- 0
+    # }
+    
+    # 2) Autoregressive model
+    EpsilonT.O[1] ~ dnorm(0, sd = SigmaT.O)
+    logit(O[1]) <- logit(Mu.O) + EpsilonT.O[1]
+    
+    for(t in 2:nYear){
+      EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+      logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
     }
     
     #### Priors ####
