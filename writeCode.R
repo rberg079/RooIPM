@@ -243,25 +243,25 @@ writeCode <- function(){
     }
 
     # observation function
-    # for(t in 1:nYear){
-    #   # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
-    #   # logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
-    #   
-    #   # CRN: The model struggles with the estimation of random effects on O. 
-    #   # Can try two alternative models here and see how it affects performance. 
-    #   
-    #   # 1) Constant model: 
-    #   EpsilonT.O[t] <- 0
-    # }
-    
-    # 2) Autoregressive model
-    EpsilonT.O[1] ~ dnorm(0, sd = SigmaT.O)
-    logit(O[1]) <- logit(Mu.O) + EpsilonT.O[1]
-    
-    for(t in 2:nYear){
-      EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
-      logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
+    for(t in 1:nYear){
+      # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+      logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
+
+      # CRN: The model struggles with the estimation of random effects on O.
+      # Can try two alternative models here and see how it affects performance.
+
+      # 1) Constant model:
+      EpsilonT.O[t] <- 0
     }
+    
+    # # 2) Autoregressive model
+    # EpsilonT.O[1] ~ dnorm(0, sd = SigmaT.O)
+    # logit(O[1]) <- logit(Mu.O) + EpsilonT.O[1]
+    # 
+    # for(t in 2:nYear){
+    #   EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+    #   logit(O[t]) <- logit(O[t-1]) + EpsilonT.O[t]
+    # }
     
     #### Priors ####
     # survival
@@ -387,7 +387,8 @@ writeCode <- function(){
     
     # priors for random effects
     for(i in 1:nID.R){
-      XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
+      # XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
+      XiI.R[i] <- 0
     }
 
     for(t in 1:(nYear-1)){
@@ -395,7 +396,6 @@ writeCode <- function(){
       XiT.B[t] ~ dnorm(0, sd = 1) # latent standard normal
     }
     
-    # GammaI.R <- 0
     EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
     EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
     EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
@@ -404,8 +404,8 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    SigmaI.R <- 0
+    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     
