@@ -333,7 +333,7 @@ writeCode <- function(){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) + # CRN: Recommend setting up ageC.R as a vector with length "nR" up externally to avoid the double-nested indexing (should not change anything, but slightly less prone to errors when working on code)
-          BetaD.R * dens.cov[year.R[x]] +
+          # BetaD.R * dens.cov[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
@@ -361,7 +361,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.cov[t] +
+            # BetaD.R * dens.cov[t] +
             BetaV.R * veg.true[t] +
             BetaW.R * win.true[t] +
             EpsilonT.R[t]
@@ -380,15 +380,15 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
+      # BetaD.R ~ dunif(-5, 5)
       BetaV.R ~ dunif(-5, 5)
       BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects
     for(i in 1:nID.R){
-      # XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
-      XiI.R[i] <- 0
+      XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
+      # XiI.R[i] <- 0
     }
 
     for(t in 1:(nYear-1)){
@@ -404,8 +404,8 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    SigmaI.R <- 0
-    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    # SigmaI.R <- 0
+    SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     

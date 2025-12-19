@@ -145,7 +145,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
+if(envEffectsR){params <- c(params, 'BetaV.R', 'BetaW.R')} # 'BetaD.R'
 
 # select MCMC settings
 if(testRun){
@@ -229,7 +229,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
