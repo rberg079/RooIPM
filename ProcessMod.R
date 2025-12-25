@@ -8,7 +8,7 @@
 testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
-envEffectsR <- TRUE
+envEffectsR <- FALSE
 ageClasses <- 6
 
 # load packages
@@ -229,7 +229,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
