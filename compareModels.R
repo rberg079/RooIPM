@@ -17,26 +17,27 @@
 #'
 #' @examples
 
-compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 5,
+compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # for testing purposes
-  nYear = 17
-  minYear = 2008
-  maxYear = minYear + nYear - 1
-  nAgeC.S = 6
-  plotAges = c(2, 6, 10, 14)
-  plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_autregObs.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_simpleObs.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds")
-  modelNames = c("IPM_autregObs",
-                 "IPM_simpleObs",
-                 "IPM_simpleSurv")
-  plotFolder = c("figures/toConverge_II")
-  returnSumData = TRUE
-  nModels <- length(modelNames)
+  # # for testing purposes
+  # nYear = 17
+  # minYear = 2008
+  # maxYear = minYear + nYear - 1
+  # nAgeC.S = 6
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_autregObs.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_simpleObs.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds")
+  # modelNames = c("IPM_autregObs",
+  #                "IPM_simpleObs",
+  #                "IPM_simpleSurv")
+  # plotFolder = c("figures/toConverge_II")
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
+  
 
   ## Set up --------------------------------------------------------------------
 
