@@ -283,14 +283,21 @@ MCMCtrace(out.mcmc, pdf = T)
 
 ## Compare model outputs -------------------------------------------------------
 
-nYear <- myConst$nYear
-nAge  <- myConst$nAge
-nAgeC <- myConst$nAgeC
+nYear   <- myConst$nYear
+nAgeC.S <- myConst$nAgeC.S
 
 source('compareModels.R')
-compareModels(nAge = nAge, nAgeC = nAgeC, nYear = nYear,
-              postPaths = c("results/IPM_CJSen.rds", "results/IPM_CJSen_RSen.rds", "results/IPM_CJSen_RSen_AB.rds", "results/IPM_CJSen_RSen_AB_RSfix2.rds"),
-              modelNames = c("CJSen", "CJSen/RSen", "CJSen/RSen/AB", "CJSen/RSen/AB2"), plotFolder = c("figures/Mod"),
+compareModels(nYear = nYear,
+              nAgeC.S = nAgeC.S,
+              postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds",
+                            "results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds",
+                            "results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds",
+                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds"),
+              modelNames = c("base",
+                             "noRandomI",
+                             "noDensEffect",
+                             "noEnvEffects"),
+              plotFolder = c("figures/simplifyRS"),
               returnSumData = TRUE)
 
 
