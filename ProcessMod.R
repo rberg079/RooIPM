@@ -7,7 +7,7 @@
 # set toggles
 testRun <- FALSE
 parallelRun <- TRUE
-envEffectsS <- TRUE
+envEffectsS <- FALSE
 envEffectsR <- FALSE
 ageClasses <- 6
 
@@ -132,7 +132,7 @@ params <- c(
   # 'Gamma.S', 'Sigma.S',                     # random effects (correlated)
   'EpsilonT.S', 'SigmaT.S',                 # random effects (uncorrelated)
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
-  'dens.true', 'veg.true', 'win.true',      # latent true environment
+  # 'dens.true', 'veg.true', 'win.true',      # latent true environment
   
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
@@ -145,7 +145,8 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-if(envEffectsR){params <- c(params, 'BetaV.R', 'BetaW.R')} # 'BetaD.R'
+if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
+if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true', 'win.true')}
 
 # select MCMC settings
 if(testRun){
@@ -229,7 +230,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -289,14 +290,16 @@ nAgeC.S <- myConst$nAgeC.S
 source('compareModels.R')
 compareModels(nYear = nYear,
               nAgeC.S = nAgeC.S,
-              postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds",
+              postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
                             "results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds",
                             "results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds",
-                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds"),
+                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds",
+                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds"),
               modelNames = c("base",
                              "noRandomI",
-                             "noDensEffect",
-                             "noEnvEffects"),
+                             "noDensEffectR",
+                             "noEnvEffectsR",
+                             "noEnvEffectsS&R"),
               plotFolder = c("figures/simplifyRS"),
               returnSumData = TRUE)
 
