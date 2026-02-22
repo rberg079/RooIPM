@@ -315,6 +315,11 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     }
   }
   
+  # initial population sizes
+  initN.YF <- 100
+  initN.SA <- 120
+  initN.AD <- rep(80, nAge)
+  
   
   ## Simulate observation parameters -------------------------------------------
   
@@ -418,7 +423,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     nSA = nSA,
     nAD = nAD,
     nTOT = nTOT,
-    area = area
+    area = area,
+    initN.YF = initN.YF,
+    initN.SA = initN.SA,
+    initN.AD = initN.AD
   )
   
   if(envEffectsS){

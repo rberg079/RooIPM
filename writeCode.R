@@ -85,8 +85,12 @@ writeCode <- function(){
   # SigmaT.R = standard deviation of effect of year (T) on reproductive success (Ri & Ra)
   # SigmaT.B = standard deviation of effect of year (T) on breeding rate (Bt)
   
-  # ab = yearly abundance in number of kangaroos, supplied for most years with 1-2 NAs
   # propF = yearly proportion of observations representing females, supplied up to 2019
+  
+  # initN.YF = initial population size of young-at-foot
+  # initN.SA = initial population size of subadults
+  # initN.AD = initial population size of adults
+  # uLim.N = upper limit on initial population sizes
   
   
   ## Set up --------------------------------------------------------------------
@@ -191,9 +195,24 @@ writeCode <- function(){
         for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
       }
     }
+    
+    #### Priors ####
+    # initial population sizes
+    nYF[1] <- initN.YF
+    nSA[1] <- initN.SA
+    
+    initN.YF ~ dcat(DU.N[1:uLim.N])
+    initN.SA ~ dcat(DU.N[1:uLim.N])
+    
+    for(a in 2:nAge){
+      nAD[a,1] <- initN.AD[a]
+      initN.AD[a] ~ dcat(DU.N[1:uLim.N])
+    }
+    
+    DU.N[1:uLim.N] <- 1 / uLim.N
       
 
-    ## ABUNDANCE MODEL
+    ## POPULATION DENSITY MODEL
     ## -------------------------------------------------------------------------
     
     #### Likelihood ####
@@ -244,14 +263,14 @@ writeCode <- function(){
 
     # observation function
     for(t in 1:nYear){
-      # EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
+      EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
       logit(O[t]) <- logit(Mu.O) + EpsilonT.O[t]
 
       # CRN: The model struggles with the estimation of random effects on O.
       # Can try two alternative models here and see how it affects performance.
 
-      # 1) Constant model:
-      EpsilonT.O[t] <- 0
+      # # 1) Constant model:
+      # EpsilonT.O[t] <- 0
     }
     
     # # 2) Autoregressive model
@@ -332,8 +351,8 @@ writeCode <- function(){
     for(x in 1:nR){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) + # CRN: Recommend setting up ageC.R as a vector with length "nR" up externally to avoid the double-nested indexing (should not change anything, but slightly less prone to errors when working on code)
-          # BetaD.R * dens.cov[year.R[x]] +
+        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+          BetaD.R * dens.cov[year.R[x]] +
           BetaV.R * veg.true[year.R[x]] +
           BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
@@ -361,7 +380,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            # BetaD.R * dens.cov[t] +
+            BetaD.R * dens.cov[t] +
             BetaV.R * veg.true[t] +
             BetaW.R * win.true[t] +
             EpsilonT.R[t]
@@ -380,7 +399,7 @@ writeCode <- function(){
     Mu.B ~ dunif(0, 1)
 
     if(envEffectsR){
-      # BetaD.R ~ dunif(-5, 5)
+      BetaD.R ~ dunif(-5, 5)
       BetaV.R ~ dunif(-5, 5)
       BetaW.R ~ dunif(-5, 5)
     }

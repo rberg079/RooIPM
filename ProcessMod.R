@@ -7,8 +7,8 @@
 # set toggles
 testRun <- FALSE
 parallelRun <- TRUE
-envEffectsS <- FALSE
-envEffectsR <- FALSE
+envEffectsS <- TRUE
+envEffectsR <- TRUE
 ageClasses <- 6
 
 # load packages
@@ -83,7 +83,8 @@ myConst <- list(nR = rsData$nR,
                 nNoProp = enData$nNoProp,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
-                ageClasses = ageClasses)
+                ageClasses = ageClasses,
+                uLim.N = 80)
 
 
 ## Assemble --------------------------------------------------------------------
@@ -132,7 +133,7 @@ params <- c(
   # 'Gamma.S', 'Sigma.S',                     # random effects (correlated)
   'EpsilonT.S', 'SigmaT.S',                 # random effects (uncorrelated)
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
-  # 'dens.true', 'veg.true', 'win.true',      # latent true environment
+  'dens.true', 'veg.true', 'win.true',      # latent true environment
   
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
@@ -230,7 +231,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
