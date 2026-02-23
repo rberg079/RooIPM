@@ -83,8 +83,7 @@ myConst <- list(nR = rsData$nR,
                 nNoProp = enData$nNoProp,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
-                ageClasses = ageClasses,
-                uLim.N = 80)
+                ageClasses = ageClasses)
 
 
 ## Assemble --------------------------------------------------------------------
@@ -231,7 +230,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

@@ -90,7 +90,6 @@ writeCode <- function(){
   # initN.YF = initial population size of young-at-foot
   # initN.SA = initial population size of subadults
   # initN.AD = initial population size of adults
-  # uLim.N = upper limit on initial population sizes
   
   
   ## Set up --------------------------------------------------------------------
@@ -201,15 +200,14 @@ writeCode <- function(){
     nYF[1] <- initN.YF
     nSA[1] <- initN.SA
     
-    initN.YF ~ dcat(DU.N[1:uLim.N])
-    initN.SA ~ dcat(DU.N[1:uLim.N])
+    # Poisson priors centered on your simulated/expected starting values
+    initN.YF ~ dpois(100) 
+    initN.SA ~ dpois(120) 
     
     for(a in 2:nAge){
-      nAD[a,1] <- initN.AD[a]
-      initN.AD[a] ~ dcat(DU.N[1:uLim.N])
+      nAD[a, 1] <- initN.AD[a]
+      initN.AD[a] ~ dpois(80) 
     }
-    
-    DU.N[1:uLim.N] <- 1 / uLim.N
       
 
     ## POPULATION DENSITY MODEL
