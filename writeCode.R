@@ -196,19 +196,35 @@ writeCode <- function(){
     }
     
     #### Priors ####
-    # initial population sizes
+    # # initial population sizes
+    # nYF[1] <- initN.YF
+    # nSA[1] <- initN.SA
+    # 
+    # initN.YF ~ dpois(100) 
+    # initN.SA ~ dpois(120) 
+    # 
+    # for(a in 2:nAge){
+    #   nAD[a, 1] <- initN.AD[a]
+    #   initN.AD[a] ~ dpois(80) 
+    # }
+    
+    # young-at-foot
+    log.initN.YF ~ dnorm(log(100), sd = 0.5)
+    initN.YF <- round(exp(log.initN.YF))
     nYF[1] <- initN.YF
+    
+    # subadults
+    log.initN.SA ~ dnorm(log(120), sd = 0.5)
+    initN.SA <- round(exp(log.initN.SA))
     nSA[1] <- initN.SA
     
-    # Poisson priors centered on your simulated/expected starting values
-    initN.YF ~ dpois(100) 
-    initN.SA ~ dpois(120) 
-    
+    # adults
     for(a in 2:nAge){
-      nAD[a, 1] <- initN.AD[a]
-      initN.AD[a] ~ dpois(80) 
+      log.initN.AD[a] ~ dnorm(log(80), sd = 0.5)
+      initN.AD[a] <- round(exp(log.initN.AD[a]))
+      nAD[a,1] <- initN.AD[a]
     }
-      
+    
 
     ## POPULATION DENSITY MODEL
     ## -------------------------------------------------------------------------
