@@ -7,8 +7,8 @@
 # set toggles
 testRun <- FALSE
 parallelRun <- TRUE
-envEffectsS <- TRUE
-envEffectsR <- TRUE
+envEffectsS <- FALSE
+envEffectsR <- FALSE
 ageClasses <- 6
 
 # load packages
@@ -132,7 +132,7 @@ params <- c(
   # 'Gamma.S', 'Sigma.S',                     # random effects (correlated)
   'EpsilonT.S', 'SigmaT.S',                 # random effects (uncorrelated)
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
-  'dens.true', 'veg.true', 'win.true',      # latent true environment
+  # 'dens.true', 'veg.true', 'win.true',      # latent true environment
   
   # Reproductive success model
   'Mu.B', 'Mu.R',                           # mean reproductive success
@@ -230,7 +230,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S_dnorm.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -242,7 +242,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_simpleSurv.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -290,17 +290,27 @@ nAgeC.S <- myConst$nAgeC.S
 source('compareModels.R')
 compareModels(nYear = nYear,
               nAgeC.S = nAgeC.S,
-              postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
-                            "results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds",
-                            "results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds",
-                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds",
-                            "results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds"),
-              modelNames = c("base",
-                             "noRandomI",
-                             "noDensEffectR",
-                             "noEnvEffectsR",
-                             "noEnvEffectsS&R"),
-              plotFolder = c("figures/simplifyRS"),
+              postPaths = c(
+                "results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dcat.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds"
+                # "results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds"
+              ),
+              modelNames = c(
+                "base",
+                "dcatPriorN",
+                "dpoisPriorN",
+                "dnormPriorN"
+                # "noRandomI",
+                # "noDensEffectR",
+                # "noEnvEffectsR",
+                # "noEnvEffectsS&R"
+              ),
+              plotFolder = c("figures/priorInitNs"),
               returnSumData = TRUE)
 
 
@@ -410,7 +420,7 @@ df$sUCI = inv.logit(apply(S.pred, 1, quantile, 0.975))
 
 # plot main results
 df %>%
-  mutate(ageC = as.factor(ageC)) %>% 
+  mutate(ageC = as.factor(ageC)) %>%
   ggplot(aes(x = year, y = S)) +
   geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.2) +
   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
