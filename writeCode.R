@@ -108,11 +108,13 @@ writeCode <- function(){
     ## MISSING VALUES
     ## -------------------------------------------------------------------------
     
+    for(t in 1:(nYear-1)){
+      # CRN: This is the data likelihood for the population density estimates. We need it.
+      dens[t] ~ dnorm(dens.true[t], sd = densE[t])
+    }
+    
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        # CRN: This is the data likelihood for the population density estimates. We need it.
-        dens[t] ~ dnorm(dens.true[t], sd = densE[t])
-        
         # CRN: This is an additional level of stochasticity you impose, assuming that vegetation is observed with a known error.
         # This makes sense to include, but perhaps only once everything else works.
         # veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
@@ -359,6 +361,7 @@ writeCode <- function(){
 
     for(t in 1:(nYear-1)){
       logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
+      # Bt[t] <- 1
     }
 
     # individual RS function
@@ -389,7 +392,6 @@ writeCode <- function(){
     # age-specific RS function
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
-    # Mu.R[1] <- 0
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
@@ -421,7 +423,6 @@ writeCode <- function(){
     # priors for random effects
     for(i in 1:nID.R){
       XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
-      # XiI.R[i] <- 0
     }
 
     for(t in 1:(nYear-1)){
@@ -437,8 +438,8 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    SigmaI.R <- 0
+    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     
