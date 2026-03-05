@@ -229,7 +229,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noSigIonR_dnorm.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -283,36 +283,36 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-# nYear   <- myConst$nYear
-# nAgeC.S <- myConst$nAgeC.S
-# 
-# source('compareModels.R')
-# compareModels(nYear = nYear,
-#               nAgeC.S = nAgeC.S,
-#               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dcat.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S_dnorm.rds"
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_noRandomI.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_noDensR.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_noEnvR.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S.rds"
-#               ),
-#               modelNames = c(
-#                 "base",
-#                 # "dcatPriorN",
-#                 # "dpoisPriorN",
-#                 "dnormPriorN",
-#                 "dnorm_noEnvS&R"
-#                 # "noRandomI",
-#                 # "noDensEffectR",
-#                 # "noEnvEffectsR",
-#                 # "noEnvEffectsS&R"
-#               ),
-#               plotFolder = c("figures/simplifyRS"),
-#               returnSumData = TRUE)
+nYear   <- myConst$nYear
+nAgeC.S <- myConst$nAgeC.S
+
+source('compareModels.R')
+compareModels(nYear = nYear,
+              nAgeC.S = nAgeC.S,
+              postPaths = c(
+                "results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dcat.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
+              ),
+              modelNames = c(
+                "base",
+                # "dcatPriorN",
+                # "dpoisPriorN",
+                "dnormPriorN",
+                "dnorm_noEnvS&R",
+                "dnorm_noVorW",
+                "dnorm_noDens",
+                "dnorm_noSigI",
+                "dnorm_Bt1"
+              ),
+              plotFolder = c("figures/simplifyRS"),
+              returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------

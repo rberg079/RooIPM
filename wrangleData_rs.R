@@ -20,9 +20,10 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
 
   # # for testing purposes
   # rs.data = "data/RSmainRB_Mar25.xlsx"
-  # obs.data = "data/PromObs_2008-2019.xlsx"
+  # obs.data = "data/PromObs_2008-2023.xlsx"
+  # ageClasses = 6
   # known.age = TRUE
-  # cum.surv = TRUE
+  # cum.surv = FALSE
   
   
   ## Set up --------------------------------------------------------------------
@@ -81,15 +82,15 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
            SurvSep1 = ifelse(SurvNov1 == 1, 1, NA),
            SurvSep1 = case_when(
              SurvNov1 == 2 ~ NA,
-             is.na(SurvSep1) & PYLastObs > as.Date(paste0(Year, "-09-01")) ~ 1,
-             is.na(SurvSep1) & PYLastObs < as.Date(paste0(Year, "-09-01")) ~ 0,
+             is.na(SurvSep1) & PYLastObs > as.Date(paste0(Year+1, "-09-01")) ~ 1,
+             is.na(SurvSep1) & PYLastObs < as.Date(paste0(Year+1, "-09-01")) ~ 0,
              is.na(SurvSep1) & is.na(PYLastObs) & SurvLPY == 0 ~ 0,
              TRUE ~ SurvSep1),
            SurvSep2 = ifelse(SurvNov2 == 1, 1, NA),
            SurvSep2 = case_when(
              SurvNov2 == 2 ~ NA,
-             is.na(SurvSep2) & PYLastObs > as.Date(paste0(Year+1, "-09-01")) ~ 1,
-             is.na(SurvSep2) & PYLastObs < as.Date(paste0(Year+1, "-09-01")) ~ 0,
+             is.na(SurvSep2) & PYLastObs > as.Date(paste0(Year+2, "-09-01")) ~ 1,
+             is.na(SurvSep2) & PYLastObs < as.Date(paste0(Year+2, "-09-01")) ~ 0,
              is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
              TRUE ~ SurvSep2)))
   

@@ -381,13 +381,6 @@ writeCode <- function(){
           EpsilonT.R[year.R[x]]
       }
     }
-    
-    # CRN: Posteriors and traceplots indicate that this model is too complex. 
-    # We may have to figure out which aspect is pushing it too much. 
-    # Try to run some alternatives: 
-    # a) No individual random effect
-    # b) No density effect
-    # c) No covariate effects at all
 
     # age-specific RS function
     # use parameters estimated from individual data above
@@ -438,8 +431,8 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    SigmaI.R <- 0
-    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    # SigmaI.R <- 0
+    SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     
