@@ -241,7 +241,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_noEnvR&S_dnorm.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -283,36 +283,30 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-nYear   <- myConst$nYear
-nAgeC.S <- myConst$nAgeC.S
-
-source('compareModels.R')
-compareModels(nYear = nYear,
-              nAgeC.S = nAgeC.S,
-              postPaths = c(
-                "results/IPM_CJSen_RSen_AB_DynDens_noAgeSpCovs.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dcat.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dpois.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
-              ),
-              modelNames = c(
-                "base",
-                # "dcatPriorN",
-                # "dpoisPriorN",
-                "dnormPriorN",
-                "dnorm_noEnvS&R",
-                "dnorm_noVorW",
-                "dnorm_noDens",
-                "dnorm_noSigI",
-                "dnorm_Bt1"
-              ),
-              plotFolder = c("figures/simplifyRS"),
-              returnSumData = TRUE)
+# nYear   <- myConst$nYear
+# nAgeC.S <- myConst$nAgeC.S
+# 
+# source('compareModels.R')
+# compareModels(nYear = nYear,
+#               nAgeC.S = nAgeC.S,
+#               postPaths = c(
+#                 "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
+#               ),
+#               modelNames = c(
+#                 "base",
+#                 "dnorm_noEnvS&R",
+#                 "dnorm_noVorW",
+#                 "dnorm_noDens",
+#                 "dnorm_noSigI",
+#                 "dnorm_Bt1"
+#               ),
+#               plotFolder = c("figures/simplifyRS"),
+#               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
