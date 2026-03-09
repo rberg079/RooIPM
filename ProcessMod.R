@@ -283,30 +283,32 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-# nYear   <- myConst$nYear
-# nAgeC.S <- myConst$nAgeC.S
-# 
-# source('compareModels.R')
-# compareModels(nYear = nYear,
-#               nAgeC.S = nAgeC.S,
-#               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
-#               ),
-#               modelNames = c(
-#                 "base",
-#                 "dnorm_noEnvS&R",
-#                 "dnorm_noVorW",
-#                 "dnorm_noDens",
-#                 "dnorm_noSigI",
-#                 "dnorm_Bt1"
-#               ),
-#               plotFolder = c("figures/simplifyRS"),
-#               returnSumData = TRUE)
+nYear   <- myConst$nYear
+nAgeC.S <- myConst$nAgeC.S
+
+source('compareModels.R')
+compareModels(nYear = nYear,
+              nAgeC.S = nAgeC.S,
+              postPaths = c(
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds"
+              ),
+              modelNames = c(
+                "base",
+                # "dnorm_noEnvS&R",
+                # "dnorm_noVorW",
+                # "dnorm_noDens",
+                # "dnorm_noSigI",
+                # "dnorm_Bt1",
+                "typoFix"
+              ),
+              plotFolder = c("figures/wrangleTypo"),
+              returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
