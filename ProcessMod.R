@@ -134,9 +134,9 @@ params <- c(
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
   
   # Reproductive success model
-  'Mu.R', 'Mu.B',                           # mean reproductive success
-  'EpsilonI.R', 'EpsilonT.R', 'EpsilonT.B', # random effects
-  'SigmaI.R', 'SigmaT.R', 'SigmaT.B',       # random effects
+  'Mu.R', 'Mu.B',                           # mean reproductive success  
+  'EpsilonI.R', 'EpsilonT.R', 'EpsilonT.B', # random effects  
+  'SigmaI.R', 'SigmaT.R', 'SigmaT.B',       # random effects  
   
   # Abundance model
   'propF'
@@ -229,7 +229,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noSigI.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -290,24 +290,22 @@ source('compareModels.R')
 compareModels(nYear = nYear,
               nAgeC.S = nAgeC.S,
               postPaths = c(
-                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds"
+                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
               ),
               modelNames = c(
                 "base",
-                # "dnorm_noEnvS&R",
-                # "dnorm_noVorW",
-                # "dnorm_noDens",
-                # "dnorm_noSigI",
-                # "dnorm_Bt1",
-                "typoFix"
+                "dnorm_noEnvS&R",
+                "dnorm_noVorW",
+                "dnorm_noDens",
+                "dnorm_noSigI",
+                "dnorm_Bt1"
               ),
-              plotFolder = c("figures/wrangleTypo"),
+              plotFolder = c("figures/simplifyRS"),
               returnSumData = TRUE)
 
 
