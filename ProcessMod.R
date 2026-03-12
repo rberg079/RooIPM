@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -68,6 +68,7 @@ myConst <- list(nR = rsData$nR,
                 nAge = rsData$nAge,
                 nAgeC.S = svData$nAgeC.S,
                 nAgeC.R = rsData$nAgeC.R,
+                dummy = svData$dummy,
                 first = svData$first,
                 last = svData$last,
                 W = diag(svData$nAgeC.S),
@@ -144,7 +145,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R', 'BetaV.R', 'BetaW.R')}
+if(envEffectsR){params <- c(params, 'BetaD.R')} # , 'BetaV.R', 'BetaW.R'
 if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true', 'win.true')}
 
 # select MCMC settings
@@ -229,7 +230,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_noSigI.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -283,30 +284,30 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-nYear   <- myConst$nYear
-nAgeC.S <- myConst$nAgeC.S
-
-source('compareModels.R')
-compareModels(nYear = nYear,
-              nAgeC.S = nAgeC.S,
-              postPaths = c(
-                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
-              ),
-              modelNames = c(
-                "base",
-                "dnorm_noEnvS&R",
-                "dnorm_noVorW",
-                "dnorm_noDens",
-                "dnorm_noSigI",
-                "dnorm_Bt1"
-              ),
-              plotFolder = c("figures/simplifyRS"),
-              returnSumData = TRUE)
+# nYear   <- myConst$nYear
+# nAgeC.S <- myConst$nAgeC.S
+# 
+# source('compareModels.R')
+# compareModels(nYear = nYear,
+#               nAgeC.S = nAgeC.S,
+#               postPaths = c(
+#                 "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
+#               ),
+#               modelNames = c(
+#                 "base",
+#                 "dnorm_noEnvS&R",
+#                 "dnorm_noVorW",
+#                 "dnorm_noDens",
+#                 "dnorm_noSigI",
+#                 "dnorm_Bt1"
+#               ),
+#               plotFolder = c("figures/simplifyRS"),
+#               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------

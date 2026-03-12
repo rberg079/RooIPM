@@ -31,7 +31,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # library(readxl)
   # library(tidyverse)
   # 
-  # source("wrangleData_en.R")
+  # ageClasses <- 6
+  # source('wrangleData_en.R')
   # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
   #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
   #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
@@ -42,16 +43,15 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # source('wrangleData_sv.R')
   # svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
   #                          yafs.data = "data/RSmainRB_Mar25.xlsx",
-  #                          ageClasses = 6, known.age = TRUE)
+  #                          ageClasses = ageClasses, known.age = TRUE)
   # 
   # source('wrangleData_rs.R')
   # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
   #                          obs.data = "data/PromObs_2008-2023.xlsx",
-  #                          ageClasses = 6, known.age = TRUE, cum.surv = FALSE)
+  #                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
   # 
   # nYear <- rsData$nYear
   # nAge <- rsData$nAge
-  # ageClasses <- 6
   # 
   # nID.S <- svData$nID.S
   # ageC.S <- svData$ageC.S
@@ -123,8 +123,18 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   ## Reproductive success model
   if(envEffectsR){
     BetaD.R <- runif(1, -1, 1)
-    BetaV.R <- runif(1, -1, 1)
-    BetaW.R <- runif(1, -1, 1)
+    # BetaV.R <- runif(1, -1, 1)
+    # BetaW.R <- runif(1, -1, 1)
+  }
+  
+  # dummy variable
+  # for targets of covariate effects
+  if(ageClasses == 6){
+    dummy = c(1, rep(0,4), 1)
+  }else if(ageClasses == 12){
+    dummy = c(1, rep(0,8), rep(1,4))
+  }else if(ageClasses == 20){
+    dummy = c(1, rep(0,8), rep(1,11))
   }
   
   
@@ -208,9 +218,9 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       if(envEffectsS){
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
-            BetaD.S * dens.cov[t] +
-            BetaV.S * veg.true[t] +
-            BetaW.S * win.true[t] +
+            BetaD.S * dens.cov[t] * dummy[a] +
+            BetaV.S * veg.true[t] * dummy[a] +
+            BetaW.S * win.true[t] * dummy[a] +
             # Gamma.S[t, a] +
             EpsilonT.S[t])
       }else{
@@ -240,8 +250,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
       Ri[x] <- plogis(
         qlogis(Mu.R[ageC.R[age.R[x]]]) +
           BetaD.R * dens.cov[year.R[x]] +
-          BetaV.R * veg.true[year.R[x]] +
-          BetaW.R * win.true[year.R[x]] +
+          # BetaV.R * veg.true[year.R[x]] +
+          # BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]])
     }else{
@@ -259,8 +269,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
         Ra[a, t] <- plogis(
           qlogis(Mu.R[a]) +
             BetaD.R * dens.cov[t] +
-            BetaV.R * veg.true[t] +
-            BetaW.R * win.true[t] +
+            # BetaV.R * veg.true[t] +
+            # BetaW.R * win.true[t] +
             EpsilonT.R[t])
       }else{
         Ra[a, t] <- plogis(
@@ -315,7 +325,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     }
   }
   
-  # initial population sizes
+  # priors for initial population sizes
   initN.YF <- 100
   initN.SA <- 120
   initN.AD <- rep(80, nAge)
@@ -440,8 +450,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   if(envEffectsR){
     initList <- c(initList, list(
       BetaD.R = BetaD.R,
-      BetaV.R = BetaV.R,
-      BetaW.R = BetaW.R
+      # BetaV.R = BetaV.R,
+      # BetaW.R = BetaW.R
     ))
   }
   

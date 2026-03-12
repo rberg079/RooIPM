@@ -12,7 +12,7 @@
 #' @examples
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
-                           ageClasses = 20, known.age = FALSE){
+                           ageClasses = 20, known.age = TRUE){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalOct24.xlsx"
@@ -270,17 +270,27 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     ageC.S = c(seq(from = 1, to = 19, by = 1), rep(20,21))
   }
   
+  # create dummy variable
+  # for targets of covariate effects
+  if(ageClasses == 6){
+    dummy = c(1, rep(0,4), 1)
+  }else if(ageClasses == 12){
+    dummy = c(1, rep(0,8), rep(1,4))
+  }else if(ageClasses == 20){
+    dummy = c(1, rep(0,8), rep(1,11))
+  }
+  
   nYear <- ncol(state)
   nID.S <- nrow(state)
-  nAgeC.S  <- max(ageC.S)
+  nAgeC.S <- max(ageC.S)
   
-  noAge   <- which(is.na(age.S[,ncol(age)]))
+  noAge <- which(is.na(age.S[,ncol(age)]))
   nNoAge <- length(noAge)
   
   first <- as.numeric(id$first[!noInfo])
-  last  <- as.numeric(id$last[!noInfo])
-  uka   <- id$uka[!noInfo]
-  id    <- as.numeric(id$ID[!noInfo])
+  last <- as.numeric(id$last[!noInfo])
+  uka <- id$uka[!noInfo]
+  id <- as.numeric(id$ID[!noInfo])
   
   return(list(first = first,
               last = last,
@@ -293,6 +303,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
               state = state,
               age.S = age.S,
               ageC.S = ageC.S,
+              dummy = dummy,
               
               noAge = noAge,
               nNoAge = nNoAge))

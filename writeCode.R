@@ -264,9 +264,9 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            BetaD.S * dens.cov[t] +
-            BetaV.S * veg.true[t] +
-            BetaW.S * win.true[t] +
+            BetaD.S * dens.cov[t] * dummy[a] +
+            BetaV.S * veg.true[t] * dummy[a] +
+            BetaW.S * win.true[t] * dummy[a] +
             # Gamma.S[t, a] +
             EpsilonT.S[t]
         }else{
@@ -355,8 +355,8 @@ writeCode <- function(){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
           BetaD.R * dens.cov[year.R[x]] +
-          BetaV.R * veg.true[year.R[x]] +
-          BetaW.R * win.true[year.R[x]] +
+          # BetaV.R * veg.true[year.R[x]] +
+          # BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
@@ -375,8 +375,8 @@ writeCode <- function(){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
             BetaD.R * dens.cov[t] +
-            BetaV.R * veg.true[t] +
-            BetaW.R * win.true[t] +
+            # BetaV.R * veg.true[t] +
+            # BetaW.R * win.true[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
@@ -394,8 +394,8 @@ writeCode <- function(){
 
     if(envEffectsR){
       BetaD.R ~ dunif(-5, 5)
-      BetaV.R ~ dunif(-5, 5)
-      BetaW.R ~ dunif(-5, 5)
+      # BetaV.R ~ dunif(-5, 5)
+      # BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects
@@ -416,8 +416,8 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    SigmaI.R <- 0
-    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    # SigmaI.R <- 0
+    SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     
