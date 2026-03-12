@@ -198,18 +198,6 @@ writeCode <- function(){
     }
     
     #### Priors ####
-    # # initial population sizes
-    # nYF[1] <- initN.YF
-    # nSA[1] <- initN.SA
-    # 
-    # initN.YF ~ dpois(100) 
-    # initN.SA ~ dpois(120) 
-    # 
-    # for(a in 2:nAge){
-    #   nAD[a, 1] <- initN.AD[a]
-    #   initN.AD[a] ~ dpois(80) 
-    # }
-    
     # young-at-foot
     log.initN.YF ~ dnorm(log(100), sd = 0.5)
     initN.YF <- round(exp(log.initN.YF))
@@ -252,7 +240,6 @@ writeCode <- function(){
         obs[i, t] ~ dbern(Mu.Op[i, t])
         Mu.Op[i, t] <- O[t] * state[i, t]
       }
-      
       # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
       # Try to implement nimbleEcology::dCJS_vv()
       # Documentation here: https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html
@@ -267,11 +254,11 @@ writeCode <- function(){
             BetaD.S * dens.cov[t] * dummy[a] +
             BetaV.S * veg.true[t] * dummy[a] +
             BetaW.S * win.true[t] * dummy[a] +
-            # Gamma.S[t, a] +
             EpsilonT.S[t]
+            # EpsilonT.S1[t] * dummy[a] +     # dummy == 1
+            # EpsilonT.S0[t] * (1 - dummy[a]) # dummy == 0
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            # Gamma.S[t, a] +
             EpsilonT.S[t]
         }
       }
@@ -289,15 +276,6 @@ writeCode <- function(){
       Mu.S[a] ~ dunif(0, 1)
     }
     
-    # # for age-dependent fixed effects
-    # if(envEffectsS){
-    #   for(a in 1:nAgeC.S){
-    #     BetaD.S[a] ~ dunif(-5, 5)
-    #     BetaV.S[a] ~ dunif(-5, 5)
-    #     BetaW.S[a] ~ dunif(-5, 5)
-    #   }
-    # }
-    
     # for age-independent fixed effects
     if(envEffectsS){
       BetaD.S ~ dunif(-5, 5)
@@ -305,30 +283,21 @@ writeCode <- function(){
       BetaW.S ~ dunif(-5, 5)
     }
     
-    # # for age-dependent random effects
-    # # variance-covariance matrix
-    # for(a in 1:nAgeC.S){
-    #   zero[a] <- 0
-    #   Xi.S[a] ~ dunif(0, 2)
-    # }
-    # 
-    # for(t in 1:(nYear-1)){
-    #   Epsilon.S[t, 1:nAgeC.S] ~ dmnorm(zero[1:nAgeC.S], Tau.S[1:nAgeC.S, 1:nAgeC.S])
-    #   for(a in 1:nAgeC.S){
-    #     Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
-    #   }
-    # }
-    # 
-    # # precision matrix
-    # Tau.S[1:nAgeC.S, 1:nAgeC.S] ~ dwish(W[1:nAgeC.S, 1:nAgeC.S], DF)
-    # Sigma.S[1:nAgeC.S, 1:nAgeC.S] <- inverse(Tau.S[1:nAgeC.S, 1:nAgeC.S])
-    
     # for age-independent random effects
     for(t in 1:(nYear-1)){
       XiT.S[t] ~ dnorm(0, sd = 1) # latent standard normal
       EpsilonT.S[t] <- SigmaT.S * XiT.S[t] # actual random effect
     }
     SigmaT.S ~ dunif(0, 10) # scale of the random effect
+    
+    # for(t in 1:(nYear-1)){
+    #   XiT.S1[t] ~ dnorm(0, sd = 1)
+    #   XiT.S0[t] ~ dnorm(0, sd = 1)
+    #   EpsilonT.S1[t] <- SigmaT.S1 * XiT.S1[t] 
+    #   EpsilonT.S0[t] <- SigmaT.S0 * XiT.S0[t] 
+    # }
+    # SigmaT.S1 ~ dunif(0, 10) # dummy == 1
+    # SigmaT.S0 ~ dunif(0, 10) # dummy == 0
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -355,8 +324,6 @@ writeCode <- function(){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
           BetaD.R * dens.cov[year.R[x]] +
-          # BetaV.R * veg.true[year.R[x]] +
-          # BetaW.R * win.true[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
@@ -375,8 +342,6 @@ writeCode <- function(){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
             BetaD.R * dens.cov[t] +
-            # BetaV.R * veg.true[t] +
-            # BetaW.R * win.true[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
@@ -394,8 +359,6 @@ writeCode <- function(){
 
     if(envEffectsR){
       BetaD.R ~ dunif(-5, 5)
-      # BetaV.R ~ dunif(-5, 5)
-      # BetaW.R ~ dunif(-5, 5)
     }
     
     # priors for random effects
@@ -412,6 +375,7 @@ writeCode <- function(){
     EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
     EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
     
+    # NOTES:
     # this way sampler can move Xi & Sigma independently
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)

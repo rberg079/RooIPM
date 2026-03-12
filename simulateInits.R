@@ -169,6 +169,16 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   SigmaT.S <- runif(1, .5, 2)
   EpsilonT.S <- XiT.S * SigmaT.S
   
+  # dummy == 1
+  XiT.S1 <- rnorm(nYear-1, 0, 1)
+  SigmaT.S1 <- runif(1, .5, 2)
+  EpsilonT.S1 <- XiT.S1 * SigmaT.S1
+  
+  # dummy == 0
+  XiT.S0 <- rnorm(nYear-1, 0, 1)
+  SigmaT.S0 <- runif(1, .5, 2)
+  EpsilonT.S0 <- XiT.S0 * SigmaT.S0
+  
   ## Reproductive success model
   # latent standard normals
   XiI.R <- rnorm(nID.R, 0, 1)
@@ -222,7 +232,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
             BetaV.S * veg.true[t] * dummy[a] +
             BetaW.S * win.true[t] * dummy[a] +
             # Gamma.S[t, a] +
-            EpsilonT.S[t])
+            EpsilonT.S1[t] * dummy[a] +      # dummy == 1
+            EpsilonT.S0[t] * (1 - dummy[a])) # dummy == 0
       }else{
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
@@ -399,6 +410,14 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     SigmaT.S = SigmaT.S,
     EpsilonT.S = EpsilonT.S,
     
+    XiT.S1 = XiT.S1,
+    SigmaT.S1 = SigmaT.S1,
+    EpsilonT.S1 = EpsilonT.S1,
+    
+    XiT.S0 = XiT.S0,
+    SigmaT.S0 = SigmaT.S0,
+    EpsilonT.S0 = EpsilonT.S0,
+    
     XiI.R = XiI.R,
     XiT.R = XiT.R,
     XiT.B = XiT.B,
@@ -449,7 +468,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   
   if(envEffectsR){
     initList <- c(initList, list(
-      BetaD.R = BetaD.R,
+      BetaD.R = BetaD.R
       # BetaV.R = BetaV.R,
       # BetaW.R = BetaW.R
     ))

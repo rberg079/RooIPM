@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -125,19 +125,19 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD',    # yearly vital rates
-  'nYF', 'nSA', 'nAD', 'nTOT',              # population sizes
+  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD',
+  'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
-  'Mu.S',                                   # mean survival
-  # 'Gamma.S', 'Sigma.S',                   # random effects (correlated)
-  'EpsilonT.S', 'SigmaT.S',                 # random effects (uncorrelated)
-  'Mu.O', 'EpsilonT.O', 'SigmaT.O',         # observation parameters
+  'Mu.S', 'EpsilonT.S', 'SigmaT.S',
+  # 'EpsilonT.S1', 'SigmaT.S1', # dummy == 1
+  # 'EpsilonT.S0', 'SigmaT.S0', # dummy == 0
+  'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
-  'Mu.R', 'Mu.B',                           # mean reproductive success  
-  'EpsilonI.R', 'EpsilonT.R', 'EpsilonT.B', # random effects  
-  'SigmaI.R', 'SigmaT.R', 'SigmaT.B',       # random effects  
+  'Mu.R', 'Mu.B',
+  'EpsilonI.R', 'EpsilonT.R', 'EpsilonT.B', 
+  'SigmaI.R', 'SigmaT.R', 'SigmaT.B', 
   
   # Abundance model
   'propF'
@@ -145,7 +145,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R')} # , 'BetaV.R', 'BetaW.R'
+if(envEffectsR){params <- c(params, 'BetaD.R')}
 if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true', 'win.true')}
 
 # select MCMC settings
@@ -242,7 +242,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
