@@ -98,6 +98,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   veg.true  <- veg
   win.true  <- win
   
+  # TODO: Prepare the vectors dens, veg, win, and propF for inclusion in inits list. 
+  # The criterion here is that any value that is NOT NA in the input data should be NA in what is passed in initial values.
+  # This also applies to the vector "area". 
+  
   # latent states
   state <- knownStates
   
