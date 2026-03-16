@@ -40,6 +40,12 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2024.xlsx",
                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
 
+# TODO: You are passing a data vector "R" to the model that is full of NAs.
+# This means that the model is trying to estimate all those missing data points. 
+# That takes a lot of time/power, and is completely pointless here. 
+# Revise wrangleData_rs() to only return "R" and associated variables for the 
+# cases where "R" is not NA. 
+
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 #state = svData$state,
