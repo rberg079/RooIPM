@@ -65,7 +65,8 @@ myData  <- list(obs = svData$obs,
 
 myConst <- list(nR = rsData$nR,
                 
-                nID.S = svData$nID,
+                #nID.S = svData$nID,
+                nID.S = 471,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
                 
