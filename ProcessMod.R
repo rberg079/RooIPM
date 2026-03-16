@@ -5,11 +5,12 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
-parallelRun <- TRUE
+testRun <- TRUE
+parallelRun <- FALSE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 6
+use_dCJS <- TRUE
 
 # load packages
 library(tidyverse)
@@ -19,6 +20,7 @@ library(here)
 library(boot)
 library(coda)
 library(nimble)
+library(nimbleEcology)
 library(parallel)
 
 # load data
@@ -93,7 +95,8 @@ myConst <- list(nR = rsData$nR,
                 nNoProp = enData$nNoProp,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
-                ageClasses = ageClasses)
+                ageClasses = ageClasses,
+                use_dCJS = use_dCJS)
 
 
 ## Assemble --------------------------------------------------------------------

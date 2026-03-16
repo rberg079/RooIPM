@@ -136,7 +136,7 @@ writeCode <- function(){
       propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     }
     
-      
+    
     ## POPULATION MODEL
     ## -------------------------------------------------------------------------
     
@@ -215,7 +215,7 @@ writeCode <- function(){
       nAD[a,1] <- initN.AD[a]
     }
     
-
+    
     ## POPULATION DENSITY MODEL
     ## -------------------------------------------------------------------------
     
@@ -230,22 +230,46 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     #### Likelihood ####
-    for(i in 1:nID.S){
+    
+    # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
+    # Try to implement nimbleEcology::dCJS_vv()
+    # Documentation here: https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html
+    
+    if(use_dCJS){
       
-      # initial state
-      state[i, 1] <- 1
-      
-      for(t in (first[i] + 1):last[i]){
-        # state process
-        state[i, t] ~ dbern(S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1])
+      # Marginalized formulation with nimbleEcology::dCJS
+      for(i in 1:nID.S){
         
-        # observation process
-        obs[i, t] ~ dbern(O[t] * state[i, t])
+        #S_ind[i, 1:(first[i]-1)] <- 0
+        for(t in first[i]:(last[i]-1)){
+          S_ind[i, t] <- S[ageC.S[age.S[i, t]], t] 
+        }
+        #S_ind[i, (last[i]-1):(nYear-1)] <- 0
+        
+        obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
+                                           probCapture = O[first[i]:last[i]], 
+                                           len = last[i] - first[i] + 1)
       }
-      # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
-      # Try to implement nimbleEcology::dCJS_vv()
-      # Documentation here: https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html
+      
+    }else{
+      
+      # Latent state formulation
+      for(i in 1:nID.S){
+        
+        # initial state
+        state[i, 1] <- 1
+        
+        for(t in (first[i] + 1):last[i]){
+          # state process
+          state[i, t] ~ dbern(S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1])
+          
+          # observation process
+          obs[i, t] ~ dbern(O[t] * state[i, t])
+        }
+      }
+      
     }
+    
     
     #### Constraints ####
     # survival function
@@ -257,15 +281,15 @@ writeCode <- function(){
             BetaV.S * veg.true[t] * dummy[a] +
             BetaW.S * win.true[t] * dummy[a] +
             EpsilonT.S[t]
-            # EpsilonT.S1[t] * dummy[a] +     # dummy == 1
-            # EpsilonT.S0[t] * (1 - dummy[a]) # dummy == 0
+          # EpsilonT.S1[t] * dummy[a] +     # dummy == 1
+          # EpsilonT.S0[t] * (1 - dummy[a]) # dummy == 0
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
             EpsilonT.S[t]
         }
       }
     }
-
+    
     # observation function
     for(t in 1:nYear){
       EpsilonT.O[t] ~ dnorm(0, sd = SigmaT.O)
@@ -314,12 +338,12 @@ writeCode <- function(){
     for(x in 1:nR){
       B[x] ~ dbern(Bt[year.R[x]])
     }
-
+    
     for(t in 1:(nYear-1)){
       logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
       # Bt[t] <- 1
     }
-
+    
     # individual RS function
     for(x in 1:nR){
       if(envEffectsR){
@@ -335,7 +359,7 @@ writeCode <- function(){
           EpsilonT.R[year.R[x]]
       }
     }
-
+    
     # age-specific RS function
     # use parameters estimated from individual data above
     # to predict age-specific reproductive success (Ra) here!
@@ -351,14 +375,14 @@ writeCode <- function(){
         }
       }
     }
-
+    
     ##### Priors ####
     # priors for fixed effects
     for(a in 1:nAgeC.R){
       Mu.R[a] ~ dunif(0, 1)
     }
     Mu.B ~ dunif(0, 1)
-
+    
     if(envEffectsR){
       BetaD.R ~ dunif(-5, 5)
     }
@@ -367,7 +391,7 @@ writeCode <- function(){
     for(i in 1:nID.R){
       XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
     }
-
+    
     for(t in 1:(nYear-1)){
       XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
       XiT.B[t] ~ dnorm(0, sd = 1) # latent standard normal
