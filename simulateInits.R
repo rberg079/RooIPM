@@ -14,6 +14,7 @@
 #' @param dens vector of length nYear of population density data.
 #' @param veg vector of length nYear of available vegetation data.
 #' @param win vector of length nYear of winter severity data.
+#' @param knownStates matrix of same dimensions as capture histories and containing information on known states.
 #' @param propF vector of length nYear of proportion of observations belonging to females.
 #' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
 #' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
@@ -25,7 +26,7 @@
 
 simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, ageC.S,
                           nR = 0, nID.R = 0, year.R = 0, id.R = 0, age.R = 0, ageC.R,
-                          dens, veg, win, propF = 0, envEffectsS = TRUE, envEffectsR = TRUE){
+                          dens, veg, win, knownStates, propF = 0, envEffectsS = TRUE, envEffectsR = TRUE){
   
   # # for testing purposes
   # library(readxl)
@@ -98,9 +99,19 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   win.true  <- win
   
   # latent states
-  Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
-  Mu.Op <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
+  state <- knownStates
   
+  for(i in 1:nrow(state)){
+    
+    # Extract first capture
+    first <- min(which(!is.na(state[i, ])))
+    
+    # Set 1 for any unknown state
+    state[i, is.na(state[i, ])] <- 1
+    
+    # Set 0 for any NA prior to first capture
+    state[i, 1:(first-1)] <- 0
+  }
   
   ## Simulate vital rate covariate effects -------------------------------------
   
@@ -400,8 +411,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     veg.true = veg.true,
     win.true = win.true,
     
-    Mu.Sp = Mu.Sp,
-    Mu.Op = Mu.Op,
+    state = state,
+    
     Mu.S = Mu.S,
     
     # Xi.S = Xi.S,

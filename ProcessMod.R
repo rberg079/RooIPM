@@ -42,7 +42,7 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
-                state = svData$state,
+                #state = svData$state,
                 
                 B = rsData$B,
                 R = rsData$survS1,
@@ -119,6 +119,7 @@ for(c in 1:nchains){
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
+    knownStates = svData$state,
     propF = myData$propF,
     envEffectsR = TRUE,
     envEffectsS = TRUE

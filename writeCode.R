@@ -231,14 +231,16 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(i in 1:nID.S){
+      
+      # initial state
+      state[i, 1] <- 1
+      
       for(t in (first[i] + 1):last[i]){
         # state process
-        state[i, t] ~ dbern(Mu.Sp[i, t])
-        Mu.Sp[i, t] <- S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1]
+        state[i, t] ~ dbern(S[ageC.S[age.S[i, t-1]], t-1] * state[i, t-1])
         
         # observation process
-        obs[i, t] ~ dbern(Mu.Op[i, t])
-        Mu.Op[i, t] <- O[t] * state[i, t]
+        obs[i, t] ~ dbern(O[t] * state[i, t])
       }
       # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
       # Try to implement nimbleEcology::dCJS_vv()
