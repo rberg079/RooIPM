@@ -318,61 +318,67 @@ writeCode <- function(){
       # Bt[t] <- 1
     }
 
-    # individual RS function
-    for(x in 1:nR){
-      if(envEffectsR){
-        R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.cov[year.R[x]] +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]]
-      }else{
-        R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]]
-      }
-    }
+    # # individual RS function
+    # for(x in 1:nR){
+    #   if(envEffectsR){
+    #     R[x] ~ dbern(Ri[x])
+    #     logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+    #       BetaD.R * dens.cov[year.R[x]] +
+    #       EpsilonI.R[id.R[x]] +
+    #       EpsilonT.R[year.R[x]]
+    #   }else{
+    #     R[x] ~ dbern(Ri[x])
+    #     logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+    #       EpsilonI.R[id.R[x]] +
+    #       EpsilonT.R[year.R[x]]
+    #   }
+    # }
 
-    # age-specific RS function
-    # use parameters estimated from individual data above
-    # to predict age-specific reproductive success (Ra) here!
+    # # age-specific RS function
+    # # use parameters estimated from individual data above
+    # # to predict age-specific reproductive success (Ra) here!
+    # for(a in 1:nAgeC.R){
+    #   for(t in 1:(nYear-1)){
+    #     if(envEffectsR){
+    #       logit(Ra[a, t]) <- logit(Mu.R[a]) +
+    #         BetaD.R * dens.cov[t] +
+    #         EpsilonT.R[t]
+    #     }else{
+    #       logit(Ra[a, t]) <- logit(Mu.R[a]) +
+    #         EpsilonT.R[t]
+    #     }
+    #   }
+    # }
+    
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
-        if(envEffectsR){
-          logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.cov[t] +
-            EpsilonT.R[t]
-        }else{
-          logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            EpsilonT.R[t]
-        }
+        Ra[a, t] <- 0.5
       }
     }
 
     ##### Priors ####
     # priors for fixed effects
-    for(a in 1:nAgeC.R){
-      Mu.R[a] ~ dunif(0, 1)
-    }
+    # for(a in 1:nAgeC.R){
+    #   Mu.R[a] ~ dunif(0, 1)
+    # }
     Mu.B ~ dunif(0, 1)
 
-    if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
-    }
+    # if(envEffectsR){
+    #   BetaD.R ~ dunif(-5, 5)
+    # }
     
     # priors for random effects
-    for(i in 1:nID.R){
-      XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
-    }
+    # for(i in 1:nID.R){
+    #   XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
+    # }
 
     for(t in 1:(nYear-1)){
-      XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
+      # XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
       XiT.B[t] ~ dnorm(0, sd = 1) # latent standard normal
     }
     
-    EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
-    EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
+    # EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
+    # EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
     EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
     
     # NOTES:
@@ -381,8 +387,8 @@ writeCode <- function(){
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
     # SigmaI.R <- 0
-    SigmaI.R ~ dunif(0, 10) # scale of the random effect
-    SigmaT.R ~ dunif(0, 10) # scale of the random effect
+    # SigmaI.R ~ dunif(0, 10) # scale of the random effect
+    # SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
     
     # NOTES:

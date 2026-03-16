@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=RooIPM_dummy         # Nom de la tâche
-#SBATCH --output=job_output_dummy.txt   # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_dummy.txt     # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=RooIPM_fixsPY         # Nom de la tâche
+#SBATCH --output=job_output_fixsPY.txt   # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_fixsPY.txt     # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 
