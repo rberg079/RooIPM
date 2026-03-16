@@ -237,23 +237,30 @@ writeCode <- function(){
     
     if(use_dCJS){
       
-      # Marginalized formulation with nimbleEcology::dCJS
+      ## Marginalized formulation with nimbleEcology::dCJS
       for(i in 1:nID.S){
-        
-        #S_ind[i, 1:(first[i]-1)] <- 0
         for(t in first[i]:(last[i]-1)){
           S_ind[i, t] <- S[ageC.S[age.S[i, t]], t] 
         }
-        #S_ind[i, (last[i]-1):(nYear-1)] <- 0
-        
+      }
+
+      # - Individuals first captured before second-to-last occasion (S_ind = vector)
+      for(i in 1:(nID.S.switch-1)){
         obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
+                                           probCapture = O[first[i]:last[i]], 
+                                           len = last[i] - first[i] + 1)
+      }
+      
+      # Individuals first captured at second-to-last occasion (S_ind = scalar)
+      for(i in nID.S.switch:nID.S){
+        obs[i, first[i]:last[i]] ~ dCJS_sv(probSurvive = S_ind[i, first[i]], 
                                            probCapture = O[first[i]:last[i]], 
                                            len = last[i] - first[i] + 1)
       }
       
     }else{
       
-      # Latent state formulation
+      ## Latent state formulation
       for(i in 1:nID.S){
         
         # initial state

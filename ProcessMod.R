@@ -65,8 +65,8 @@ myData  <- list(obs = svData$obs,
 
 myConst <- list(nR = rsData$nR,
                 
-                #nID.S = svData$nID,
-                nID.S = 471,
+                nID.S = svData$nID,
+                nID.S.switch = min(which(svData$first == svData$nYear - 1)), # Caution: This only works if svData is strictly ordered by capture year!
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
                 
