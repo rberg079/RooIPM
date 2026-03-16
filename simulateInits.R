@@ -336,12 +336,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     }
   }
   
-  # priors for initial population sizes
-  initN.YF <- 100
-  initN.SA <- 120
-  initN.AD <- rep(80, nAge)
-  
-  
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
@@ -363,6 +357,15 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   nAD        <- matrix(NA, nrow = nAge, ncol = nYear)
   nAD[,1]    <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10))
   nTOT       <- c(nYF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1))
+  
+  # priors for initial population sizes
+  initN.YF <- nYF[1]
+  initN.SA <- nSA[1]
+  initN.AD <- nAD[,1]
+  
+  log.initN.YF <- log(initN.YF)
+  log.initN.SA <- log(initN.SA)
+  log.initN.AD <- log(initN.AD)
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
@@ -455,7 +458,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     area = area,
     initN.YF = initN.YF,
     initN.SA = initN.SA,
-    initN.AD = initN.AD
+    initN.AD = initN.AD,
+    log.initN.YF = log.initN.YF,
+    log.initN.SA = log.initN.SA,
+    log.initN.AD = log.initN.AD
   )
   
   if(envEffectsS){
