@@ -5,8 +5,8 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
-parallelRun <- FALSE
+testRun <- FALSE
+parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 6
@@ -42,18 +42,16 @@ rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2024.xlsx",
                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
 
-# TODO: You are passing a data vector "R" to the model that is full of NAs.
-# This means that the model is trying to estimate all those missing data points. 
-# That takes a lot of time/power, and is completely pointless here. 
-# Revise wrangleData_rs() to only return "R" and associated variables for the 
-# cases where "R" is not NA. 
+# NAs in age.S before first capture were throwing an error at model defining step!
+# replacing NAs with dummy integer 1 seems to have solved it (to move to wrangling)
+svData$age.S[is.na(svData$age.S)] <- 1
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
-                #state = svData$state,
+                state = svData$state,
                 
                 B = rsData$B,
-                R = rsData$survS1,
+                R = rsData$R,
                 
                 area = enData$area,
                 propF = enData$propF,
@@ -63,37 +61,37 @@ myData  <- list(obs = svData$obs,
                 vegE = enData$vegE,
                 win = enData$win)
 
-myConst <- list(nR = rsData$nR,
+myConst <- list(nYear = svData$nYear,
+                nAge = rsData$nAge,
                 
                 nID.S = svData$nID,
                 nID.S.switch = min(which(svData$first == svData$nYear - 1)), # Caution: This only works if svData is strictly ordered by capture year!
+                nAgeC.S = svData$nAgeC.S,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
                 
+                nB = rsData$nB,
+                nR = rsData$nR,
                 nID.R = rsData$nID,
                 id.R = rsData$id.R,
+                year.B = rsData$year.B,
                 year.R = rsData$year.R,
                 age.R = rsData$age.R,
                 ageC.R = rsData$ageC.R,
-                
-                nYear = svData$nYear,
-                nAge = rsData$nAge,
-                nAgeC.S = svData$nAgeC.S,
                 nAgeC.R = rsData$nAgeC.R,
+                
                 dummy = svData$dummy,
                 first = svData$first,
                 last = svData$last,
-                W = diag(svData$nAgeC.S),
-                DF = svData$nAgeC.S,
+                
                 densM = enData$densM,
-                noDens = enData$noDens,
                 noVeg = enData$noVeg,
                 noWin = enData$noWin,
                 noProp = enData$noProp,
-                nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
                 nNoProp = enData$nNoProp,
+                
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
                 ageClasses = ageClasses,
@@ -115,22 +113,21 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
+    dens = myData$dens,
+    veg = myData$veg,
+    win = myData$win,
+    propF = myData$propF,
+    knownStates = svData$state,
     nYear = myConst$nYear,
     nAge = myConst$nAge,
-    ageClasses = ageClasses,
-    nID.S = myConst$nID.S,
-    ageC.S = myConst$ageC.S,
     nR = myConst$nR,
     nID.R = myConst$nID.R,
+    ageClasses = ageClasses,
     year.R = myConst$year.R,
     id.R = myConst$id.R,
     age.R = myConst$age.R,
     ageC.R = myConst$ageC.R,
-    dens = myData$dens,
-    veg = myData$veg,
-    win = myData$win,
-    knownStates = svData$state,
-    propF = myData$propF,
+    ageC.S = myConst$ageC.S,
     envEffectsR = TRUE,
     envEffectsS = TRUE
     )
@@ -144,8 +141,6 @@ params <- c(
   
   # Survival model
   'Mu.S', 'EpsilonT.S', 'SigmaT.S',
-  # 'EpsilonT.S1', 'SigmaT.S1', # dummy == 1
-  # 'EpsilonT.S0', 'SigmaT.S0', # dummy == 0
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
@@ -182,6 +177,7 @@ if(parallelRun){
                        niter, nburnin, nthin, seed){
     
     library(nimble)
+    library(nimbleEcology)
     set.seed(seed)
     inits <- myInits[[chainID]]
     
@@ -244,7 +240,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -256,7 +252,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs

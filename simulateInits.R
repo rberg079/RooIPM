@@ -7,9 +7,9 @@
 #' @param knownStates matrix of same dimensions as capture history of information on known states.
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
-#' @param ageClasses integer. Number of age classes to be considered. ageClasses = 20 by default.
 #' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
 #' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
+#' @param ageClasses integer. Number of age classes to be considered. ageClasses = 20 by default.
 #' @param year.R integer vector. Year of each event in the reproductive success analysis.
 #' @param id.R integer vector. Maternal ID of each event in the reproductive success analysis.
 #' @param age.R integer vector. Maternal age of each event in the reproductive success analysis.
@@ -23,8 +23,8 @@
 #' @examples
 
 simulateInits <- function(dens, veg, win, propF, knownStates, 
-                          nYear = 17, nAge = 19, ageClasses = 20,
-                          nR = 0, nID.R = 0, year.R = 0, id.R = 0, age.R = 0, ageC.R,
+                          nYear = 17, nAge = 19, nR = 0, nID.R = 0, ageClasses = 20,
+                          year.R = 0, id.R = 0, age.R = 0, ageC.R, ageC.S,
                           envEffectsS = TRUE, envEffectsR = TRUE){
   
   # # for testing purposes
@@ -66,6 +66,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R
   # ageC.R <- rsData$ageC.R
+  # ageC.S <- svData$ageC.S
   # 
   # envEffectsR <- TRUE
   # envEffectsS <- TRUE

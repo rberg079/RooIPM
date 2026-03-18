@@ -10,18 +10,21 @@ writeCode <- function(){
   
   ## Parameters ------------------------------------------------------------------
   
-  # nR = number of events in the reproductive success dataset (was N)
-  # nID.S = number of unique kangaroos in the survival dataset (was nind)
-  # nID.R = number of unique kangaroos in the reproductive success dataset (was N.id)
   # nYear = number of years in the population model (was ntimes or N.year)
   # nAge = number of ages or maximum age in the population model
+  
+  # nB = number of events in the birth rate analysis
+  # nR = number of events in the survival-of-pouch-young analysis
+  # nID.S = number of unique kangaroos in the survival dataset (was nind)
+  # nID.R = number of unique kangaroos in the reproductive success dataset (was N.id)
+
   # nAgeC.S = number of age classes in the survival model (was nAgeC)
   # nAgeC.R = number of age classes in the reproductive success model
   
-  # nNoAge = number of individuals for which age is unknown
   # nNoDens = number of years for which population density is unknown
   # nNoVeg = number of years for which available vegetation is unknown
-  # nNoWin = number of years for which winter severity is unknown
+  # nNoWin = number of years for which weather harshness is unknown
+  # nNoProp = number of years for which proportion of females in the population is unknown
   
   # nYF = number of young-at-foot (near pouch exit at 0 years old) in the population (was nYAF)
   # nYFa = number of young-at-foot of mothers of each age in the population (was nYAFa)
@@ -37,19 +40,15 @@ writeCode <- function(){
   # sSA = survival of 1-year-old subadults to their 1st Sept as 2-year-olds in the population model (taken from the CJS model's S)
   # sAD = survival of adult females from one Sept to the next in the population model (taken from the CJS model's S)
   
-  # Mu.Sp = mean latent state for CJS model (was mu1)
-  # Mu.Op = mean latent observation for CJS model (was mu2)
-  
   # Mu.S = age-specific mean probability of survival (S)
   # BetaD.S = covariate effect of density (D) on survival (S) (was B.dens)
   # BetaV.S = covariate effect of vegetation (V) on survival (S) (was B.veg)
   # BetaW.S = covariate effect of weather harshness (W) on survival (S)
   
-  # dens.true = "true" yearly population density, from which the observed value was hypothetically sampled
+  # dens.true = "true" yearly population density, from which the observed values were hypothetically sampled
   # dens.cov = centered "true" yearly population density, for its use as a covariate in survival & reproductive success models
-  # veg.true = "true" yearly available vegetation, from which the observed value was hypothetically sampled
-  # noAge = indexes of individuals who are of unknown age in the survival model
-  # ageM = estimated ages of unknown-aged individuals in the survival model
+  # veg.true = "true" yearly available vegetation, from which the observed values were hypothetically sampled
+  # win.true = "true" yearly weather harshness, from which the observed values were hypothetically sampled
   
   # Gamma.S = correlated random effect of year on probability of survival (was gamma)
   # Xi.S = scaling factor for how big the random effect variation is per age class (was xi)
@@ -67,11 +66,9 @@ writeCode <- function(){
   # SigmaT.O = standard deviation of effect of year on probability of observation in the survival model (was sd.p)
   
   # Mu.B = mean breeding rate, or probability of a female producing a jellybean, in the reproductive success model
-  # Mu.R = mean probability of successfully turning a jellybean into a YAF, in the reproductive success model
+  # Mu.R = mean probability of successfully bringing a jellybean to pouch exit, in the reproductive success model
   
   # BetaD.R = covariate effect of density (D) on reproductive success (R)
-  # BetaV.R = covariate effect of vegetation (V) on reproductive success (R)
-  # BetaW.R = covariate effect of weather harshness (W) on reproductive success (R)
   
   # EpsilonI.R = random effect of mother's identity (I) on reproductive success (Ri)
   # EpsilonT.R = random effect of year (T) on reproductive success (Ri & Ra)
@@ -84,8 +81,6 @@ writeCode <- function(){
   # SigmaI.R = standard deviation of effect of mother's identity (I) on reproductive success (Ri)
   # SigmaT.R = standard deviation of effect of year (T) on reproductive success (Ri & Ra)
   # SigmaT.B = standard deviation of effect of year (T) on breeding rate (Bt)
-  
-  # propF = yearly proportion of observations representing females, supplied up to 2019
   
   # initN.YF = initial population size of young-at-foot
   # initN.SA = initial population size of subadults
@@ -244,20 +239,19 @@ writeCode <- function(){
         }
       }
 
-      # - Individuals first captured before second-to-last occasion (S_ind = vector)
+      # Individuals first captured before last-1 (S_ind = vector)
       for(i in 1:(nID.S.switch-1)){
         obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
                                            probCapture = O[first[i]:last[i]], 
                                            len = last[i] - first[i] + 1)
       }
       
-      # Individuals first captured at second-to-last occasion (S_ind = scalar)
+      # Individuals first captured at last-1 (S_ind = scalar)
       for(i in nID.S.switch:nID.S){
         obs[i, first[i]:last[i]] ~ dCJS_sv(probSurvive = S_ind[i, first[i]], 
                                            probCapture = O[first[i]:last[i]], 
                                            len = last[i] - first[i] + 1)
       }
-      
     }else{
       
       ## Latent state formulation
@@ -274,9 +268,7 @@ writeCode <- function(){
           obs[i, t] ~ dbern(O[t] * state[i, t])
         }
       }
-      
     }
-    
     
     #### Constraints ####
     # survival function
@@ -288,8 +280,6 @@ writeCode <- function(){
             BetaV.S * veg.true[t] * dummy[a] +
             BetaW.S * win.true[t] * dummy[a] +
             EpsilonT.S[t]
-          # EpsilonT.S1[t] * dummy[a] +     # dummy == 1
-          # EpsilonT.S0[t] * (1 - dummy[a]) # dummy == 0
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
             EpsilonT.S[t]
@@ -309,28 +299,19 @@ writeCode <- function(){
       Mu.S[a] ~ dunif(0, 1)
     }
     
-    # for age-independent fixed effects
+    # fixed effects
     if(envEffectsS){
       BetaD.S ~ dunif(-5, 5)
       BetaV.S ~ dunif(-5, 5)
       BetaW.S ~ dunif(-5, 5)
     }
     
-    # for age-independent random effects
+    # random effects
     for(t in 1:(nYear-1)){
       XiT.S[t] ~ dnorm(0, sd = 1) # latent standard normal
       EpsilonT.S[t] <- SigmaT.S * XiT.S[t] # actual random effect
     }
     SigmaT.S ~ dunif(0, 10) # scale of the random effect
-    
-    # for(t in 1:(nYear-1)){
-    #   XiT.S1[t] ~ dnorm(0, sd = 1)
-    #   XiT.S0[t] ~ dnorm(0, sd = 1)
-    #   EpsilonT.S1[t] <- SigmaT.S1 * XiT.S1[t] 
-    #   EpsilonT.S0[t] <- SigmaT.S0 * XiT.S0[t] 
-    # }
-    # SigmaT.S1 ~ dunif(0, 10) # dummy == 1
-    # SigmaT.S0 ~ dunif(0, 10) # dummy == 0
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)
@@ -342,13 +323,12 @@ writeCode <- function(){
     
     #### Likelihood & constraints ####
     # yearly birth rate
-    for(x in 1:nR){
-      B[x] ~ dbern(Bt[year.R[x]])
+    for(x in 1:nB){
+      B[x] ~ dbern(Bt[year.B[x]])
     }
     
     for(t in 1:(nYear-1)){
       logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
-      # Bt[t] <- 1
     }
     
     # individual RS function
@@ -384,7 +364,7 @@ writeCode <- function(){
     }
     
     ##### Priors ####
-    # priors for fixed effects
+    # fixed effects
     for(a in 1:nAgeC.R){
       Mu.R[a] ~ dunif(0, 1)
     }
@@ -394,7 +374,7 @@ writeCode <- function(){
       BetaD.R ~ dunif(-5, 5)
     }
     
-    # priors for random effects
+    # random effects
     for(i in 1:nID.R){
       XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
     }
@@ -413,7 +393,6 @@ writeCode <- function(){
     # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
     # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
     
-    # SigmaI.R <- 0
     SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
