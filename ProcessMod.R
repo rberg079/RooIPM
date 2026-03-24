@@ -144,9 +144,9 @@ params <- c(
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
-  'Mu.R', 'Mu.B',
-  'EpsilonI.R', 'EpsilonT.R', 'EpsilonT.B', 
-  'SigmaI.R', 'SigmaT.R', 'SigmaT.B', 
+  'Mu.B', # 'Mu.R', 
+  'EpsilonT.B', # 'EpsilonI.R', 'EpsilonT.R', 
+  'SigmaT.B', # 'SigmaI.R', 'SigmaT.R', 
   
   # Abundance model
   'propF'
@@ -154,7 +154,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R')}
+# if(envEffectsR){params <- c(params, 'BetaD.R')}
 if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true', 'win.true')}
 
 # select MCMC settings
