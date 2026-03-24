@@ -10,6 +10,7 @@ parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 6
+use_dCJS <- FALSE
 
 # load packages
 library(tidyverse)
@@ -19,6 +20,7 @@ library(here)
 library(boot)
 library(coda)
 library(nimble)
+library(nimbleEcology)
 library(parallel)
 
 # load data
@@ -27,7 +29,7 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
-                         obs.data  = "data/PromObs_2008-2023.xlsx",
+                         obs.data  = "data/PromObs_2008-2024.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
 source('wrangleData_sv.R')
@@ -37,21 +39,19 @@ svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
 
 source('wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                         obs.data = "data/PromObs_2008-2023.xlsx",
+                         obs.data = "data/PromObs_2008-2024.xlsx",
                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
+
+# NAs in age.S before first capture were throwing an error at model defining step!
+# replacing NAs with dummy integer 1 seems to have solved it (to move to wrangling)
+svData$age.S[is.na(svData$age.S)] <- 1
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
                 state = svData$state,
-                age.S = svData$age.S,
-                ageC.S = svData$ageC.S,
                 
                 B = rsData$B,
-                R = rsData$survS1,
-                id.R = rsData$id.R,
-                year.R = rsData$year.R,
-                age.R = rsData$age.R,
-                ageC.R = rsData$ageC.R,
+                R = rsData$R,
                 
                 area = enData$area,
                 propF = enData$propF,
@@ -61,30 +61,41 @@ myData  <- list(obs = svData$obs,
                 vegE = enData$vegE,
                 win = enData$win)
 
-myConst <- list(nR = rsData$nR,
-                nID.S = svData$nID,
-                nID.R = rsData$nID,
-                nYear = svData$nYear,
+myConst <- list(nYear = svData$nYear,
                 nAge = rsData$nAge,
+                
+                nID.S = svData$nID,
+                nID.S.switch = min(which(svData$first == svData$nYear - 1)), # Caution: This only works if svData is strictly ordered by capture year!
                 nAgeC.S = svData$nAgeC.S,
+                age.S = svData$age.S,
+                ageC.S = svData$ageC.S,
+                
+                nB = rsData$nB,
+                nR = rsData$nR,
+                nID.R = rsData$nID,
+                id.R = rsData$id.R,
+                year.B = rsData$year.B,
+                year.R = rsData$year.R,
+                age.R = rsData$age.R,
+                ageC.R = rsData$ageC.R,
                 nAgeC.R = rsData$nAgeC.R,
+                
                 dummy = svData$dummy,
                 first = svData$first,
                 last = svData$last,
-                W = diag(svData$nAgeC.S),
-                DF = svData$nAgeC.S,
+                
                 densM = enData$densM,
-                noDens = enData$noDens,
                 noVeg = enData$noVeg,
                 noWin = enData$noWin,
                 noProp = enData$noProp,
-                nNoDens = enData$nNoDens,
                 nNoVeg = enData$nNoVeg,
                 nNoWin = enData$nNoWin,
                 nNoProp = enData$nNoProp,
+                
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
-                ageClasses = ageClasses)
+                ageClasses = ageClasses,
+                use_dCJS = use_dCJS)
 
 
 ## Assemble --------------------------------------------------------------------
@@ -102,21 +113,21 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    nYear = myConst$nYear,
-    nAge = myConst$nAge,
-    ageClasses = ageClasses,
-    nID.S = myConst$nID.S,
-    ageC.S = myData$ageC.S,
-    nR = myConst$nR,
-    nID.R = myConst$nID.R,
-    year.R = myData$year.R,
-    id.R = myData$id.R,
-    age.R = myData$age.R,
-    ageC.R = myData$ageC.R,
     dens = myData$dens,
     veg = myData$veg,
     win = myData$win,
     propF = myData$propF,
+    knownStates = svData$state,
+    nYear = myConst$nYear,
+    nAge = myConst$nAge,
+    nR = myConst$nR,
+    nID.R = myConst$nID.R,
+    ageClasses = ageClasses,
+    year.R = myConst$year.R,
+    id.R = myConst$id.R,
+    age.R = myConst$age.R,
+    ageC.R = myConst$ageC.R,
+    ageC.S = myConst$ageC.S,
     envEffectsR = TRUE,
     envEffectsS = TRUE
     )
@@ -130,8 +141,6 @@ params <- c(
   
   # Survival model
   'Mu.S', 'EpsilonT.S', 'SigmaT.S',
-  # 'EpsilonT.S1', 'SigmaT.S1', # dummy == 1
-  # 'EpsilonT.S0', 'SigmaT.S0', # dummy == 0
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
@@ -168,6 +177,7 @@ if(parallelRun){
                        niter, nburnin, nthin, seed){
     
     library(nimble)
+    library(nimbleEcology)
     set.seed(seed)
     inits <- myInits[[chainID]]
     
@@ -230,7 +240,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_fixsPY.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_base.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -242,7 +252,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -291,28 +301,14 @@ source('compareModels.R')
 compareModels(nYear = nYear,
               nAgeC.S = nAgeC.S,
               postPaths = c(
-                "results/IPM_CJSen_RSen_AB_DynDens_fullAgeIND_typoFix.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noEnvS&R_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noVorW_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noDens_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_noSigI_dnorm.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_Bt1_dnorm.rds"
-                # "results/IPM_CJSen_RSen_AB_DynDens_avgsPY.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_fixsPY.rds"
-                "results/IPM_CJSen_RSen_AB_DynDens_Dummy.rds"
+                "results/IPM_CJSen_RSen_AB_DynDens_base.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds"
               ),
               modelNames = c(
                 "base",
-                # "dnorm_noEnvS&R",
-                # "dnorm_noVorW",
-                # "dnorm_noDens",
-                # "dnorm_noSigI",
-                # "dnorm_Bt1"
-                # "avg_sPY",
-                # "fixed_sPY"
-                "dummy"
+                "dCJS"
               ),
-              plotFolder = c("figures/dummyVariable"),
+              plotFolder = c("figures/dCJS"),
               returnSumData = TRUE)
 
 

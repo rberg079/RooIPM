@@ -1,20 +1,19 @@
 #' Simulate initial values for IPM
 #'
-#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
-#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
-#' @param ageClasses integer. Number of age classes to be considered. ageClasses = 20 by default.
-#' @param nID.S integer. Number of unique kangaroos in the survival model. nID.S = 0 by default.
-#' @param ageC.S integer vector. Age classes to assign to actual ages in survival model.
-#' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
-#' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
-#' @param year.R integer vector. Year of each event in the reproductive success analysis.
-#' @param id.R integer vector. Maternal ID of each event in the reproductive success analysis.
-#' @param age.R integer vector. Maternal age of each event in the reproductive success analysis.
-#' @param ageC.R integer vector. Age classes to assign to actual ages in reproductive success model.
 #' @param dens vector of length nYear of population density data.
 #' @param veg vector of length nYear of available vegetation data.
 #' @param win vector of length nYear of winter severity data.
 #' @param propF vector of length nYear of proportion of observations belonging to females.
+#' @param knownStates matrix of same dimensions as capture history of information on known states.
+#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
+#' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 19 by default.
+#' @param nR integer. Number of events in the reproductive success model. nR = 0 by default.
+#' @param nID.R integer. Number of unique kangaroos in the reproductive success model. nID.R = 0 by default.
+#' @param ageClasses integer. Number of age classes to be considered. ageClasses = 20 by default.
+#' @param year.R integer vector. Year of each event in the reproductive success analysis.
+#' @param id.R integer vector. Maternal ID of each event in the reproductive success analysis.
+#' @param age.R integer vector. Maternal age of each event in the reproductive success analysis.
+#' @param ageC.R integer vector. Age classes to assign to actual ages in reproductive success model.
 #' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
 #' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
 #'
@@ -23,9 +22,10 @@
 #'
 #' @examples
 
-simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, ageC.S,
-                          nR = 0, nID.R = 0, year.R = 0, id.R = 0, age.R = 0, ageC.R,
-                          dens, veg, win, propF = 0, envEffectsS = TRUE, envEffectsR = TRUE){
+simulateInits <- function(dens, veg, win, propF, knownStates, 
+                          nYear = 17, nAge = 19, nR = 0, nID.R = 0, ageClasses = 20,
+                          year.R = 0, id.R = 0, age.R = 0, ageC.R, ageC.S,
+                          envEffectsS = TRUE, envEffectsR = TRUE){
   
   # # for testing purposes
   # library(readxl)
@@ -50,12 +50,15 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   #                          obs.data = "data/PromObs_2008-2023.xlsx",
   #                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
   # 
-  # nYear <- rsData$nYear
-  # nAge <- rsData$nAge
+  # dens <- enData$dens
+  # veg <- enData$veg
+  # win <- enData$win
+  # propF <- enData$propF
+  # knownStates <- svData$state
   # 
-  # nID.S <- svData$nID.S
-  # ageC.S <- svData$ageC.S
-  # nAgeC.S <- svData$nAgeC.S
+  # nYear <- svData$nYear
+  # nAge <- rsData$nAge
+  # ageClasses <- 6
   # 
   # nR <- rsData$nR
   # nID.R <- rsData$nID.R
@@ -63,12 +66,8 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   # id.R <- rsData$id.R
   # age.R <- rsData$age.R
   # ageC.R <- rsData$ageC.R
-  # nAgeC.R <- rsData$nAgeC.R
+  # ageC.S <- svData$ageC.S
   # 
-  # dens <- enData$dens
-  # veg <- enData$veg
-  # win <- enData$win
-  # propF <- enData$propF
   # envEffectsR <- TRUE
   # envEffectsS <- TRUE
   # 
@@ -81,26 +80,35 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   
   ## Survival model
   # missing values
-  nNoDens <- sum(is.na(dens))
-  nNoVeg  <- sum(is.na(veg))
-  nNoWin  <- sum(is.na(win))
-  nNoProp <- sum(is.na(propF))
+  noDens <- is.na(dens)
+  noVeg  <- is.na(veg)
+  noWin  <- is.na(win)
+  noProp <- is.na(propF)
   
-  dens  <- round(ifelse(is.na(dens), rnorm(nYear, 3.9, .4), dens), 2)
-  veg   <- round(ifelse(is.na(veg), rnorm(nYear, 0, .1), veg), 4)
-  win   <- round(ifelse(is.na(win), rnorm(nYear, 0, .1), win), 4)
-  propF <- round(ifelse(is.na(propF), pmax(pmin(rnorm(nYear, .7, .1), 0.99), 0.4), propF), 4)
+  nNoDens <- length(which(noDens))
+  nNoVeg  <- length(which(noVeg))
+  nNoWin  <- length(which(noWin))
+  nNoProp <- length(which(noProp))
+  
+  dens  <- round(ifelse(noDens, rnorm(1, 3.9, .4), dens), 2)
+  veg   <- round(ifelse(noVeg, rnorm(1, 0, .1), veg), 4)
+  win   <- round(ifelse(noWin, rnorm(1, 0, .1), win), 4)
+  propF <- round(ifelse(noProp, pmax(pmin(rnorm(1, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   dens.true <- dens
   dens.cov  <- dens - mean(dens)
   veg.true  <- veg
-  win.true  <- win
+  win.true  <- win 
   
   # latent states
-  Mu.Sp <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
-  Mu.Op <- matrix(runif(nID.S * nYear, 0, 1), nrow = nID.S, ncol = nYear)
+  state <- knownStates
   
+  for(i in 1:nrow(state)){
+    first <- min(which(!is.na(state[i, ]))) # first capture
+    state[i, is.na(state[i, ])] <- 1        # 1 for any unknown states
+    state[i, 1:(first-1)] <- 0              # 0 for any NA prior to first
+  }
   
   ## Simulate vital rate covariate effects -------------------------------------
   
@@ -169,16 +177,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   SigmaT.S <- runif(1, .5, 2)
   EpsilonT.S <- XiT.S * SigmaT.S
   
-  # dummy == 1
-  XiT.S1 <- rnorm(nYear-1, 0, 1)
-  SigmaT.S1 <- runif(1, .5, 2)
-  EpsilonT.S1 <- XiT.S1 * SigmaT.S1
-  
-  # dummy == 0
-  XiT.S0 <- rnorm(nYear-1, 0, 1)
-  SigmaT.S0 <- runif(1, .5, 2)
-  EpsilonT.S0 <- XiT.S0 * SigmaT.S0
-  
   ## Reproductive success model
   # latent standard normals
   XiI.R <- rnorm(nID.R, 0, 1)
@@ -232,8 +230,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
             BetaV.S * veg.true[t] * dummy[a] +
             BetaW.S * win.true[t] * dummy[a] +
             # Gamma.S[t, a] +
-            EpsilonT.S1[t] * dummy[a] +      # dummy == 1
-            EpsilonT.S0[t] * (1 - dummy[a])) # dummy == 0
+            EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
@@ -336,12 +333,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     }
   }
   
-  # priors for initial population sizes
-  initN.YF <- 100
-  initN.SA <- 120
-  initN.AD <- rep(80, nAge)
-  
-  
   ## Simulate observation parameters -------------------------------------------
   
   # Recapture probabilities (CJS)
@@ -363,6 +354,15 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
   nAD        <- matrix(NA, nrow = nAge, ncol = nYear)
   nAD[,1]    <- c(0, 5*5, rep(2*5, times = 8), rep(1*5, times = nAge-10))
   nTOT       <- c(nYF[1] + nSA[1] + sum(nAD[2:nAge, 1]), rep(NA, times = nYear-1))
+  
+  # priors for initial population sizes
+  initN.YF <- nYF[1]
+  initN.SA <- nSA[1]
+  initN.AD <- nAD[,1]
+  
+  log.initN.YF <- log(initN.YF)
+  log.initN.SA <- log(initN.SA)
+  log.initN.AD <- log(initN.AD)
   
   for(t in 1:(nYear-1)){
     # survival & birthdays
@@ -397,9 +397,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     veg.true = veg.true,
     win.true = win.true,
     
-    Mu.Sp = Mu.Sp,
-    Mu.Op = Mu.Op,
-    Mu.S = Mu.S,
+    state = state,
     
     # Xi.S = Xi.S,
     # Epsilon.S = Epsilon.S,
@@ -409,14 +407,6 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     XiT.S = XiT.S,
     SigmaT.S = SigmaT.S,
     EpsilonT.S = EpsilonT.S,
-    
-    XiT.S1 = XiT.S1,
-    SigmaT.S1 = SigmaT.S1,
-    EpsilonT.S1 = EpsilonT.S1,
-    
-    XiT.S0 = XiT.S0,
-    SigmaT.S0 = SigmaT.S0,
-    EpsilonT.S0 = EpsilonT.S0,
     
     XiI.R = XiI.R,
     XiT.R = XiT.R,
@@ -436,6 +426,7 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     Ri = Ri,
     Ra = Ra,
     
+    Mu.S = Mu.S,
     S = S,
     sPY = sPY,
     sYF = sYF,
@@ -455,7 +446,10 @@ simulateInits <- function(nYear = 17, nAge = 19, ageClasses = 20, nID.S = 0, age
     area = area,
     initN.YF = initN.YF,
     initN.SA = initN.SA,
-    initN.AD = initN.AD
+    initN.AD = initN.AD,
+    log.initN.YF = log.initN.YF,
+    log.initN.SA = log.initN.SA,
+    log.initN.AD = log.initN.AD
   )
   
   if(envEffectsS){

@@ -18,7 +18,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # surv.data = "data/PromSurvivalOct24.xlsx"
   # yafs.data = "data/RSmainRB_Mar25.xlsx"
   # surv.sheet = "YEARLY SURV"
-  # ageClasses = 12
+  # ageClasses = 6
   # known.age = TRUE
   
   
@@ -80,12 +80,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
              is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
              TRUE ~ SurvSep2))
   
-  tmp <- yafs %>% 
-    filter(SurvSep1 == 1, !is.na(SurvSep2)) %>% 
-    select(Year, ID, SurvSep1, SurvSep2)
-  
-  newbies <- tmp$ID[tmp$SurvSep2 == 0]
-  remove(tmp)
+  newbies <- yafs %>% anti_join(surv %>% distinct(ID), by = "ID")
+  newbies <- newbies$ID
   
   yafs <- yafs %>% 
     filter(SurvSep1 == 1, !is.na(SurvSep2)) %>% 
@@ -253,6 +249,20 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   
   ## Return (mostly) scaled data -----------------------------------------------
   
+  # arrange not just by ID but by year first captured, then by ID
+  # so inds needing dCJS_sv are all together at the end of the matrix
+  id <- id %>% select(ID, first, last)
+  
+  obs <- cbind(id, obs) %>% 
+    arrange(first, ID) %>% 
+    select(-ID, -first, -last)
+  
+  state <- cbind(id, state) %>% 
+    arrange(first, ID) %>% 
+    select(-ID, -first, -last)
+  
+  id <- id %>% arrange(first, id)
+  
   # remove inds who were only in the dataset 1 year
   noInfo <- id$first == id$last
   # length(which(noInfo))
@@ -289,7 +299,6 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   
   first <- as.numeric(id$first[!noInfo])
   last <- as.numeric(id$last[!noInfo])
-  uka <- id$uka[!noInfo]
   id <- as.numeric(id$ID[!noInfo])
   
   return(list(first = first,

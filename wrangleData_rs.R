@@ -6,8 +6,6 @@
 #' @param ageClasses integer. Number of age classes to be considered in the reproductive success model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #' @param cum.surv logical. If TRUE, survival is calculated as cumulative survival up to the current step. cum.surv = TRUE by default.
-#' @param surv.sep1 logical. If TRUE, NAs in SurvSep1 are filtered out, so it may serve as a response variable. surv.sep1 = FALSE by default.
-#' @param surv.sep2 logical. If TRUE, NAs in SurvSep2 are filtered out, so it may serve as a response variable. surv.sep2 = FALSE by default.
 #'
 #' @returns a list containing a series of potential response variables, individual and population covariates related to reproductive success.
 #' @export
@@ -15,8 +13,7 @@
 #' @examples
 
 wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
-                           known.age = FALSE, cum.surv = TRUE,
-                           surv.sep1 = FALSE, surv.sep2 = FALSE){
+                           known.age = FALSE, cum.surv = TRUE){
 
   # # for testing purposes
   # rs.data = "data/RSmainRB_Mar25.xlsx"
@@ -232,39 +229,31 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
            SurvLPY = ifelse(!is.na(SurvLPY) & SurvLPY == 2, NA, SurvLPY),
            SurvWN = ifelse(!is.na(SurvWN) & SurvWN == 2, NA, SurvWN))
   
-  # if cum.surv is FALSE
-  # we are interested in birth rate as well
-  # & therefore want to remove NAs from Repro
-  if(cum.surv){
-  }else{
-    rs <- rs %>% filter(!is.na(Repro))
-  }
-  
-  # if surv.sep1 is TRUE
-  # we are interested in survival to first September
-  # & therefore want to remove NAs from SurvSep1
-  if(surv.sep1){
-    rs <- rs %>% filter(!is.na(SurvSep1))
-  }
-  
-  # if surv.sep2 is TRUE
-  # we are interested in survival to second September
-  # & therefore want to remove NAs from SurvSep2
-  if(surv.sep2){
-    rs <- rs %>% filter(!is.na(SurvSep2))
-  }
-  
   
   ## Return (mostly) scaled data -----------------------------------------------
   
-  rs <- rs %>% filter(Year > 2007)
+  # birth rate data (B)
+  rs <- rs %>% filter(Year > 2007, !is.na(Repro))
   
-  id.R   <- as.integer(rs$ID)
-  id.R   <- match(id.R, sort(unique(id.R)))
+  B <- rs$Repro
+  nB <- length(B)
+  year.B <- as.integer(factor(rs$Year))
+  
+  # survival of pouch young data (R)
+  rs <- rs %>% filter(!is.na(SurvSep1))
+  
+  R <- rs$SurvSep1
+  nR <- length(R)
+  id.R <- as.integer(rs$ID)
+  id.R <- match(id.R, sort(unique(id.R)))
+  nID.R <- length(unique(id.R))
   year.R <- as.integer(factor(rs$Year))
-  age.R <- as.integer(rs$Age) # age in Sept before breeding!
   
-  # sort age classes
+  # sort age & age classes
+  # age.R is age in Sept before breeding!
+  age.R <- as.integer(rs$Age)
+  nAge <- max(age.R)
+  
   if(ageClasses == 6){
     ageC.R = c(0,1,2,3,4,4,5,5,5,5, rep(6,30))
   }else if(ageClasses == 12){
@@ -272,32 +261,22 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   }else if(ageClasses == 20){
     ageC.R = c(seq(from = 0, to = 18, by = 1), rep(18,21))
   }
-  
-  nR    <- length(id.R)
-  nID.R <- length(unique(id.R))
   nAgeC.R <- max(ageC.R)
-  nAge <- max(age.R)
   
-  B <- rs$Repro
-  surv7 <- rs$SurvLPY
-  surv21 <- rs$SurvWN
-  survS1 <- rs$SurvSep1
-  survS2 <- rs$SurvSep2
-  
-  return(list(nR = nR,
-              nID.R = nID.R,
-              nAgeC.R = nAgeC.R,
-              nAge = nAge,
-              nYear = 17,
+  return(list(B = B,
+              nB = nB,
+              year.B = year.B,
+              
+              R = R,
+              nR = nR,
               id.R = id.R,
-              age.R = age.R,
-              ageC.R = ageC.R,
+              nID.R = nID.R,
               year.R = year.R,
-              B = B,
-              surv7 = surv7,
-              surv21 = surv21,
-              survS1 = survS1,
-              survS2 = survS2
+              
+              age.R = age.R,
+              nAge = nAge,
+              ageC.R = ageC.R,
+              nAgeC.R = nAgeC.R
               ))
   
 }
