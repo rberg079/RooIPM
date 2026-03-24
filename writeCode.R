@@ -225,11 +225,6 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     #### Likelihood ####
-    
-    # CRN: I think we are ready to try what we can gain by marginalizing this likelihood. 
-    # Try to implement nimbleEcology::dCJS_vv()
-    # Documentation here: https://cran.r-project.org/web/packages/nimbleEcology/vignettes/Introduction_to_nimbleEcology.html
-    
     if(use_dCJS){
       
       ## Marginalized formulation with nimbleEcology::dCJS
@@ -239,7 +234,7 @@ writeCode <- function(){
         }
       }
 
-      # Individuals first captured before last-1 (S_ind = vector)
+      # indss first captured before last-1 (S_ind = vector)
       for(i in 1:(nID.S.switch-1)){
         obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
                                            probCapture = O[first[i]:last[i]], 
