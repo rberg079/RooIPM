@@ -10,7 +10,7 @@ parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 6
-use_dCJS <- TRUE
+use_dCJS <- FALSE
 
 # load packages
 library(tidyverse)
@@ -240,7 +240,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_base.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
