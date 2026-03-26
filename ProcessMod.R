@@ -314,9 +314,9 @@ compareModels(nYear = nYear,
 
 ## Extract parameter samples ---------------------------------------------------
 
-# source('extractParamSamples.R')
-# paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-# # paramSamples <- readRDS('results/paramSamples.rds')
+source('extractParamSamples.R')
+paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+# paramSamples <- readRDS('results/paramSamples.rds')
 
 
 # ## Plot population model -------------------------------------------------------

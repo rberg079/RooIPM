@@ -3,7 +3,6 @@
 #' @param MCMCsamples MCMClist object. The IPM output as returned by nimbleMCMC().
 #' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
 #' @param nAge integer. Number of ages, or maximum age, in the model. nAge = 17 by default.
-#' @param nAgeC integer. Number of age classes in the model. nAgeC = 5 by default.
 #' @param saveList logical. If TRUE, saves the created list object as an RDS to the /results folder.
 #' @param testRun logical. If TRUE, will only use the first 100 samples, for computational efficiency.
 #'
@@ -15,14 +14,13 @@
 #' @examples
 #' 
 
-extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
+extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 18,
                                 saveList = FALSE, testRun = FALSE){
   
   # # for testing purposes
-  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
   # nYear <- 17
-  # nAge <- 19
-  # nAgeC <- 5
+  # nAge <- 18
   # testRun <- TRUE
 
   ## Set up --------------------------------------------------------------------
@@ -43,17 +41,17 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   # prepare arrays
   # time-varying vital rates
   Bt <- matrix(NA, nrow = nSamples, ncol = nYear-1)
-  Ra <- array(NA, dim = c(nSamples, nAge, nYear-1))
-  sYAF <- matrix(NA, nrow = nSamples, ncol = nYear-1)
+  sPY <- array(NA, dim = c(nSamples, nAge, nYear-1))
+  sYF <- matrix(NA, nrow = nSamples, ncol = nYear-1)
   sSA <- matrix(NA, nrow = nSamples, ncol = nYear-1)
   sAD <- array(NA, dim = c(nSamples, nAge, nYear-1))
   
   # time-varying population sizes
-  nYAF <- matrix(NA, nrow = nSamples, ncol = nYear)
+  nYF <- matrix(NA, nrow = nSamples, ncol = nYear)
   nSA <- matrix(NA, nrow = nSamples, ncol = nYear)
   nAD <- array(NA, dim = c(nSamples, nAge, nYear))
   nTOT <- matrix(NA, nrow = nSamples, ncol = nYear)
-  pYAF <- matrix(NA, nrow = nSamples, ncol = nYear)
+  pYF <- matrix(NA, nrow = nSamples, ncol = nYear)
   pSA <- matrix(NA, nrow = nSamples, ncol = nYear)
   pAD <- array(NA, dim = c(nSamples, nAge, nYear))
   lambda <- matrix(NA, nrow = nSamples, ncol = nYear-1)
@@ -67,17 +65,17 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
         
         # time-varying vital rates
         Bt[i, t] <- out.mat[i, paste0("Bt[", t, "]")]
-        sYAF[i, t] <- out.mat[i, paste0("sYAF[", t, "]")]
+        sYF[i, t] <- out.mat[i, paste0("sYF[", t, "]")]
         sSA[i, t] <- out.mat[i, paste0("sSA[", t, "]")]
         
         for(a in 1:nAge){
-          Ra[i, a, t] <- out.mat[i, paste0("Ra[", a, ", ", t, "]")]
+          sPY[i, a, t] <- out.mat[i, paste0("sPY[", a, ", ", t, "]")]
           sAD[i, a, t] <- out.mat[i, paste0("sAD[", a, ", ", t, "]")]
         }
       }
       
       # time-varying population sizes
-      nYAF[i, t] <- out.mat[i, paste0("nYAF[", t, "]")]
+      nYF[i, t] <- out.mat[i, paste0("nYF[", t, "]")]
       nSA[i, t] <- out.mat[i, paste0("nSA[", t, "]")]
       
       for(a in 1:nAge){
@@ -88,7 +86,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
       
       # time-varying proportions of the population
       # represented by each age class
-      pYAF[i, t] <- out.mat[i, paste0("nYAF[", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
+      pYF[i, t] <- out.mat[i, paste0("nYF[", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
       pSA[i, t] <- out.mat[i, paste0("nSA[", t, "]")] / out.mat[i, paste0("nTOT[", t, "]")]
       
       for(a in 1:nAge){
@@ -107,17 +105,17 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   
   # vital rates
   Bt.mean <- rowMeans(Bt[, 1:(nYear-1)], na.rm = T)
-  Ra.mean <- apply(Ra[, , 1:(nYear-1)], c(1, 2), mean)
-  sYAF.mean <- rowMeans(sYAF[, 1:(nYear-1)], na.rm = T)
+  sPY.mean <- apply(sPY[, , 1:(nYear-1)], c(1, 2), mean)
+  sYF.mean <- rowMeans(sYF[, 1:(nYear-1)], na.rm = T)
   sSA.mean <- rowMeans(sSA[, 1:(nYear-1)], na.rm = T)
   sAD.mean <- apply(sAD[, , 1:(nYear-1)], c(1, 2), mean)
   
   # population sizes
-  nYAF.mean <- rowMeans(nYAF[, 1:nYear], na.rm = T)
+  nYF.mean <- rowMeans(nYF[, 1:nYear], na.rm = T)
   nSA.mean <- rowMeans(nSA[, 1:nYear], na.rm = T)
   nAD.mean <- apply(nAD[, , 1:(nYear-1)], c(1, 2), mean)
   nTOT.mean <- rowMeans(nTOT[, 1:nYear], na.rm = T)
-  pYAF.mean <- rowMeans(pYAF[, 1:nYear], na.rm = T)
+  pYF.mean <- rowMeans(pYF[, 1:nYear], na.rm = T)
   pSA.mean <- rowMeans(pSA[, 1:nYear], na.rm = T)
   pAD.mean <- apply(pAD[, , 1:(nYear-1)], c(1, 2), mean)
   lambda.mean <- rowMeans(lambda[, 1:(nYear-1)], na.rm = T)
@@ -128,29 +126,29 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 19, nAgeC = 5,
   paramSamples <- list(
     
     t = list(Bt = Bt,
-             Ra = Ra,
-             sYAF = sYAF,
+             sPY = sPY,
+             sYF = sYF,
              sSA = sSA,
              sAD = sAD,
-             nYAF = nYAF,
+             nYF = nYF,
              nSA = nSA,
              nAD = nAD,
              nTOT = nTOT,
-             pYAF = pYAF,
+             pYF = pYF,
              pSA = pSA,
              pAD = pAD,
              lambda = lambda),
     
     t.mean = list(Bt.mean = Bt.mean,
-                  Ra.mean = Ra.mean,
-                  sYAF.mean = sYAF.mean,
+                  sPY.mean = sPY.mean,
+                  sYF.mean = sYF.mean,
                   sSA.mean = sSA.mean,
                   sAD.mean = sAD.mean,
-                  nYAF.mean = nYAF.mean,
+                  nYF.mean = nYF.mean,
                   nSA.mean = nSA.mean,
                   nAD.mean = nAD.mean,
                   nTOT.mean = nTOT.mean,
-                  pYAF.mean = pYAF.mean,
+                  pYF.mean = pYF.mean,
                   pSA.mean = pSA.mean,
                   pAD.mean = pAD.mean,
                   lambda.mean = lambda.mean)
