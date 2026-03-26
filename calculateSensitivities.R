@@ -9,15 +9,15 @@
 #'
 #' @examples
 
-calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
+calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   
-  # # for testing purposes
-  # # source('extractParamSamples.R')
-  # # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
-  # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  # paramSamples <- readRDS('results/paramSamples.rds')
-  # t.period <- NULL
-  # nAge <- 19
+  # for testing purposes
+  # source('extractParamSamples.R')
+  # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
+  # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+  paramSamples <- readRDS('results/paramSamples.rds')
+  t.period <- NULL
+  nAge <- 18
   
   
   ## Calculate transient sensitivities -----------------------------------------
@@ -30,7 +30,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   }else{
     for(i in 1:length(paramSamples$t.mean)){
       paramName <- names(paramSamples$t)[i]
-      t.offset <- ifelse(paramName %in% c("Bt", "Ra", "sYAF", "sSA", "sAD"), 1, 0)
+      t.offset <- ifelse(paramName %in% c("Bt", "sPY", "sYF", "sSA", "sAD"), 1, 0)
       
       focalParam <- paramSamples$t[[i]]
       
@@ -49,11 +49,11 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # set up list of arrays for storing transient sensitivities
   sensList <- list(
     sens.Bt = rep(NA, nSamples),
-    sens.Ra = matrix(NA, nrow = nSamples, ncol = nAge),
-    sens.sYAF = rep(NA, nSamples),
+    sens.sPY = matrix(NA, nrow = nSamples, ncol = nAge),
+    sens.sYF = rep(NA, nSamples),
     sens.sSA = rep(NA, nSamples),
     sens.sAD = matrix(NA, nrow = nSamples, ncol = nAge),
-    sens.pYAF = rep(NA, nSamples),
+    sens.pYF = rep(NA, nSamples),
     sens.pSA = rep(NA, nSamples),
     sens.pAD = matrix(NA, nrow = nSamples, ncol = nAge)
   )
@@ -61,22 +61,22 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # calculate transient sensitivities 
   # for vital rates & population size/structure (at the temporal mean)
   for(i in 1:nSamples){
-    sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * Ra[i, 2:nAge])
+    sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * sPY[i, 2:nAge])
     
-    sensList$sens.sYAF[i] <- pYAF[i]
-    sensList$sens.sSA[i]  <- pSA[i]
-    sensList$sens.pYAF[i] <- sYAF[i]
-    sensList$sens.pSA[i]  <- sSA[i]
+    sensList$sens.sYF[i] <- pYF[i]
+    sensList$sens.sSA[i] <- pSA[i]
+    sensList$sens.pYF[i] <- sYF[i]
+    sensList$sens.pSA[i] <- sSA[i]
     
     for(a in 1:nAge){
       if(a == 1){
-        sensList$sens.Ra[i, a] <- 0
+        sensList$sens.sPY[i, a] <- 0
         sensList$sens.sAD[i, a] <- 0
         sensList$sens.pAD[i, a] <- 0
       }else{
-        sensList$sens.Ra[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * Bt[i]
-        sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
-        sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * Ra[i, a])
+        sensList$sens.sPY[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * Bt[i]
+        sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * Bt[i] * sPY[i, a])
+        sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * Bt[i] * sPY[i, a])
       }
     }
   }
@@ -119,12 +119,12 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # (evaluated at the temporal mean)
   elasList <- list(
     elas.Bt = sensList$sens.Bt * (Bt/lambda),
-    # elas.Ra = sensList$sens.Ra * (Ra/lambda)
-    elas.Ra = sensList$sens.Ra /lambda, # TODO: DISCUSS
-    elas.sYAF = sensList$sens.sYAF * (sYAF/lambda),
+    # elas.sPY = sensList$sens.sPY * (sPY/lambda)
+    elas.sPY = sensList$sens.sPY /lambda, # TODO: DISCUSS
+    elas.sYF = sensList$sens.sYF * (sYF/lambda),
     elas.sSA = sensList$sens.sSA * (sSA/lambda),
     elas.sAD = sensList$sens.sAD * (sAD/lambda),
-    elas.pYAF = sensList$sens.pYAF * (pYAF/lambda),
+    elas.pYF = sensList$sens.pYF * (pYF/lambda),
     elas.pSA = sensList$sens.pSA * (pSA/lambda),
     elas.pAD = sensList$sens.pAD * (pAD/lambda)
   )
