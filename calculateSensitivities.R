@@ -11,13 +11,13 @@
 
 calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   
-  # for testing purposes
-  # source('extractParamSamples.R')
-  # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
-  # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  paramSamples <- readRDS('results/paramSamples.rds')
-  t.period <- NULL
-  nAge <- 18
+  # # for testing purposes
+  # # source('extractParamSamples.R')
+  # # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
+  # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+  # paramSamples <- readRDS('results/paramSamples.rds')
+  # t.period <- NULL
+  # nAge <- 18
   
   
   ## Calculate transient sensitivities -----------------------------------------
@@ -119,8 +119,8 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   # (evaluated at the temporal mean)
   elasList <- list(
     elas.Bt = sensList$sens.Bt * (Bt/lambda),
-    # elas.sPY = sensList$sens.sPY * (sPY/lambda)
-    elas.sPY = sensList$sens.sPY /lambda, # TODO: DISCUSS
+    elas.sPY = sensList$sens.sPY * (sPY/lambda),
+    # elas.sPY = sensList$sens.sPY /lambda, # TODO: DISCUSS
     elas.sYF = sensList$sens.sYF * (sYF/lambda),
     elas.sSA = sensList$sens.sSA * (sSA/lambda),
     elas.sAD = sensList$sens.sAD * (sAD/lambda),

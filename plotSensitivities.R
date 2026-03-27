@@ -9,12 +9,12 @@
 #'
 #' @examples
 
-plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
+plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
 
   # for testing purposes
   sensitivities <- readRDS('results/sensitivities.rds')
   plotFolder = c("figures")
-  nAge = 19
+  nAge = 18
   
   
   ## Set up --------------------------------------------------------------------
@@ -53,13 +53,14 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
                    "Survival of adults",
                    "Proportion of young-at-foot",
                    "Proportion of subadults",
-                   "Proportion of adults")),
+                   "Proportion of adults"),
+                 each = nSamples),
       estimate = c(params$Bt,
-                   rowSums(params$Ra),
-                   params$sYAF,
+                   rowSums(params$sPY),
+                   params$sYF,
                    params$sSA,
                    rowSums(params$sAD),
-                   params$pYAF,
+                   params$pYF,
                    params$pSA,
                    rowSums(params$pAD)))
     
@@ -81,12 +82,16 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     age.data <- data.frame(rlist::list.cbind(params))
     
     # change column names
-    colnames(age.data) <- c("Bt", paste0("Ra_", 1:nAge),
-                            "sYAF", "sSA", paste0("sAD_", 1:nAge),
-                            "pYAF", "pSA", paste0("pAD_", 1:nAge))
+    colnames(age.data) <- c("Bt", paste0("sPY_", 1:nAge),
+                            "sYF", "sSA", paste0("sAD_", 1:nAge),
+                            "pYF", "pSA", paste0("pAD_", 1:nAge))
     
     # convert to longitudinal format
-    age.data <- reshape2::melt(age.data)
+    # age.data <- reshape2::melt(age.data)
+    age.data <- tidyr::pivot_longer(age.data, 
+                                    cols = everything(), 
+                                    names_to = "variable", 
+                                    values_to = "value")
     
     
     ## Plot sensitivities/elasticities -----------------------------------------
@@ -124,11 +129,11 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     # reproductive success panel
     R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
-    names(R.colours) <- c("Bt", paste0("Ra_", 2:nAge))
+    names(R.colours) <- c("Bt", paste0("sPY_", 2:nAge))
     
-    p.R <- ggplot(subset(age.data, Variable %in% c("Bt", paste0("Ra_", 2:nAge)))) +
-      geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("Ra_", 2:nAge))),
-                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
+    p.R <- ggplot(subset(age.data, variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
+      geom_violin(aes(x = factor(variable, levels = c("Bt", paste0("sPY_", 2:nAge))),
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(B, R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
@@ -142,11 +147,11 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     # survival panel
     S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 18))
-    names(S.colours) <- c("sYAF", "sSA", paste0("sAD_", 2:nAge))
+    names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
     
-    p.S <- ggplot(subset(age.data, Variable %in% c("sYAF", "sSA", paste0("sAD_", 2:nAge)))) +
-      geom_violin(aes(x = factor(Variable, levels = c("sYAF", "sSA", paste0("sAD_", 2:nAge))),
-                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") + 
+    p.S <- ggplot(subset(age.data, variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+      geom_violin(aes(x = factor(variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") + 
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(S[0], S[1],
@@ -162,11 +167,11 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder){
     
     # population structure panel
     P.colours <- c(plot.colours[6:7], rep(plot.colours[8], 18))
-    names(P.colours) <- c("pYAF", "pSA", paste0("pAD_", 2:nAge))
+    names(P.colours) <- c("pYF", "pSA", paste0("pAD_", 2:nAge))
     
-    p.P <- ggplot(subset(age.data, Variable %in% c("pYAF", "pSA", paste0("pAD_", 2:nAge)))) +
-      geom_violin(aes(x = factor(Variable, levels = c("pYAF", "pSA", paste0("pAD_", 2:nAge))),
-                      y = value, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
+    p.P <- ggplot(subset(age.data, variable %in% c("pYF", "pSA", paste0("pAD_", 2:nAge)))) +
+      geom_violin(aes(x = factor(variable, levels = c("pYF", "pSA", paste0("pAD_", 2:nAge))),
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
       scale_x_discrete(labels = expression(P[0], P[1],
