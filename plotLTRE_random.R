@@ -11,10 +11,10 @@
 
 plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
-  # # for testing purposes
-  # LTREresults <- readRDS('results/LTREresults_random.rds')
-  # plotFolder = c("figures")
-  # nAge = 19
+  # for testing purposes
+  LTREresults <- readRDS('results/LTREresults_random.rds')
+  plotFolder = c("figures")
+  nAge = 18
   
   
   ## Set up --------------------------------------------------------------------
@@ -38,15 +38,15 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
   # split & format summed data
   contData_sum <- contData %>% 
-    dplyr::filter(Variable %in% c("Bt", "Ra_sum",
-                                  "sYAF", "sSA", "sAD_sum",
-                                  "pYAF", "pSA", "pAD_sum")) %>%
+    dplyr::filter(Variable %in% c("Bt", "sPY_sum",
+                                  "sYF", "sSA", "sAD_sum",
+                                  "pYF", "pSA", "pAD_sum")) %>%
     dplyr::mutate(type = dplyr::case_when(Variable == "Bt" ~ "Birth rate",
-                                          Variable == "Ra_sum" ~ "Survival of jellybeans",
-                                          Variable == "sYAF" ~ "Survival of young-at-foot",
+                                          Variable == "sPY_sum" ~ "Survival of jellybeans",
+                                          Variable == "sYF" ~ "Survival of young-at-foot",
                                           Variable == "sSA" ~ "Survival of subadults",
                                           Variable == "sAD_sum" ~ "Survival of adults",
-                                          Variable == "pYAF" ~ "Proportion of young-at-foot",
+                                          Variable == "pYF" ~ "Proportion of young-at-foot",
                                           Variable == "pSA" ~ "Proportion of subadults",
                                           Variable == "pAD_sum" ~ "Proportion of adults"))
   
@@ -97,10 +97,10 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
   # reproductive success panel
   R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
-  names(R.colours) <- c("Bt", paste0("Ra_", 2:nAge))
+  names(R.colours) <- c("Bt", paste0("sPY_", 2:nAge))
   
-  p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("Ra_", 2:nAge)))) +
-    geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("Ra_", 2:nAge))),
+  p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
+    geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("sPY_", 2:nAge))),
                     y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
     geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
@@ -116,10 +116,10 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
   # survival panel
   S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 18))
-  names(S.colours) <- c("sYAF", "sSA", paste0("sAD_", 2:nAge))
+  names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
   
-  p.S <- ggplot(subset(contData, Variable %in% c("sYAF", "sSA", paste0("sAD_", 2:nAge)))) +
-    geom_violin(aes(x = factor(Variable, levels = c("sYAF", "sSA", paste0("sAD_", 2:nAge))),
+  p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+    geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
                     y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
     geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
@@ -137,10 +137,10 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
   # population structure panel
   P.colours <- c(plot.colours[6:7], rep(plot.colours[8], 18))
-  names(P.colours) <- c("nYAF", "nSA", paste0("nAD_", 2:nAge))
+  names(P.colours) <- c("pYF", "pSA", paste0("pAD_", 2:nAge))
   
-  p.P <- ggplot(subset(contData, Variable %in% c("nYAF", "nSA", paste0("nAD_", 2:nAge)))) +
-    geom_violin(aes(x = factor(Variable, levels = c("nYAF", "nSA", paste0("nAD_", 2:nAge))),
+  p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nAge)))) +
+    geom_violin(aes(x = factor(Variable, levels = c("pYF", "pSA", paste0("pAD_", 2:nAge))),
                     y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
     geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
@@ -164,7 +164,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   dev.off()
   
   library(patchwork)
-  pdf(paste0(plotFolder, "/LTRErandom_age.pdf"), width = 7, height = 8)
+  pdf(paste0(plotFolder, "/LTRErandom_age.pdf"), width = 12, height = 6)
   print(
     # p.sum + (p.R / p.S / p.P)
     (p.sum + labs(tag = "a)")) + ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))

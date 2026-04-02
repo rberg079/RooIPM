@@ -13,7 +13,7 @@
 #'
 #' @examples
 
-runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
+runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 17){
   
   # # for testing purposes
   # source('extractParamSamples.R')
@@ -23,10 +23,10 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
   # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
   # 
   # OR
-  paramSamples <- readRDS('results/paramSamples.rds')
-  sensitivities <- readRDS('results/sensitivities.rds')
-  nYear <- 17
-  nAge <- 19
+  # paramSamples <- readRDS('results/paramSamples.rds')
+  # sensitivities <- readRDS('results/sensitivities.rds')
+  # nYear <- 17
+  # nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
   
   
   ## Set up --------------------------------------------------------------------
@@ -37,7 +37,7 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
   # set sample number
   nSamples <- length(paramSamples$t.mean$lambda)
   
-  dropParams <- c("nTOT")
+  dropParams <- c("nTOT", "nYF", "nSA", "nAD")
   dropIdx <- which(names(paramSamples$t) %in% dropParams)
   
   paramList <- paramSamples$t[-dropIdx]
@@ -83,7 +83,7 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
       }
       
       # set time interval based on parameter
-      if(names(paramList)[x] %in% c("pYAF", "pSA", "pAD")){
+      if(names(paramList)[x] %in% c("pYF", "pSA", "pAD")){
         tInt <- 2:nYear
       }else{
         tInt <- 1:(nYear-1)
@@ -160,7 +160,7 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 19, nYear = 17){
   quantile(contList$other$tempvar.lambda, probs = c(0.025, 0.5, 0.975))
   
   # calculate summed contributions for age-specific parameters
-  sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "Ra"))]
+  sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "sPY"))]
   
   for(x in 1:length(sumParams)){
     subList <- contList$cont[which(grepl(paste0(sumParams[x], "_"), names(contList$cont)))]
