@@ -3,7 +3,7 @@
 #' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
 #' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
-#' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 5 by default.
+#' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 6 by default.
 #' @param plotAges integer vector. Ages to plot in time series plots. plotAges = c(2, 6, 10, 14) by default.
 #' @param plotYears integer vector. Years to plot in density plots. plotYears = c(2, 6, 10, 14) by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
@@ -221,8 +221,6 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
              aes(x = Value, color = Model, fill = Model)) + 
         geom_density(alpha = 1/nModels) + 
         facet_wrap(~Parameter, scales = "free") + 
-        # scale_fill_viridis_d() +
-        # scale_color_viridis_d() + 
         scale_fill_manual(values = plot.cols) +
         scale_color_manual(values = plot.cols) + 
         theme_bw() + theme(panel.grid = element_blank())
