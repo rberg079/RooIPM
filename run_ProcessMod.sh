@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=RooIPM_base          # Nom de la tâche
-#SBATCH --output=job_output_base.txt    # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_base.txt      # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=RooIPM_dCJS_20          # Nom de la tâche
+#SBATCH --output=job_output_dCJS_20.txt    # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_dCJS_20.txt      # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 

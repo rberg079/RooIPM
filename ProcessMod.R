@@ -9,8 +9,8 @@ testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
-ageClasses <- 6
-use_dCJS <- FALSE
+ageClasses <- 20
+use_dCJS <- TRUE
 
 # load packages
 library(tidyverse)
@@ -65,7 +65,7 @@ myConst <- list(nYear = svData$nYear,
                 nAge = rsData$nAge,
                 
                 nID.S = svData$nID,
-                nID.S.switch = min(which(svData$first == svData$nYear - 1)), # Caution: This only works if svData is strictly ordered by capture year!
+                nID.S.switch = min(which(svData$first == svData$nYear - 1)),
                 nAgeC.S = svData$nAgeC.S,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
@@ -144,9 +144,9 @@ params <- c(
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
-  'Mu.B', # 'Mu.R', 
-  'EpsilonT.B', # 'EpsilonI.R', 'EpsilonT.R', 
-  'SigmaT.B', # 'SigmaI.R', 'SigmaT.R', 
+  'Mu.B', 'Mu.R', 
+  'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', 
+  'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
   
   # Abundance model
   'propF'
@@ -154,7 +154,7 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S', 'BetaW.S')}
-# if(envEffectsR){params <- c(params, 'BetaD.R')}
+if(envEffectsR){params <- c(params, 'BetaD.R')}
 if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true', 'win.true')}
 
 # select MCMC settings
@@ -240,7 +240,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_base.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_20.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -294,29 +294,33 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-nYear   <- myConst$nYear
-nAgeC.S <- myConst$nAgeC.S
-
-source('compareModels.R')
-compareModels(nYear = nYear,
-              nAgeC.S = nAgeC.S,
-              postPaths = c(
-                "results/IPM_CJSen_RSen_AB_DynDens_base.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds"
-              ),
-              modelNames = c(
-                "base",
-                "dCJS"
-              ),
-              plotFolder = c("figures/dCJS"),
-              returnSumData = TRUE)
+# nYear   <- myConst$nYear
+# nAgeC.S <- myConst$nAgeC.S
+# 
+# source('compareModels.R')
+# compareModels(nYear = nYear,
+#               nAgeC.S = nAgeC.S,
+#               postPaths = c(
+#                 "results/IPM_CJSen_RSen_AB_DynDens_base.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_20.rds"
+#               ),
+#               modelNames = c(
+#                 "base",
+#                 "dCJS_6",
+#                 "dCJS_12",
+#                 "dCJS_20"
+#               ),
+#               plotFolder = c("figures/ageClasses"),
+#               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
 
-source('extractParamSamples.R')
-paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-# paramSamples <- readRDS('results/paramSamples.rds')
+# source('extractParamSamples.R')
+# paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+# # paramSamples <- readRDS('results/paramSamples.rds')
 
 
 # ## Plot population model -------------------------------------------------------

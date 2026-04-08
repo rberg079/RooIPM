@@ -347,7 +347,14 @@ writeCode <- function(){
     # to predict age-specific reproductive success (Ra) here!
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
-        Ra[a, t] <- 0.5
+        if(envEffectsR){
+          logit(Ra[a, t]) <- logit(Mu.R[a]) +
+            BetaD.R * dens.cov[t] +
+            EpsilonT.R[t]
+        }else{
+          logit(Ra[a, t]) <- logit(Mu.R[a]) +
+            EpsilonT.R[t]
+        }
       }
     }
     
@@ -368,12 +375,12 @@ writeCode <- function(){
     }
     
     for(t in 1:(nYear-1)){
-      # XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
+      XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
       XiT.B[t] ~ dnorm(0, sd = 1) # latent standard normal
     }
     
-    # EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
-    # EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
+    EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # actual random effect
+    EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
     EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
     
     # NOTES:
