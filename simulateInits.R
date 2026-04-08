@@ -31,7 +31,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # library(readxl)
   # library(tidyverse)
   # 
-  # ageClasses <- 6
+  # ageClasses <- 20
   # source('wrangleData_en.R')
   # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
   #                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
@@ -56,9 +56,8 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # propF <- enData$propF
   # knownStates <- svData$state
   # 
-  # nYear <- svData$nYear
-  # nAge <- rsData$nAge
-  # ageClasses <- 6
+  # nYear <- 17
+  # nAge <- 19
   # 
   # nR <- rsData$nR
   # nID.R <- rsData$nID.R
@@ -308,7 +307,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     }
   }else if(nAgeC.S == 20){
     for(t in 1:(nYear-1)){
-      for(a in 2:19) sAD[a, t] <- S[a+1, t] # adults
+      for(a in 2:nAge) sAD[a, t] <- S[a+1, t] # adults
     }
   }
 
@@ -329,7 +328,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     }
   }else if(nAgeC.R == 20){
     for(t in 1:(nYear-1)){
-      for(a in 2:19) sPY[a, t] <- Ra[a-1, t]
+      for(a in 2:nAge) sPY[a, t] <- Ra[a-1, t]
     }
   }
   

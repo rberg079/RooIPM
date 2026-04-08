@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
@@ -62,7 +62,7 @@ myData  <- list(obs = svData$obs,
                 win = enData$win)
 
 myConst <- list(nYear = svData$nYear,
-                nAge = rsData$nAge,
+                nAge = rsData$nAge+1,
                 
                 nID.S = svData$nID,
                 nID.S.switch = min(which(svData$first == svData$nYear - 1)),
