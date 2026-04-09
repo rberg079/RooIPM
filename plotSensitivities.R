@@ -11,10 +11,10 @@
 
 plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
 
-  # for testing purposes
-  sensitivities <- readRDS('results/sensitivities.rds')
-  plotFolder = c("figures")
-  nAge = 18
+  # # for testing purposes
+  # sensitivities <- readRDS('results/sensitivities.rds')
+  # plotFolder = c("figures/results12ageCs")
+  # nAge = 18 # nAge-1, because 1 year-old adults don't exist!
   
   
   ## Set up --------------------------------------------------------------------

@@ -22,7 +22,7 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 17){
   # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
   # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
   # 
-  # OR
+  # # OR
   # paramSamples <- readRDS('results/paramSamples.rds')
   # sensitivities <- readRDS('results/sensitivities.rds')
   # nYear <- 17

@@ -9,7 +9,7 @@ testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
-ageClasses <- 20
+ageClasses <- 12
 use_dCJS <- TRUE
 
 # load packages

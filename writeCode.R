@@ -234,7 +234,7 @@ writeCode <- function(){
         }
       }
 
-      # indss first captured before last-1 (S_ind = vector)
+      # Individuals first captured before last-1 (S_ind = vector)
       for(i in 1:(nID.S.switch-1)){
         obs[i, first[i]:last[i]] ~ dCJS_vv(probSurvive = S_ind[i, first[i]:(last[i]-1)], 
                                            probCapture = O[first[i]:last[i]], 
