@@ -5,7 +5,7 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
