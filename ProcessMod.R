@@ -252,7 +252,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -328,6 +328,9 @@ library(scales)
 # # posterior samples
 # out.mat <- as.matrix(out.mcmc)
 # 
+# nYear <- myConst$nYear
+# nAge  <- myConst$nAge
+# 
 # # # TEMP: check correlation between BetaD.R & BetaV.R
 # # out.mat <- data.frame(out.mat)
 # # plot(out.mat$BetaD.R, out.mat$BetaV.R)
@@ -389,7 +392,7 @@ library(scales)
 # # check variance-correlation matrix, with Sigma.S on diagonal
 # varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
 # 
-# for(i in 1:myConst$nAgeC){
+# for(i in 1:myConst$nAgeC.S){
 #   varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.S[', i,']')]*
 #     sqrt(out.dat[, paste0('Sigma.S[', i,', ', i,']')])
 # }
