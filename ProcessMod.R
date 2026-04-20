@@ -272,7 +272,7 @@ library(scales)
 # MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
 # MCMCsummary(out.mcmc, params = c('Bt', 'sPY'), n.eff = TRUE, round = 2)
-# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), n.eff = TRUE, round = 2)}
+# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2)}
 # MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 # 
 # MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), n.eff = TRUE, round = 2)
@@ -321,118 +321,4 @@ library(scales)
 # source('extractParamSamples.R')
 # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
 # # paramSamples <- readRDS('results/paramSamples.rds')
-
-
-# ## Plot population model -------------------------------------------------------
-# 
-# # posterior samples
-# out.mat <- as.matrix(out.mcmc)
-# 
-# nYear <- myConst$nYear
-# nAge  <- myConst$nAge
-# 
-# # # TEMP: check correlation between BetaD.R & BetaV.R
-# # out.mat <- data.frame(out.mat)
-# # plot(out.mat$BetaD.R, out.mat$BetaV.R)
-# # cor(out.mat$BetaD.R, out.mat$BetaV.R)
-# 
-# # parameters to include
-# table.params <- c(
-#   paste0('nYF[', 1:nYear, ']'),
-#   paste0('nSA[', 1:nYear, ']'),
-#   paste0('nAD[', rep(1:nAge, each = nYear), ', ', rep(1:nYear, times = nAge), ']'),
-#   paste0('nTOT[', 1:nYear, ']'))
-# 
-# # table of posterior summaries
-# post.table <- data.frame(Parameter = table.params, Estimate = NA)
-# 
-# for(i in 1:length(table.params)){
-#   est <- out.mat[, table.params[i]]
-#   post.table$Estimate[i] <- paste0(round(median(est, na.rm = T), digits = 2), ' [',
-#                                    round(quantile(est, 0.025, na.rm = T), digits = 2), ', ',
-#                                    round(quantile(est, 0.975, na.rm = T), digits = 2), ']')
-# }
-# 
-# # plot results
-# nYF <- grep("^nYF\\[", colnames(out.mcmc[[1]])); nYF
-# nSA <- grep("^nSA\\[", colnames(out.mcmc[[1]])); nSA
-# nAD <- grep("^nAD\\[", colnames(out.mcmc[[1]])); nAD
-# nTOT <- grep("^nTOT\\[", colnames(out.mcmc[[1]])); nTOT
-# 
-# var <- nTOT
-# 
-# df <- data.frame(
-#   Year = 1:length(var),
-#   Mean = apply(out.mat[, var, drop = FALSE], 2, mean, na.rm = TRUE),
-#   Lower = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
-#   Upper = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
-# )
-# 
-# # population plot
-# ggplot(df, aes(x = Year, y = Mean)) +
-#   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#C398B7", alpha = 0.4) +
-#   geom_line(color = "#673C5B", linewidth = 1) +
-#   ylab("Parameter value") +
-#   xlab("Year") +
-#   theme_bw()
-# 
-# # ggsave("figures/IPM.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
-# 
-# 
-# ## Plots survival model --------------------------------------------------------
-# 
-# out.dat <- out.mcmc %>% map(as.data.frame) %>% bind_rows()
-# 
-# # check for correlations among fixed effects
-# par(mfrow = c(1,1))
-# corrplot(cor(out.mcmc[, grepl('Beta', colnames(out.mcmc[[1]]))] %>%
-#                map(as.data.frame) %>% bind_rows(), use = 'p'))
-# 
-# # check random effects among demographic rates
-# # check variance-correlation matrix, with Sigma.S on diagonal
-# varCorrMatrix <- array(NA, dim = c(myConst$nAgeC, myConst$nAgeC, nrow(out.dat)))
-# 
-# for(i in 1:myConst$nAgeC.S){
-#   varCorrMatrix[i,i,] <- out.dat[, paste0('Xi.S[', i,']')]*
-#     sqrt(out.dat[, paste0('Sigma.S[', i,', ', i,']')])
-# }
-# 
-# for(j in 1:(myConst$nAgeC-1)){
-#   for(i in (j+1):myConst$nAgeC){
-#     varCorrMatrix[j, i, ] <- (out.dat[, paste0('Sigma.S[', i, ', ', j, ']')])/
-#       sqrt(out.dat[, paste0('Sigma.S[', j, ', ', j, ']')]*
-#              out.dat[, paste0('Sigma.S[', i, ', ', i, ']')])
-#   }
-# }
-# 
-# round(apply(varCorrMatrix, 1:2, mean, na.rm = T), 2)
-# round(apply(varCorrMatrix, 1:2, quantile, prob = 0.025, na.rm = T), 2)
-# round(apply(varCorrMatrix, 1:2, quantile, prob = 0.975, na.rm = T), 2)
-# 
-# # calculate survival probabilities
-# df <- expand.grid(age = 1:20, year = 1:16)
-# S.pred <- matrix(NA, nrow = nrow(df), ncol = nrow(out.dat))
-# 
-# for(i in 1:nrow(df)){
-#   S.pred[i, ] <- out.dat[, paste0('BetaA.S[', myData$ageC[df$age[i]], ']')] +
-#     out.dat[, paste0('Gamma.S[', df$year[i], ', ', myData$ageC[df$age[i]], ']')]
-#   df$ageC[i] <- myData$ageC[df$age[i]]
-# }
-# 
-# df$S = inv.logit(apply(S.pred, 1, mean))
-# df$sLCI = inv.logit(apply(S.pred, 1, quantile, 0.025))
-# df$sUCI = inv.logit(apply(S.pred, 1, quantile, 0.975))
-# 
-# # plot main results
-# df %>%
-#   mutate(ageC = as.factor(ageC)) %>%
-#   ggplot(aes(x = year, y = S)) +
-#   geom_ribbon(aes(ymin = sLCI, ymax = sUCI, fill = ageC), alpha = 0.2) +
-#   geom_line(aes(colour = ageC), linewidth = 1, show.legend = F) +
-#   labs(x = "Year", y = "Survival", fill = "Age class") +
-#   # scale_x_continuous(breaks = pretty_breaks()) +
-#   scale_y_continuous(breaks = pretty_breaks()) +
-#   theme_bw()
-# 
-# # ggsave("figures/IPM_CJS.jpeg", scale = 1, width = 18.0, height = 9.0, units = c("cm"), dpi = 600)
 
