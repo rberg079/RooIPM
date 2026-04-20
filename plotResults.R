@@ -112,9 +112,9 @@ R <- 0.5 * Bt * sPY
 
 # build summary dataframe
 df <- expand.grid(Age = 1:18, Year = 1:16)
-df$Mean <- apply(RO, 2, mean, na.rm = TRUE)
-df$Lower <- apply(RO, 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(RO, 2, quantile, probs = 0.975, na.rm = TRUE)
+df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # select ages!
 plotAges <- c(2, 4, 6, 8, 10, 12)
@@ -138,7 +138,7 @@ df %>%
 
 inv_logit <- function(x) 1 / (1 + exp(-x))
 
-keep_ages <- c(1, 10, 11, 12, 13)
+keep_ages <- c(1, 11, 12, 13)
 
 # extract betas
 bD <- out.mat[, grep("^BetaD\\.S", colnames(out.mat))]
@@ -181,7 +181,7 @@ df <- rbind(
 
 # plot
 df %>%
-  mutate(Age = factor(Age)) %>%
+  mutate(Age = factor(Age-1)) %>%
   ggplot(aes(x = x, y = Mean, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
@@ -191,5 +191,5 @@ df %>%
        colour = "Age", fill = "Age") +
   theme_bw()
 
-# ADD RAW DATA POINTS ON TOP?!
+# ggsave("figures/results12ageCs/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 

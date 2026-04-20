@@ -285,9 +285,9 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   if(ageClasses == 6){
     dummy = c(1, rep(0,4), 1)
   }else if(ageClasses == 12){
-    dummy = c(1, rep(0,8), rep(1,4))
+    dummy = c(1, rep(0,9), rep(1,3))
   }else if(ageClasses == 20){
-    dummy = c(1, rep(0,8), rep(1,11))
+    dummy = c(1, rep(0,9), rep(1,10))
   }
   
   nYear <- ncol(state)
