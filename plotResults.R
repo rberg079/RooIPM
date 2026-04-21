@@ -52,16 +52,17 @@ df <- data.frame(
 )
 
 # population plot
-df %>% 
+pop <- df %>% 
   filter(Year > 1) %>% 
   mutate(Year = Year + 2007) %>% 
   ggplot(aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#C398B7", alpha = 0.4) +
   geom_line(color = "#673C5B", linewidth = 0.8) +
-  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_x_continuous(limits = c(2008, 2024),
+                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   scale_y_continuous(breaks = pretty_breaks()) +
   labs(y = "Female population size") +
-  theme_bw()
+  theme_bw(); pop
 
 # ggsave("figures/results12ageCs/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
@@ -80,18 +81,36 @@ df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na
 # select ages!
 plotAges <- c(0, 1, 2, 4, 6, 8, 10, 12)
 
+# pick colours
+cols <- c(
+  "0"  = "#F8756C",
+  "1"  = "#CC9400",
+  "2"  = "#7CAE00",
+  "4"  = "#00BD65",
+  "6"  = "#00BEC3",
+  "8"  = "#00A8FF",
+  "10" = "#C980FF",
+  "12" = "#FF61CC"
+)
+
 # plot
-df %>%
+surv <- df %>%
   mutate(Year = Year + 2007,
          Age  = factor(Age-1)) %>%
   filter(Age %in% plotAges) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
-  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022)) +
-  scale_y_continuous(limits = c(0,1), breaks = pretty_breaks()) +
+  scale_colour_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(2008, 2024),
+                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
   labs(x = "Year", y = "Survival", colour = "Age", fill = "Age") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x  = element_blank(),
+        axis.ticks.x = element_blank()); surv
 
 # ggsave("figures/results12ageCs/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
@@ -104,14 +123,14 @@ sPY_idx <- grep("^sPY\\[", colnames(out.mat))
 
 # extract matrices
 Bt  <- out.mat[, Bt_idx,  drop = FALSE]
-Bt  <- Bt[, rep(1:ncol(Bt), each = 18)]
+Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
 sPY <- out.mat[, sPY_idx, drop = FALSE]
 
 # compute reproductive output
 R <- 0.5 * Bt * sPY
 
 # build summary dataframe
-df <- expand.grid(Age = 1:18, Year = 1:16)
+df <- expand.grid(Age = 1:19, Year = 1:16)
 df$Mean <- apply(R, 2, mean, na.rm = TRUE)
 df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
 df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
@@ -119,19 +138,50 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 # select ages!
 plotAges <- c(2, 4, 6, 8, 10, 12)
 
+# pick colours
+cols <- c(
+  "2"  = "#7CAE00",
+  "4"  = "#00BD65",
+  "6"  = "#00BEC3",
+  "8"  = "#00A8FF",
+  "10" = "#C980FF",
+  "12" = "#FF61CC"
+)
+
 # plot
-df %>%
+rout <- df %>%
   mutate(Year = Year + 2007,
          Age  = factor(Age)) %>%
   filter(Age %in% plotAges) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
-  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022)) +
+  scale_colour_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(2008, 2024),
+                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_y_continuous(limits = c(0, 0.6), breaks = c(0.0, 0.2, 0.4, 0.6)) +
   labs(x = "Year", y = "Reproductive output", colour = "Age", fill = "Age") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x  = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "none"); rout
 
 # ggsave("figures/results12ageCs/routput.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+# combine with survival plot
+library(patchwork)
+# surv / rout
+
+# ggsave("figures/results12ageCs/surv&rout.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+
+# ...& population size
+(surv / rout / pop) +
+  plot_layout(guides = "collect") +
+  theme(legend.position = "right")
+
+# ggsave("figures/results12ageCs/surv&rout&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate effects on survival -----------------------------------------------

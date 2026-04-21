@@ -163,8 +163,8 @@ if(testRun){
   nburnin <- 0
   niter   <- 10
 }else{
-  nthin   <- 4
-  nburnin <- 40000
+  nthin   <- 20
+  nburnin <- 20000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -240,7 +240,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_20.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
