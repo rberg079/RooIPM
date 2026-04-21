@@ -30,12 +30,12 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # plotYears = c(2, 6, 10, 14)
   # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds",
   #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds")
-  #               # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds")
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds")
   # modelNames = c("IPM_12",
   #                "IPM_12_noW",
-  #                "IPM_12_noW_stochV")
-  #                # "IPM_12_noW_stochV_long")
+  #                "IPM_12_noW_stochV",
+  #                "IPM_12_noW_stochV_long")
   # plotFolder = c("figures/envTweaks")
   # returnSumData = TRUE
   # nModels <- length(modelNames)

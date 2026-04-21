@@ -24,7 +24,7 @@ library(nimbleEcology)
 library(parallel)
 
 # load data
-source('wrangleData_en.R')
+source('R/wrangleData_en.R')
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
@@ -32,12 +32,12 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          obs.data  = "data/PromObs_2008-2024.xlsx",
                          list      = "data/PromlistAllOct24.xlsx")
 
-source('wrangleData_sv.R')
+source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
                          yafs.data = "data/RSmainRB_Mar25.xlsx",
                          ageClasses = ageClasses, known.age = TRUE)
 
-source('wrangleData_rs.R')
+source('R/wrangleData_rs.R')
 rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
                          obs.data = "data/PromObs_2008-2024.xlsx",
                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
@@ -252,7 +252,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -266,7 +266,7 @@ library(scales)
 # # summaries
 # MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 # MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
-# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2, pg0 = T)}
+# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
 # MCMCsummary(out.mcmc, params = c('Mu.R', 'Bt', 'sPY'), n.eff = TRUE, round = 2)
@@ -278,7 +278,7 @@ library(scales)
 # # chainplots
 # MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
 # MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
-# if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), pdf = FALSE)}
+# if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)}
 # MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 # 
 # MCMCtrace(out.mcmc, params = c('Bt', 'sPY'), pdf = FALSE)
