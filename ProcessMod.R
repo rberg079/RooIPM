@@ -263,16 +263,14 @@ library(scales)
 #   }
 # }
 
-# MCMCtrace(out.mcmc, pdf = T)
-
 # # summaries
 # MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 # MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
-# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2)}
+# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S', 'BetaW.S'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
-# MCMCsummary(out.mcmc, params = c('Bt', 'sPY'), n.eff = TRUE, round = 2)
-# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2)}
+# MCMCsummary(out.mcmc, params = c('Mu.R', 'Bt', 'sPY'), n.eff = TRUE, round = 2)
+# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 # 
 # MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), n.eff = TRUE, round = 2)
@@ -284,12 +282,12 @@ library(scales)
 # MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 # 
 # MCMCtrace(out.mcmc, params = c('Bt', 'sPY'), pdf = FALSE)
-# if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R', 'BetaV.R', 'BetaW.R'), pdf = FALSE)}
+# if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R'), pdf = FALSE)}
 # MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
 # 
 # MCMCtrace(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), pdf = FALSE)
 # 
-# MCMCtrace(out.mcmc, pdf = T)
+# MCMCtrace(out.mcmc, Rhat = T, pdf = T, filename = 'results/MCMCtrace.pdf')
 
 
 ## Compare model outputs -------------------------------------------------------

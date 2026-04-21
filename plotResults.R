@@ -154,8 +154,8 @@ rout <- df %>%
          Age  = factor(Age)) %>%
   filter(Age %in% plotAges) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
-  geom_line(linewidth = 0.8) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
+  geom_line(linewidth = 0.8, show.legend = F) +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2008, 2024),
@@ -237,9 +237,51 @@ df %>%
   geom_line(linewidth = 0.8) +
   facet_wrap(~ covariate, scales = "free_x") +
   scale_y_continuous(limits = c(0.2, 1), breaks = c(0.2, 0.4, 0.6, 0.8, 1.0)) +
-  labs(x = "Standardized covariate value", y = "Survival",
+  labs(x = "Scaled covariate value", y = "Survival",
        colour = "Age", fill = "Age") +
   theme_bw()
 
 # ggsave("figures/results12ageCs/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+
+## Covariate values through time -----------------------------------------------
+
+# indices
+D_idx  <- grep("^dens\\.true", colnames(out.mat))
+V_idx  <- grep("^veg\\.true", colnames(out.mat))
+
+# build summary dataframe
+df <- expand.grid(Year = 1:17)
+
+dens <- apply(out.mat[, D_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+veg  <- apply(out.mat[, V_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+
+dens <- scale(dens)[,1]
+
+dens <- cbind(df, dens) %>% rename(value = dens) %>% mutate(covariate = "Density")
+veg  <- cbind(df, veg) %>% rename(value = veg) %>% mutate(covariate = "Forage")
+
+df <- rbind(dens, veg)
+
+# plot
+covs <- df %>%
+  filter(Year > 1) %>% 
+  mutate(Year = Year + 2007) %>%
+  ggplot(aes(x = Year, y = value, colour = covariate)) +
+  geom_line(linewidth = 0.8) +
+  geom_hline(yintercept = 0, colour = "grey40") +
+  scale_x_continuous(limits = c(2008, 2024),
+                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  labs(y = "Scaled covariate value", colour = "Covariate") +
+  theme_bw(); covs
+
+# ggsave("figures/results12ageCs/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+# combine with survival & population size
+library(patchwork)
+(surv / rout / covs) +
+  plot_layout(guides = "collect") +
+  theme(legend.position = "right")
+
+# ggsave("figures/results12ageCs/surv&rout&covs.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
