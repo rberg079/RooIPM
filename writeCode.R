@@ -112,8 +112,8 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         # CRN: This is an additional level of stochasticity you impose, assuming that vegetation is observed with a known error.
         # This makes sense to include, but perhaps only once everything else works.
-        # veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
-        veg[t] <- veg.true[t]
+        veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
+        # veg[t] <- veg.true[t]
       }
       
       for(m in 1:nNoVeg){
