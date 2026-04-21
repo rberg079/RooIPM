@@ -114,16 +114,10 @@ writeCode <- function(){
         # This makes sense to include, but perhaps only once everything else works.
         # veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
         veg[t] <- veg.true[t]
-        
-        win[t] <- win.true[t]
       }
       
       for(m in 1:nNoVeg){
         veg.true[noVeg[m]] ~ dnorm(0, sd = 1)
-      }
-      
-      for(m in 1:nNoWin){
-        win.true[noWin[m]] ~ dnorm(0, sd = 1)
       }
     }
     
@@ -273,7 +267,6 @@ writeCode <- function(){
           logit(S[a, t]) <- logit(Mu.S[a]) +
             BetaD.S * dens.cov[t] * dummy[a] +
             BetaV.S * veg.true[t] * dummy[a] +
-            BetaW.S * win.true[t] * dummy[a] +
             EpsilonT.S[t]
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
@@ -298,7 +291,6 @@ writeCode <- function(){
     if(envEffectsS){
       BetaD.S ~ dunif(-5, 5)
       BetaV.S ~ dunif(-5, 5)
-      BetaW.S ~ dunif(-5, 5)
     }
     
     # random effects
