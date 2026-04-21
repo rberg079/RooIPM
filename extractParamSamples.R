@@ -18,7 +18,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 17, nAge = 18,
                                 saveList = FALSE, testRun = FALSE){
   
   # # for testing purposes
-  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds')
+  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
   # nYear <- 17
   # nAge <- 18
   # testRun <- FALSE

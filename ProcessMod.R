@@ -252,7 +252,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds')
+# out.mcmc <- readRDS('IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
