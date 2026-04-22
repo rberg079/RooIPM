@@ -581,3 +581,18 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 
 # ggsave("figures/results12ageCs/LTREage.jpeg", width = 22.0, height = 28.0, units = c("cm"), dpi = 600)
 
+# summaries to report
+summary <- contData_sum %>%
+  group_by(Variable) %>%
+  summarise(Mean  = mean(Contribution, na.rm = TRUE),
+            Lower = quantile(Contribution, 0.025, na.rm = TRUE),
+            Upper = quantile(Contribution, 0.975, na.rm = TRUE),
+            .groups = "drop")
+
+summary <- contData %>%
+  group_by(Variable) %>%
+  summarise(Mean  = mean(Contribution, na.rm = TRUE),
+            Lower = quantile(Contribution, 0.025, na.rm = TRUE),
+            Upper = quantile(Contribution, 0.975, na.rm = TRUE),
+            .groups = "drop")
+
