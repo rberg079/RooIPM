@@ -5,6 +5,7 @@
 
 library(tidyverse)
 library(data.table)
+library(patchwork)
 library(scales)
 
 nYear <- 17
@@ -15,7 +16,7 @@ out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
-## Plot population model -------------------------------------------------------
+## Population size -------------------------------------------------------------
 
 # parameters to include
 table.params <- c(
@@ -70,7 +71,7 @@ pop <- df %>%
 # ggsave("figures/results12ageCs/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
-## Plot survival model ---------------------------------------------------------
+## Survival --------------------------------------------------------------------
 
 # indices
 S_idx  <- grep("^S\\[", colnames(out.mat))
@@ -118,7 +119,7 @@ surv <- df %>%
 # ggsave("figures/results12ageCs/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
-## Plots reproductive output ---------------------------------------------------
+## Reproductive success --------------------------------------------------------
 
 # indices
 Bt_idx  <- grep("^Bt\\[", colnames(out.mat))
@@ -174,7 +175,6 @@ rout <- df %>%
 # ggsave("figures/results12ageCs/routput.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival plot
-library(patchwork)
 # surv / rout
 
 # ggsave("figures/results12ageCs/surv&rout.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
@@ -187,7 +187,7 @@ library(patchwork)
 # ggsave("figures/results12ageCs/surv&rout&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
-## Covariate effects on survival -----------------------------------------------
+## Covariate effects -----------------------------------------------------------
 
 inv_logit <- function(x) 1 / (1 + exp(-x))
 
@@ -247,7 +247,7 @@ df %>%
 # ggsave("figures/results12ageCs/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
-## Covariate values through time -----------------------------------------------
+## Covariate values ------------------------------------------------------------
 
 # indices
 D_idx  <- grep("^dens\\.true", colnames(out.mat))
@@ -281,7 +281,6 @@ covs <- df %>%
 # ggsave("figures/results12ageCs/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & population size
-library(patchwork)
 (surv / rout / covs) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
@@ -289,7 +288,7 @@ library(patchwork)
 # ggsave("figures/results12ageCs/surv&rout&covs.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
-## Lambda through time ---------------------------------------------------------
+## Lambda ----------------------------------------------------------------------
 
 # load results
 paramSamples <- readRDS('results/paramSamples.rds')
@@ -322,8 +321,125 @@ lambda <- df %>%
 # ggsave("figures/results12ageCs/lambda.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with pop size
-library(patchwork)
 pop / lambda
+pAGE / lambda
 
 # ggsave("figures/results12ageCs/pop&lambda.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+
+
+## Age structure ---------------------------------------------------------------
+
+# load results
+paramSamples <- readRDS('results/paramSamples.rds')
+
+# extract proportions
+pYF  <- paramSamples$t$pYF
+pSA  <- paramSamples$t$pSA
+pAD  <- paramSamples$t$pAD
+nTOT <- paramSamples$t$nTOT
+
+nAD   <- dim(pAD)[2]
+nYear <- dim(pYF)[2]
+
+# summarise posterior means
+pYF_mean <- colMeans(pYF, na.rm = TRUE)
+pSA_mean <- colMeans(pSA, na.rm = TRUE)
+pAD_mean <- apply(pAD, c(2, 3), mean, na.rm = TRUE)
+nTOT_mean <- colMeans(nTOT, na.rm = TRUE)
+
+# build summary dataframe
+df_YF <- tibble(Year = 1:nYear, Age = 0, Prop = pYF_mean)
+df_SA <- tibble(Year = 1:nYear, Age = 1, Prop = pSA_mean)
+
+df_AD <- expand.grid(Age = 1:nAD, Year = 1:nYear) %>%
+  mutate(Prop = as.vector(pAD_mean)) %>% 
+  filter(Age > 1)
+
+df <- bind_rows(df_YF, df_SA, df_AD) %>%
+  mutate(Year = Year + 2007,
+         AgeGroup = case_when(Age == 0 ~ "0",
+                              Age == 1 ~ "1",
+                              Age %in% 2:11 ~ as.character(Age),
+                              Age >= 12 ~ "12+")) %>% 
+  group_by(Year, AgeGroup) %>% 
+  summarise(Prop = sum(Prop), .groups = "drop") %>% 
+  group_by(Year) %>%
+  mutate(missing = 1 - sum(Prop),
+         Prop = ifelse(AgeGroup == "12+", Prop + missing, Prop)) %>%
+  ungroup() %>%
+  select(-missing) %>%
+  mutate(AgeGroup = factor(AgeGroup, levels = c("0", "1", as.character(2:11), "12+")),
+         N = Prop * rep(nTOT_mean, each = n_distinct(AgeGroup)))
+
+# colour palette
+cols <- c("0"   = "#E8D6CB",
+          "1"   = "#D0ADA7",
+          setNames(colorRampPalette(c("#AD6A6C", "#5D2E46"))(10), as.character(2:11)),
+          "12+" = "#371B29")
+
+# cols <- c("0"   = "#C9CBA3",
+#           "1"   = "#FFE1A8",
+#           setNames(colorRampPalette(c("#F1A782", "#8E494C"))(10), as.character(2:11)),
+#           "12+" = "#723D46")
+
+# bar plot
+pAGE <- df %>%
+  ggplot(aes(x = Year, y = N, fill = AgeGroup)) +
+  # ggplot(aes(x = Year, y = Prop, fill = AgeGroup)) +
+  geom_col(width = 0.8) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(2009, 2024),
+                     breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  labs(x = "Year", y = "Proportion of the population", fill = "Age") +
+  theme_bw(); pAGE
+
+# ggsave("figures/results12ageCs/NsBars.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+# ribbon plot
+pAGE <- df %>% 
+  arrange(Year, AgeGroup) %>%
+  group_by(Year) %>%
+  # mutate(ymin = cumsum(lag(N, default = 0)),
+  #        ymax = cumsum(N)) %>%
+  mutate(ymin = cumsum(lag(Prop, default = 0)),
+         ymax = cumsum(Prop)) %>%
+  ungroup() %>%
+  ggplot(aes(x = Year, fill = AgeGroup)) +
+  geom_ribbon(aes(ymin = ymin, ymax = ymax), colour = NA) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(2009, 2024),
+                     breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  # scale_y_continuous(limits = c(0, 750)) +
+  labs(x = "Year", y = "Population size", fill = "Age") +
+  theme_bw(); pAGE
+
+# ggsave("figures/results12ageCs/NsRibbons.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+# summaries of t.mean to report
+p0  <- paramSamples$t.mean$pYF.mean
+p1  <- paramSamples$t.mean$pSA.mean
+pAD <- paramSamples$t.mean$pAD.mean[,2:18]
+
+nIter <- length(p0)
+
+p2  <- rowSums(pAD[, 1:11, drop = FALSE])
+p12 <- rowSums(pAD[, 12:17, drop = FALSE])
+
+post <- tibble(age0 = p0, age1 = p1, age2 = p2, age12 = p12) %>% 
+  mutate(total = age0 + age1 + age2 + age12,
+         age12 = age12 + (1 - total)) %>%
+  select(-total)
+
+summary <- post %>%
+  pivot_longer(everything(), names_to = "AgeClass", values_to = "Prop") %>%
+  group_by(AgeClass) %>%
+  summarise(Mean  = mean(Prop),
+            Lower = quantile(Prop, 0.025),
+            Upper = quantile(Prop, 0.975),
+            .groups = "drop") %>%
+  mutate(AgeClass = recode(AgeClass,
+                           age0    = "0",
+                           age1    = "1",
+                           age2_11 = "2–11",
+                           age12p  = "12+"))
 
