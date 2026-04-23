@@ -446,34 +446,74 @@ summary <- post %>%
 
 ## Transient LTRE --------------------------------------------------------------
 
+library(tidyverse)
+library(data.table)
+library(patchwork)
+library(scales)
+
 LTREresults <- readRDS('results/LTREresults_random.rds')
-plotFolder = c("figures/results12ageCs")
-nAge = 18 # nAge-1, because 1 year-old adults don't exist!
+plotFolder <- c("figures/results12ageCs")
+nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
 
-# select relevant data
+# extract relevant data
 contData <- LTREresults$contData
-
-# extract number of samples
 nSamples <- length(LTREresults$contList$cont[[1]])
+
+contData <- contData %>%
+  mutate(draw = rep(1:(nrow(.) / length(unique(Variable))), each = length(unique(Variable))))
+
+# to split adults & senescents
+contData_sAD <- contData %>%
+  filter(grepl("^sAD_", Variable)) %>%
+  mutate(Age = as.numeric(Age),
+         group = case_when(Age >= 2 & Age <= 11 ~ "sAD_2_11",
+                           Age >= 12 ~ "sAD_12up")) %>%
+  filter(!is.na(group)) %>%
+  group_by(draw, group) %>%
+  summarise(Contribution = sum(Contribution), .groups = "drop") %>%
+  ungroup() %>% 
+  rename(Variable = group)%>%
+  mutate(type = case_when(Variable == "sAD_2_11" ~ "Survival of adults (2–11)",
+                          Variable == "sAD_12up" ~ "Survival of senescent adults (12+)"))
 
 # split & format summed data
 contData_sum <- contData %>% 
-  dplyr::filter(Variable %in% c("Bt", "sPY_sum",
-                                "sYF", "sSA", "sAD_sum",
-                                "pYF", "pSA", "pAD_sum")) %>%
-  dplyr::mutate(type = dplyr::case_when(Variable == "Bt" ~ "Birth rate",
-                                        Variable == "sPY_sum" ~ "Survival of jellybeans",
-                                        Variable == "sYF" ~ "Survival of young-at-foot",
-                                        Variable == "sSA" ~ "Survival of subadults",
-                                        Variable == "sAD_sum" ~ "Survival of adults",
-                                        Variable == "pYF" ~ "Proportion of young-at-foot",
-                                        Variable == "pSA" ~ "Proportion of subadults",
-                                        Variable == "pAD_sum" ~ "Proportion of adults"))
+  filter(Variable %in% c("Bt", "sPY_sum",
+                         "sYF", "sSA", # "sAD_sum",
+                         "pYF", "pSA", "pAD_sum")) %>%
+  mutate(type = case_when(Variable == "Bt" ~ "Birth rate",
+                          Variable == "sPY_sum" ~ "Survival of pouch young",
+                          Variable == "sYF" ~ "Survival of young-at-foot",
+                          Variable == "sSA" ~ "Survival of subadults",
+                          # Variable == "sAD_sum" ~ "Survival of adults",
+                          Variable == "pYF" ~ "Proportion of young-at-foot",
+                          Variable == "pSA" ~ "Proportion of subadults",
+                          Variable == "pAD_sum" ~ "Proportion of adults"))
+
+# combine everything
+contData_sum <- bind_rows(contData_sum, contData_sAD)
+
+# combine pYF, pSA & pAD
+p_sum <- contData_sum %>%
+  filter(Variable %in% c("pYF", "pSA", "pAD_sum")) %>%
+  group_by(draw) %>%
+  summarise(Contribution = sum(Contribution), .groups = "drop") %>%
+  mutate(Variable = "p_all", type = "Population structure")
+
+# remove original Ps & add p_sum
+contData_sum <- contData_sum %>%
+  filter(!Variable %in% c("pYF", "pSA", "pAD_sum")) %>%
+  select(-draw) %>%
+  bind_rows(p_sum)
 
 # make ordered list of parameter types
-typeList <- c("Birth rate", "Survival of jellybeans",
-              "Survival of young-at-foot", "Survival of subadults", "Survival of adults",
-              "Proportion of young-at-foot", "Proportion of subadults", "Proportion of adults")
+typeList <- c("Birth rate",
+              "Survival of pouch young",
+              "Survival of young-at-foot",
+              "Survival of subadults",
+              "Survival of adults (2–11)",
+              "Survival of senescent adults (12+)",
+              "Population structure")
 
 # order factor levels
 contData_sum$type <- factor(contData_sum$type, levels = typeList)
@@ -482,13 +522,7 @@ contData_sum$type <- factor(contData_sum$type, levels = typeList)
 ## Plot contributions (violin plots) -----------------------------------------
 
 # plot colours
-temp.colours <- paletteer::paletteer_c("grDevices::Temps", length(unique(contData_sum$type)))
-plot.colours <- temp.colours
-
-# summed estimates for all parameters
-addline_format <- function(x,...){
-  gsub('\\s','\n',x)
-}
+plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(typeList))
 
 p.sum <- contData_sum %>% 
   ggplot(aes(x = type, y = Contribution, group = type)) +
@@ -502,17 +536,16 @@ p.sum <- contData_sum %>%
                               "Survival of\npouch young",
                               "Survival of\nyoung-at-foot",
                               "Survival of\nsubadults",
-                              "Survival of\nadults",
-                              "Proportion of\nyoung-at-foot",
-                              "Proportion of\nsubadults",
-                              "Proportion of\nadults")) +
+                              "Survival of\nadults (2–11)",
+                              "Survival of\nadults (12+)",
+                              "Population\nstructure")) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10)); p.sum
 
-# ggsave("figures/results12ageCs/LTREsum.jpeg", width = 22.0, height = 12.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results12ageCs/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
 # reproductive success panel
 R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
@@ -534,7 +567,7 @@ p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
         axis.title = element_text(size = 10)); p.R
 
 # survival panel
-S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 18))
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 10), rep(plot.colours[6], 7))
 names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
 
 p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
@@ -555,7 +588,7 @@ p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nA
         axis.title = element_text(size = 10)); p.S
 
 # population structure panel
-P.colours <- c(plot.colours[6:7], rep(plot.colours[8], 18))
+P.colours <- c(rep(plot.colours[7], 19))
 names(P.colours) <- c("pYF", "pSA", paste0("pAD_", 2:nAge))
 
 p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nAge)))) +
@@ -576,13 +609,14 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         axis.title = element_text(size = 10)); p.P
 
 # combine panels
-(p.sum + labs(tag = "a)")) + ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
-(p.sum + labs(tag = "a)")) / ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+(p.sum + labs(tag = "a)")) + ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+(p.sum + labs(tag = "a)")) / ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)"))) +
+  plot_layout(heights = c(0.4, 0.6))
 
-# ggsave("figures/results12ageCs/LTREage.jpeg", width = 22.0, height = 28.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results12ageCs/LTREage.jpeg", width = 20.0, height = 28.0, units = c("cm"), dpi = 600)
 
 # summaries to report
-summary <- contData_sum %>%
+summary_sum <- contData_sum %>%
   group_by(Variable) %>%
   summarise(Mean  = mean(Contribution, na.rm = TRUE),
             Lower = quantile(Contribution, 0.025, na.rm = TRUE),
