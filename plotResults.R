@@ -93,6 +93,7 @@ cols <- c(
   "4"  = "#00BD65",
   "6"  = "#00BEC3",
   "8"  = "#00A8FF",
+  # "9"  = "#6594FF",
   "10" = "#C980FF",
   "12" = "#FF61CC"
 )
@@ -444,6 +445,223 @@ summary <- post %>%
                            age12p  = "12+"))
 
 
+## Elasticity Analysis ---------------------------------------------------------
+
+library(tidyverse)
+library(data.table)
+library(patchwork)
+library(scales)
+
+sensitivities <- readRDS('results/sensitivities.rds')
+elas_samples <- sensitivities$elasticity$samples 
+nSamples <- length(elas_samples$elas.Bt)
+nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
+
+# function to melt the 2D matrices (sPY, sAD, pAD)
+melt_matrix <- function(mat, prefix) {
+  colnames(mat) <- paste0(prefix, "_", 1:(ncol(mat)))
+  as.data.frame(mat) %>%
+    mutate(draw = 1:n()) %>%
+    pivot_longer(-draw, names_to = "Variable", values_to = "Contribution") %>%
+    mutate(Age = as.character(as.numeric(gsub(paste0(prefix, "_"), "", Variable))))
+}
+
+# extract 1D vectors
+df_1D <- bind_rows(data.frame(draw = 1:nSamples, Variable = "Bt", Contribution = elas_samples$elas.Bt, Age = NA),
+                   data.frame(draw = 1:nSamples, Variable = "sYF", Contribution = elas_samples$elas.sYF, Age = NA),
+                   data.frame(draw = 1:nSamples, Variable = "sSA", Contribution = elas_samples$elas.sSA, Age = NA),
+                   data.frame(draw = 1:nSamples, Variable = "pYF", Contribution = elas_samples$elas.pYF, Age = NA),
+                   data.frame(draw = 1:nSamples, Variable = "pSA", Contribution = elas_samples$elas.pSA, Age = NA))
+
+# Extract 2D matrices
+df_2D <- bind_rows(melt_matrix(elas_samples$elas.sPY, "sPY"),
+                   melt_matrix(elas_samples$elas.sAD, "sAD"),
+                   melt_matrix(elas_samples$elas.pAD, "pAD"))
+
+contData <- bind_rows(df_1D, df_2D)
+
+# calculate sum variables
+sums_df <- contData %>%
+  filter(grepl("^sPY_|^pAD_", Variable)) %>%
+  mutate(prefix = sub("_.*", "_sum", Variable)) %>%
+  group_by(draw, prefix) %>%
+  summarise(Contribution = sum(Contribution), .groups = "drop") %>%
+  rename(Variable = prefix) %>%
+  mutate(Age = NA)
+
+contData <- bind_rows(contData, sums_df)
+
+# to split adults & senescents
+contData_sAD <- contData %>%
+  filter(grepl("^sAD_", Variable)) %>%
+  mutate(Age = as.numeric(Age),
+         group = case_when(Age >= 2 & Age <= 9 ~ "sAD_2_9",
+                           Age >= 10 ~ "sAD_10up")) %>%
+  filter(!is.na(group)) %>%
+  group_by(draw, group) %>%
+  summarise(Contribution = sum(Contribution), .groups = "drop") %>%
+  ungroup() %>% 
+  rename(Variable = group)%>%
+  mutate(type = case_when(Variable == "sAD_2_9" ~ "Survival of adults (2–9)",
+                          Variable == "sAD_10up" ~ "Survival of senescent adults (10+)"))
+
+# split & format summed data
+contData_sum <- contData %>% 
+  filter(Variable %in% c("Bt", "sPY_sum",
+                         "sYF", "sSA", 
+                         "pYF", "pSA", "pAD_sum")) %>%
+  mutate(type = case_when(Variable == "Bt" ~ "Birth rate",
+                          Variable == "sPY_sum" ~ "Survival of pouch young",
+                          Variable == "sYF" ~ "Survival of young-at-foot",
+                          Variable == "sSA" ~ "Survival of subadults",
+                          Variable == "pYF" ~ "Proportion of young-at-foot",
+                          Variable == "pSA" ~ "Proportion of subadults",
+                          Variable == "pAD_sum" ~ "Proportion of adults"))
+
+# combine everything
+contData_sum <- bind_rows(contData_sum, contData_sAD)
+
+# combine pYF, pSA & pAD
+p_sum <- contData_sum %>%
+  filter(Variable %in% c("pYF", "pSA", "pAD_sum")) %>%
+  group_by(draw) %>%
+  summarise(Contribution = sum(Contribution), .groups = "drop") %>%
+  mutate(Variable = "p_all", type = "Population structure")
+
+# remove original Ps & add p_sum
+contData_sum <- contData_sum %>%
+  filter(!Variable %in% c("pYF", "pSA", "pAD_sum")) %>%
+  select(-draw) %>%
+  bind_rows(p_sum)
+
+# make ordered list of parameter types
+typeList <- c("Birth rate",
+              "Survival of pouch young",
+              "Survival of young-at-foot",
+              "Survival of subadults",
+              "Survival of adults (2–9)",
+              "Survival of senescent adults (10+)",
+              "Population structure")
+
+# order factor levels
+contData_sum$type <- factor(contData_sum$type, levels = typeList)
+
+# plot colours
+plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(typeList))
+
+p.sum <- contData_sum %>% 
+  ggplot(aes(x = type, y = Contribution, group = type)) +
+  geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Elasticity") +
+  xlab("") +
+  scale_fill_manual(values = plot.colours) +
+  scale_colour_manual(values = plot.colours) +
+  scale_x_discrete(labels = c("Birth\nrate",
+                              "Survival of\npouch young",
+                              "Survival of\nyoung-at-foot",
+                              "Survival of\nsubadults",
+                              "Survival of\nadults (2–9)",
+                              "Survival of\nadults (10+)",
+                              "Population\nstructure")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10)); p.sum
+
+# ggsave("figures/results12ageCs/ELASsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+
+# survival panel
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 9))
+names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
+
+p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Elasticity") +
+  xlab("") +
+  scale_x_discrete(labels = expression(S[0], S[1],
+                                       S[2], S[3], S[4], S[5], S[6], 
+                                       S[7], S[8], S[9], S[10], S[11], S[12],
+                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = S.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.S
+
+# reproductive success panel
+R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
+names(R.colours) <- c("Bt", paste0("sPY_", 2:nAge))
+
+p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("sPY_", 2:nAge))),
+                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Elasticity") +
+  xlab("") +
+  scale_x_discrete(labels = expression(B, SP[2], SP[3], SP[4], SP[5], SP[6], SP[7], SP[8], SP[9], SP[10],
+                                       SP[11], SP[12], SP[13], SP[14], SP[15], SP[16], SP[17], SP[18], SP[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = R.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.R
+
+# population structure panel
+P.colours <- c(rep(plot.colours[7], 19))
+names(P.colours) <- c("pYF", "pSA", paste0("pAD_", 2:nAge))
+
+p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("pYF", "pSA", paste0("pAD_", 2:nAge))),
+                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Elasticity") +
+  xlab("") +
+  scale_x_discrete(labels = expression(P[0], P[1],
+                                       P[2], P[3], P[4], P[5], P[6], 
+                                       P[7], P[8], P[9], P[10], P[11], P[12],
+                                       P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = P.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.P
+
+# combine panels
+(p.sum + labs(tag = "a)")) / ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)"))) +
+  plot_layout(heights = c(0.4, 0.6))
+
+# ggsave("figures/results12ageCs/ELASage.jpeg", width = 20.0, height = 28.0, units = c("cm"), dpi = 600)
+
+# summaries to report
+summary_sum <- contData_sum %>%
+  group_by(Variable) %>%
+  summarise(Mean  = mean(Contribution, na.rm = TRUE),
+            Lower = quantile(Contribution, 0.025, na.rm = TRUE),
+            Upper = quantile(Contribution, 0.975, na.rm = TRUE),
+            .groups = "drop")
+
+summary <- contData %>%
+  group_by(Variable) %>%
+  summarise(Mean  = mean(Contribution, na.rm = TRUE),
+            Lower = quantile(Contribution, 0.025, na.rm = TRUE),
+            Upper = quantile(Contribution, 0.975, na.rm = TRUE),
+            .groups = "drop")
+
+
 ## Transient LTRE --------------------------------------------------------------
 
 library(tidyverse)
@@ -466,15 +684,15 @@ contData <- contData %>%
 contData_sAD <- contData %>%
   filter(grepl("^sAD_", Variable)) %>%
   mutate(Age = as.numeric(Age),
-         group = case_when(Age >= 2 & Age <= 11 ~ "sAD_2_11",
-                           Age >= 12 ~ "sAD_12up")) %>%
+         group = case_when(Age >= 2 & Age <= 9 ~ "sAD_2_9",
+                           Age >= 10 ~ "sAD_10up")) %>%
   filter(!is.na(group)) %>%
   group_by(draw, group) %>%
   summarise(Contribution = sum(Contribution), .groups = "drop") %>%
   ungroup() %>% 
   rename(Variable = group)%>%
-  mutate(type = case_when(Variable == "sAD_2_11" ~ "Survival of adults (2–11)",
-                          Variable == "sAD_12up" ~ "Survival of senescent adults (12+)"))
+  mutate(type = case_when(Variable == "sAD_2_9" ~ "Survival of adults (2–9)",
+                          Variable == "sAD_10up" ~ "Survival of senescent adults (10+)"))
 
 # split & format summed data
 contData_sum <- contData %>% 
@@ -511,15 +729,12 @@ typeList <- c("Birth rate",
               "Survival of pouch young",
               "Survival of young-at-foot",
               "Survival of subadults",
-              "Survival of adults (2–11)",
-              "Survival of senescent adults (12+)",
+              "Survival of adults (2–9)",
+              "Survival of senescent adults (10+)",
               "Population structure")
 
 # order factor levels
 contData_sum$type <- factor(contData_sum$type, levels = typeList)
-
-
-## Plot contributions (violin plots) -----------------------------------------
 
 # plot colours
 plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(typeList))
@@ -536,16 +751,42 @@ p.sum <- contData_sum %>%
                               "Survival of\npouch young",
                               "Survival of\nyoung-at-foot",
                               "Survival of\nsubadults",
-                              "Survival of\nadults (2–11)",
-                              "Survival of\nadults (12+)",
+                              "Survival of\nadults (2–9)",
+                              "Survival of\nadults (10+)",
                               "Population\nstructure")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)),
+                     breaks = c(-0.006, -0.004, -0.002, 0.00, 0.002, 0.004, 0.006)) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10)); p.sum
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.sum
 
 # ggsave("figures/results12ageCs/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+
+# survival panel
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 9))
+names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
+
+p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Contribution") +
+  xlab("") +
+  scale_x_discrete(labels = expression(S[0], S[1],
+                                       S[2], S[3], S[4], S[5], S[6], 
+                                       S[7], S[8], S[9], S[10], S[11], S[12],
+                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)), breaks = c(0.00, 0.002, 0.004)) +
+  scale_fill_manual(values = S.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.S
 
 # reproductive success panel
 R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
@@ -559,33 +800,14 @@ p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
   xlab("") +
   scale_x_discrete(labels = expression(B, SP[2], SP[3], SP[4], SP[5], SP[6], SP[7], SP[8], SP[9], SP[10],
                                        SP[11], SP[12], SP[13], SP[14], SP[15], SP[16], SP[17], SP[18], SP[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)), breaks = c(0.00, 0.001, 0.002)) +
   scale_fill_manual(values = R.colours) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10)); p.R
-
-# survival panel
-S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 10), rep(plot.colours[6], 7))
-names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
-
-p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
-  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
-                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
-  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
-  ylab("Contribution") +
-  xlab("") +
-  scale_x_discrete(labels = expression(S[0], S[1],
-                                       S[2], S[3], S[4], S[5], S[6], 
-                                       S[7], S[8], S[9], S[10], S[11], S[12],
-                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
-  scale_fill_manual(values = S.colours) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10)); p.S
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.R
 
 # population structure panel
 P.colours <- c(rep(plot.colours[7], 19))
@@ -601,15 +823,17 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
                                        P[2], P[3], P[4], P[5], P[6], 
                                        P[7], P[8], P[9], P[10], P[11], P[12],
                                        P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)), breaks = c(-0.004, 0.00, 0.004)) +
   scale_fill_manual(values = P.colours) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
         axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10)); p.P
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(p.sum + labs(tag = "a)")) + ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+# (p.sum + labs(tag = "a)")) + ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 (p.sum + labs(tag = "a)")) / ((p.S + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
