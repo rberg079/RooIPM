@@ -15,11 +15,11 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   # # for testing purposes
   # dens.data = "data/abundanceData_Proteus.csv"
-  # veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx"
-  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx"
-  # wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv"
+  # veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
+  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
+  # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
   # obs.data = "data/PromObs_2008-2023.xlsx"
-  # list = "data/PromlistAllOct24.xlsx"
+  # list = "data/PromlistAllNov25.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -107,7 +107,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
            SeasYr = ifelse(Month == 12,
                            paste(Season, NextYr, sep = ""),
                            paste(Season, Year, sep = ""))) %>%
-    filter(Date > "2007-07-31" & Date < "2025-03-01") %>%
+    filter(Date > "2007-07-31" & Date < "2026-01-01") %>%
     select(Date, Year, Month, Day, SeasYr, Rain))
   
   
@@ -148,7 +148,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     fill(Veg, .direction = "up") %>%
     fill(VegSE, .direction = "up") %>% 
     select(Date, Year, Month, Day, SeasYr,
-           Ab, AbE, Dens, DensE, Veg, VegSE, Rain) %>% # DensSE
+           Ab, AbE, Dens, DensE, Veg, VegSE, Rain) %>%
     mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
     left_join(wind, by = c("Date", "Year", "Month", "Day"))
@@ -189,7 +189,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     mutate(Veg = sum(Veg),
            VegSE = sqrt(sum(VegSE^2)),
            across(c(Veg, VegSE), ~replace(., Year == 2008, NA)),
-           across(c(Veg, VegSE), ~replace(., Year == 2024, NA))) %>% 
+           across(c(Veg, VegSE), ~replace(., Year == 2025, NA))) %>% 
     ungroup() %>% 
     distinct(Year, Veg, VegSE)
   
@@ -198,7 +198,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     distinct(Year, Month, Warns.18) %>% 
     group_by(Year) %>% 
     mutate(Win = sum(Warns.18),
-           Win = ifelse(Year > 2022, NA, Win)) %>% 
+           Win = ifelse(Year > 2024, NA, Win)) %>% 
     ungroup() %>% 
     distinct(Year, Win)
   
@@ -217,7 +217,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # centre and scale data
   sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
   
-  year <- seq(from = 1, to = 17, by = 1)
+  year <- seq(from = 1, to = 18, by = 1)
   
   dens <- as.numeric(env$Dens)
   veg  <- as.numeric(sc(env$Veg))

@@ -26,20 +26,19 @@ library(parallel)
 # load data
 source('R/wrangleData_en.R')
 enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-                         veg.data  = "data/biomass data April 2009 - Jan 2025_updated Feb2025.xlsx",
-                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx",
-                         wind.data = "data/POWER_Point_Daily_20080101_20241231_10M.csv",
+                         veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
                          obs.data  = "data/PromObs_2008-2024.xlsx",
-                         list      = "data/PromlistAllOct24.xlsx")
+                         list      = "data/PromlistAllNov25.xlsx")
 
 source('R/wrangleData_sv.R')
-svData <- wrangleData_sv(surv.data = "data/PromSurvivalOct24.xlsx",
-                         yafs.data = "data/RSmainRB_Mar25.xlsx",
+svData <- wrangleData_sv(surv.data = "data/PromSurvivalNov25_RB.xlsx",
+                         yafs.data = "data/RSmainRB_May26.xlsx",
                          ageClasses = ageClasses, known.age = TRUE)
 
 source('R/wrangleData_rs.R')
-rsData <- wrangleData_rs(rs.data = "data/RSmainRB_Mar25.xlsx",
-                         obs.data = "data/PromObs_2008-2024.xlsx",
+rsData <- wrangleData_rs(rs.data = "data/RSmainRB_May26.xlsx",
                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
 
 # NAs in age.S before first capture were throwing an error at model defining step!
