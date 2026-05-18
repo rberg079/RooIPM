@@ -107,7 +107,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
            SeasYr = ifelse(Month == 12,
                            paste(Season, NextYr, sep = ""),
                            paste(Season, Year, sep = ""))) %>%
-    filter(Date > "2007-07-31" & Date < "2026-01-01") %>%
+    filter(Date > "2007-08-31" & Date < "2026-01-01") %>%
     select(Date, Year, Month, Day, SeasYr, Rain))
   
   
@@ -171,8 +171,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # summarise by year,
   # where year X spans Sept 1 X to Aug 31 X+1
   env <- env %>% 
-    filter(Date > "2008-03-31") %>%  # 6 mos before 1st census
-    mutate(Year = ifelse(Month < 10, Year-1, Year))
+    filter(Date > "2007-08-31") %>%  # 1st census in Sep 2009
+    mutate(Year = ifelse(Month < 9, Year-1, Year))
   
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
@@ -180,7 +180,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     filter(grepl("Spr", SeasYr)) %>% 
     distinct(SeasYr, Ab, AbE, Dens, DensE) %>% 
     mutate(Year = as.integer(str_extract(SeasYr, "\\d{4}"))) %>% 
-    select(Year, Ab, AbE, Dens, DensE)
+    select(Year, Ab, AbE, Dens, DensE) %>% 
+    complete(Year = 2007:2025)
   
   veg <- env %>% 
     filter(!is.na(Veg)) %>% 
@@ -188,25 +189,26 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     group_by(Year) %>% 
     mutate(Veg = sum(Veg),
            VegSE = sqrt(sum(VegSE^2)),
-           across(c(Veg, VegSE), ~replace(., Year == 2008, NA)),
-           across(c(Veg, VegSE), ~replace(., Year == 2025, NA))) %>% 
+           across(c(Veg, VegSE), ~replace(., Year == 2008, NA))) %>% 
     ungroup() %>% 
-    distinct(Year, Veg, VegSE)
+    distinct(Year, Veg, VegSE) %>% 
+    complete(Year = 2007:2024) %>% 
+    filter(Year < 2025)
   
   win <- env %>% 
-    filter(Year > 2007) %>% 
     distinct(Year, Month, Warns.18) %>% 
     group_by(Year) %>% 
     mutate(Win = sum(Warns.18),
            Win = ifelse(Year > 2024, NA, Win)) %>% 
     ungroup() %>% 
-    distinct(Year, Win)
+    distinct(Year, Win) %>% 
+    filter(Year < 2025)
   
   # join & calculate vegetation per capita
-  env <- c(2008, NA, NA, NA, NA) %>% 
-    rbind(dens, c(2024, NA, NA, NA, NA)) %>% 
-    left_join(veg, by = "Year") %>% 
-    left_join(win, by = "Year") %>% 
+  env <- tibble(Year = 2008:2025) %>% 
+    left_join(dens, by = "Year") %>% 
+    left_join(veg,  by = "Year") %>% 
+    left_join(win,  by = "Year") %>% 
     mutate(VegRoo = Veg / Dens,
            VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) %>% 
     left_join(obs, by = "Year")
@@ -217,12 +219,12 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # centre and scale data
   sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
   
-  year <- seq(from = 1, to = 18, by = 1)
+  year <- seq(from = 1, to = 17, by = 1)
   
-  dens <- as.numeric(env$Dens)
-  veg  <- as.numeric(sc(env$Veg))
-  win <- as.numeric(sc(env$Win))
-  propF <- as.numeric(env$PropF)
+  dens <- as.numeric(env$Dens)          # length nYear
+  veg  <- as.numeric(sc(env$Veg[1:17])) # length nYear-1
+  win <- as.numeric(sc(env$Win[1:17]))  # length nYear-1
+  propF <- as.numeric(env$PropF)        # length nYear
   
   densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
   # vegE <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE))
@@ -242,7 +244,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoWin  <- length(noWin)
   nNoProp <- length(noProp)
   
-  area = rep(76.2, 17)
+  area = rep(76.2, 18)
   
   return(list(year = year,
               area = area,

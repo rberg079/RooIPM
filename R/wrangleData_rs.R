@@ -115,11 +115,13 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   ## Return (mostly) scaled data -----------------------------------------------
   
   # birth rate data (B)
+  rs <- rs[rs$Year > 2007,] # start in 2008 to match survival
   rs <- rs %>% filter(!is.na(Repro))
   
   B <- rs$Repro
   nB <- length(B)
   year.B <- as.integer(factor(rs$Year))
+  age.B <- as.integer(rs$Age)
   
   # survival of pouch young data (R)
   rs <- rs %>% filter(!is.na(SurvSep1))
@@ -130,12 +132,11 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   id.R <- match(id.R, sort(unique(id.R)))
   nID.R <- length(unique(id.R))
   year.R <- as.integer(factor(rs$Year))
-  
-  # sort age & age classes
-  # age.R is age in Sept before breeding!
   age.R <- as.integer(rs$Age)
   nAge <- max(age.R)
   
+  # sort age & age classes
+  # age.R is age in Sept before breeding!
   if(ageClasses == 6){
     ageC.R = c(0,1,2,3,4,4,5,5,5,5, rep(6,30))
   }else if(ageClasses == 12){
@@ -148,6 +149,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   return(list(B = B,
               nB = nB,
               year.B = year.B,
+              age.B = age.B,
               
               R = R,
               nR = nR,

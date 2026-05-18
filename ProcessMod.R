@@ -75,6 +75,7 @@ myConst <- list(nYear = svData$nYear,
                 id.R = rsData$id.R,
                 year.B = rsData$year.B,
                 year.R = rsData$year.R,
+                age.B = rsData$age.B,
                 age.R = rsData$age.R,
                 ageC.R = rsData$ageC.R,
                 nAgeC.R = rsData$nAgeC.R,
@@ -119,11 +120,14 @@ for(c in 1:nchains){
     knownStates = svData$state,
     nYear = myConst$nYear,
     nAge = myConst$nAge,
+    nB = myConst$nB,
     nR = myConst$nR,
     nID.R = myConst$nID.R,
     ageClasses = ageClasses,
+    year.B = myConst$year.B,
     year.R = myConst$year.R,
     id.R = myConst$id.R,
+    age.B = myConst$age.B,
     age.R = myConst$age.R,
     ageC.R = myConst$ageC.R,
     ageC.S = myConst$ageC.S,
@@ -135,7 +139,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD',
+  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD', # 'BR',
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
@@ -239,7 +243,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_25.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
