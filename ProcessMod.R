@@ -139,7 +139,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'Bt', 'sPY', 'sYF', 'sSA', 'sAD', # 'BR',
+  'S', 'BR', 'sPY', 'sYF', 'sSA', 'sAD', # 'Bt',
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
@@ -320,6 +320,7 @@ library(scales)
 ## Extract parameter samples ---------------------------------------------------
 
 # source('extractParamSamples.R')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds')
 # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
 # # paramSamples <- readRDS('results/paramSamples.rds')
 

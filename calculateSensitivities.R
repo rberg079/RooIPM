@@ -9,7 +9,7 @@
 #'
 #' @examples
 
-calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
+calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   
   # # for testing purposes
   # # source('extractParamSamples.R')
@@ -17,7 +17,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
   # paramSamples <- readRDS('results/paramSamples.rds')
   # t.period <- NULL
-  # nAge <- 19
+  # nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
   
   
   ## Calculate transient sensitivities -----------------------------------------
@@ -76,8 +76,7 @@ calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
         sensList$sens.sAD[i, a] <- 0
         sensList$sens.pAD[i, a] <- 0
       }else{
-        sensList$sens.BR[i, a] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * sPY[i, 2:nAge])
-        
+        sensList$sens.BR[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * sPY[i, a]
         sensList$sens.sPY[i, a] <- pAD[i, a] * sAD[i, a] * 0.5 * BR[i, a]
         sensList$sens.sAD[i, a] <- pAD[i, a] * (1 + 0.5 * BR[i, a] * sPY[i, a])
         sensList$sens.pAD[i, a] <- sAD[i, a] * (1 + 0.5 * BR[i, a] * sPY[i, a])

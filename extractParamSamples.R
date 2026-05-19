@@ -14,7 +14,7 @@
 #' @examples
 #' 
 
-extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
+extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 18,
                                 saveList = FALSE, testRun = FALSE){
   
   # # for testing purposes

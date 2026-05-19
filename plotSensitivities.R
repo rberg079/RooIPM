@@ -13,7 +13,7 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
 
   # # for testing purposes
   # sensitivities <- readRDS('results/sensitivities.rds')
-  # plotFolder = c("figures/results12ageCs")
+  # plotFolder = c("figures/results25&BR")
   # nAge = 18 # nAge-1, because 1 year-old adults don't exist!
   
   
@@ -40,7 +40,7 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
     names(params) <- sub("^.{4}\\.", "", names(params))
     
     # extract number of samples
-    nSamples <- length(params[[1]])
+    nSamples <- nrow(params[[1]])
     
     ## Assemble summarised data ------------------------------------------------
     
@@ -55,7 +55,8 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
                    "Proportion of subadults",
                    "Proportion of adults"),
                  each = nSamples),
-      estimate = c(params$Bt,
+      estimate = c(# params$Bt,
+                   rowSums(params$BR),
                    rowSums(params$sPY),
                    params$sYF,
                    params$sSA,
@@ -82,7 +83,9 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
     age.data <- data.frame(rlist::list.cbind(params))
     
     # change column names
-    colnames(age.data) <- c("Bt", paste0("sPY_", 1:nAge),
+    colnames(age.data) <- c(# "Bt",
+                            paste0("BR_", 1:nAge),
+                            paste0("sPY_", 1:nAge),
                             "sYF", "sSA", paste0("sAD_", 1:nAge),
                             "pYF", "pSA", paste0("pAD_", 1:nAge))
     
@@ -127,16 +130,34 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
             axis.text.x = element_text(size = 10),
             axis.title = element_text(size = 10))
     
-    # reproductive success panel
-    R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
-    names(R.colours) <- c("Bt", paste0("sPY_", 2:nAge))
+    # birth rate panel
+    B.colours <- c(rep(plot.colours[1], 18))
+    names(B.colours) <- c(paste0("BR_", 2:nAge))
     
-    p.R <- ggplot(subset(age.data, variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
-      geom_violin(aes(x = factor(variable, levels = c("Bt", paste0("sPY_", 2:nAge))),
+    p.B <- ggplot(subset(age.data, variable %in% c(paste0("BR_", 2:nAge)))) +
+      geom_violin(aes(x = factor(variable, levels = c(paste0("BR_", 2:nAge))),
                       y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
       ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
       xlab("") + 
-      scale_x_discrete(labels = expression(B, R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
+      scale_x_discrete(labels = expression(B[2], B[3], B[4], B[5], B[6], B[7], B[8], B[9], B[10],
+                                           B[11], B[12], B[13], B[14], B[15], B[16], B[17], B[18], B[19])) +
+      scale_fill_manual(values = B.colours) +
+      theme_bw() + 
+      theme(legend.position = "none",
+            panel.grid = element_blank(), 
+            axis.text.x = element_text(size = 10), 
+            axis.title = element_text(size = 10))
+    
+    # reproductive success panel
+    R.colours <- c(rep(plot.colours[2], 18))
+    names(R.colours) <- c(paste0("sPY_", 2:nAge)) # "Bt"
+    
+    p.R <- ggplot(subset(age.data, variable %in% c(paste0("sPY_", 2:nAge)))) +
+      geom_violin(aes(x = factor(variable, levels = c(paste0("sPY_", 2:nAge))),
+                      y = value, fill = variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5, position = "dodge") +
+      ylab(ifelse(i == 1, "Sensitivity", "Elasticity")) + 
+      xlab("") + 
+      scale_x_discrete(labels = expression(R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
                                            R[11], R[12], R[13], R[14], R[15], R[16], R[17], R[18], R[19])) +
       scale_fill_manual(values = R.colours) +
       theme_bw() + 
@@ -196,7 +217,7 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
     pdf(paste0(plotFolder, ifelse(i == 1, "/sensitivities", "/elasticities"), "_age.pdf"), width = 12, height = 6) # or 10 & 6
     print(
       # p.sum + (p.R / p.S / p.P)
-      (p.sum + labs(tag = "a)")) + ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+      (p.sum + labs(tag = "a)")) + ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)")))
     )
     dev.off()
   }

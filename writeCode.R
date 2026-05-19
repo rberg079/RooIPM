@@ -140,7 +140,7 @@ writeCode <- function(){
       for(a in 3:nAge) nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       
       # then reproductive success
-      for(a in 3:nAge) nYFa[a, t+1] ~ dbin(0.5 * Bt[t] * sPY[a-1, t], nAD[a-1, t]) # BR[a-1, t]
+      for(a in 3:nAge) nYFa[a, t+1] ~ dbin(0.5 * BR[a-1, t] * sPY[a-1, t], nAD[a-1, t]) # Bt[t]
       nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # total number of female YAFs every year
       nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
@@ -167,25 +167,25 @@ writeCode <- function(){
       }
     }
     
-    # # birth rate by age
-    # # from estimates by age class
-    # for(t in 1:(nYear-1)){
-    #   BR[1, t] <- 0 # 1 y/os don't reproduce
-    # 
-    #   if(ageClasses == 6){
-    #     for(a in 2:4) BR[a, t] <- Ba[a-1, t]
-    #     for(a in 5:6) BR[a, t] <- Ba[4, t]
-    #     for(a in 7:10) BR[a, t] <- Ba[5, t]
-    #     for(a in 11:nAge) BR[a, t] <- Ba[6, t]
-    # 
-    #   }else if(ageClasses == 12){
-    #     for(a in 2:11) BR[a, t] <- Ba[a-1, t]
-    #     for(a in 12:nAge) BR[a, t] <- Ba[11, t]
-    # 
-    #   }else if(ageClasses == 20){
-    #     for(a in 2:19) BR[a, t] <- Ba[a-1, t]
-    #   }
-    # }
+    # birth rate by age
+    # from estimates by age class
+    for(t in 1:(nYear-1)){
+      BR[1, t] <- 0 # 1 y/os don't reproduce
+
+      if(ageClasses == 6){
+        for(a in 2:4) BR[a, t] <- Ba[a-1, t]
+        for(a in 5:6) BR[a, t] <- Ba[4, t]
+        for(a in 7:10) BR[a, t] <- Ba[5, t]
+        for(a in 11:nAge) BR[a, t] <- Ba[6, t]
+
+      }else if(ageClasses == 12){
+        for(a in 2:11) BR[a, t] <- Ba[a-1, t]
+        for(a in 12:nAge) BR[a, t] <- Ba[11, t]
+
+      }else if(ageClasses == 20){
+        for(a in 2:19) BR[a, t] <- Ba[a-1, t]
+      }
+    }
     
     # reproductive success by age
     # from estimates by age class
@@ -330,29 +330,29 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     #### Likelihood & constraints ####
-    # yearly birth rate
-    for(x in 1:nB){
-      B[x] ~ dbern(Bt[year.B[x]])
-    }
-
-    for(t in 1:(nYear-1)){
-      logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
-    }
-    
-    # # individual birth rate
+    # # yearly birth rate
     # for(x in 1:nB){
-    #   B[x] ~ dbern(Bi[x])
-    #   logit(Bi[x]) <- logit(Mu.B[ageC.R[age.B[x]]]) +
-    #     EpsilonT.B[year.B[x]]
+    #   B[x] ~ dbern(Bt[year.B[x]])
     # }
     # 
-    # # age-specific birth rate
-    # for(a in 1:nAgeC.R){
-    #   for(t in 1:(nYear-1)){
-    #     logit(Ba[a, t]) <- logit(Mu.B[a]) +
-    #       EpsilonT.B[t]
-    #   }
+    # for(t in 1:(nYear-1)){
+    #   logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
     # }
+    
+    # individual birth rate
+    for(x in 1:nB){
+      B[x] ~ dbern(Bi[x])
+      logit(Bi[x]) <- logit(Mu.B[ageC.R[age.B[x]]]) +
+        EpsilonT.B[year.B[x]]
+    }
+
+    # age-specific birth rate
+    for(a in 1:nAgeC.R){
+      for(t in 1:(nYear-1)){
+        logit(Ba[a, t]) <- logit(Mu.B[a]) +
+          EpsilonT.B[t]
+      }
+    }
     
     # individual RS function
     for(x in 1:nR){
@@ -390,9 +390,9 @@ writeCode <- function(){
     # fixed effects
     for(a in 1:nAgeC.R){
       Mu.R[a] ~ dunif(0, 1)
-      # Mu.B[a] ~ dunif(0, 1)
+      Mu.B[a] ~ dunif(0, 1)
     }
-    Mu.B ~ dunif(0, 1)
+    # Mu.B ~ dunif(0, 1)
     
     if(envEffectsR){
       BetaD.R ~ dunif(-5, 5)

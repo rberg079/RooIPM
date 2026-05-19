@@ -240,34 +240,34 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   }
   
   ## Reproductive success model
-  # yearly birth rate
-  Mu.B <- runif(1, 0.4, 1)
-
-  Bt <- numeric(nYear-1)
-  for(t in 1:(nYear-1)){
-    Bt[t] <- plogis(
-      qlogis(Mu.B) +
-        EpsilonT.B[t])
-  }
+  # # yearly birth rate
+  # Mu.B <- runif(1, 0.4, 1)
+  # 
+  # Bt <- numeric(nYear-1)
+  # for(t in 1:(nYear-1)){
+  #   Bt[t] <- plogis(
+  #     qlogis(Mu.B) +
+  #       EpsilonT.B[t])
+  # }
   
-  # # age-specific birth rate
-  # Mu.B <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
-  # 
-  # Bi <- numeric(nB)
-  # for(x in 1:nB){
-  #   Bi[x] <- plogis(
-  #     qlogis(Mu.B[ageC.R[age.B[x]]]) +
-  #       EpsilonT.B[year.B[x]])
-  # }
-  # 
-  # Ba <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
-  # for(a in 1:nAgeC.R) {
-  #   for(t in 1:(nYear-1)) {
-  #     Ba[a, t] <- plogis(
-  #       qlogis(Mu.B[a]) +
-  #         EpsilonT.B[t])
-  #   }
-  # }
+  # age-specific birth rate
+  Mu.B <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
+
+  Bi <- numeric(nB)
+  for(x in 1:nB){
+    Bi[x] <- plogis(
+      qlogis(Mu.B[ageC.R[age.B[x]]]) +
+        EpsilonT.B[year.B[x]])
+  }
+
+  Ba <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
+  for(a in 1:nAgeC.R) {
+    for(t in 1:(nYear-1)) {
+      Ba[a, t] <- plogis(
+        qlogis(Mu.B[a]) +
+          EpsilonT.B[t])
+    }
+  }
   
   # age-specific reproductive success
   Mu.R <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
@@ -328,26 +328,26 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     }
   }
   
-  # # priors for age-specific birth rate
-  # BR <- matrix(0, nrow = nAge, ncol = nYear-1)
-  # 
-  # if(nAgeC.R == 6){
-  #   for(t in 1:(nYear-1)){
-  #     for(a in 2:4) BR[a, t] <- Ba[a-1, t]
-  #     for(a in 5:6) BR[a, t] <- Ba[4, t]
-  #     for(a in 7:10) BR[a, t] <- Ba[5, t]
-  #     for(a in 11:nAge) BR[a, t] <- Ba[6, t]
-  #   }
-  # }else if(nAgeC.R == 12){
-  #   for(t in 1:(nYear-1)){
-  #     for(a in 2:11) BR[a, t] <- Ba[a-1, t]
-  #     for(a in 12:nAge) BR[a, t] <- Ba[11, t]
-  #   }
-  # }else if(nAgeC.R == 20){
-  #   for(t in 1:(nYear-1)){
-  #     for(a in 2:nAge) BR[a, t] <- Ba[a-1, t]
-  #   }
-  # }
+  # priors for age-specific birth rate
+  BR <- matrix(0, nrow = nAge, ncol = nYear-1)
+
+  if(nAgeC.R == 6){
+    for(t in 1:(nYear-1)){
+      for(a in 2:4) BR[a, t] <- Ba[a-1, t]
+      for(a in 5:6) BR[a, t] <- Ba[4, t]
+      for(a in 7:10) BR[a, t] <- Ba[5, t]
+      for(a in 11:nAge) BR[a, t] <- Ba[6, t]
+    }
+  }else if(nAgeC.R == 12){
+    for(t in 1:(nYear-1)){
+      for(a in 2:11) BR[a, t] <- Ba[a-1, t]
+      for(a in 12:nAge) BR[a, t] <- Ba[11, t]
+    }
+  }else if(nAgeC.R == 20){
+    for(t in 1:(nYear-1)){
+      for(a in 2:nAge) BR[a, t] <- Ba[a-1, t]
+    }
+  }
 
   # priors for reproductive success
   sPY <- matrix(0, nrow = nAge, ncol = nYear-1)
@@ -408,7 +408,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     for(a in 3:nAge) nAD[a, t+1] <- pmax(5, rbinom(1, nAD[a-1, t], sAD[a-1, t]))
     
     # then reproductive success
-    for(a in 3:nAge) nYFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * Bt[t] * sPY[a-1, t])) # BR[a-1, t]
+    for(a in 3:nAge) nYFa[a, t+1] <- pmax(1, rbinom(1, nAD[a-1, t], 0.5 * BR[a-1, t] * sPY[a-1, t])) # Bt[t]
     nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # total number of female YAFs every year
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
@@ -459,15 +459,15 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     
     Mu.B = Mu.B,
     Mu.R = Mu.R,
-    Bt = Bt,
-    # Bi = Bi,
-    # Ba = Ba,
+    # Bt = Bt,
+    Bi = Bi,
+    Ba = Ba,
     Ri = Ri,
     Ra = Ra,
     
     Mu.S = Mu.S,
     S = S,
-    # BR = BR,
+    BR = BR,
     sPY = sPY,
     sYF = sYF,
     sSA = sSA,
