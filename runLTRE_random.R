@@ -3,7 +3,8 @@
 #' @param paramSamples list. Contains lists of posterior samples for all vital rates & population-level quantities.
 #' @param sensitivities list. Contains lists containing posterior samples of transient sensitivities & elasticities for all vital rates & population structure (n).
 #' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
-#' @param nYear integer. Number of time steps in the model. nYear = 17 by default.
+#' @param nYear integer. Number of time steps in the model. nYear = 18 by default.
+#' @param splitAdults logical. If TRUE, summarises adult data for 2-9 year-olds & 10+ year-olds separately. splitAdults = TRUE by default.
 #'
 #' @returns a list of lists containing results of the LTRE analysis.
 #' Object 'contList' is a list containing posterior distributions of all parameters' LTRE contributions (sublist 'cont'), as well as some auxiliary quantities (sublist 'other').
@@ -13,20 +14,21 @@
 #'
 #' @examples
 
-runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 17){
+runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 18, splitAdults = TRUE){
   
-  # # for testing purposes
-  # source('extractParamSamples.R')
-  # source('calculateSensitivities.R')
-  # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
-  # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-  # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
+  # # # for testing purposes
+  # # source('extractParamSamples.R')
+  # # source('calculateSensitivities.R')
+  # # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB.rds')
+  # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
+  # # sensitivities <- calculateSensitivities(paramSamples = paramSamples)
   # 
   # # OR
   # paramSamples <- readRDS('results/paramSamples.rds')
   # sensitivities <- readRDS('results/sensitivities.rds')
-  # nYear <- 17
+  # nYear <- 18
   # nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
+  # splitAdults = TRUE
   
   
   ## Set up --------------------------------------------------------------------
@@ -159,14 +161,37 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 17){
   contList$other$tempvar.lambda <- matrixStats::rowVars(paramList$lambda[, 1:(nYear-1)])
   quantile(contList$other$tempvar.lambda, probs = c(0.025, 0.5, 0.975))
   
-  # calculate summed contributions for age-specific parameters
-  sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "sPY"))]
-  
-  for(x in 1:length(sumParams)){
-    subList <- contList$cont[which(grepl(paste0(sumParams[x], "_"), names(contList$cont)))]
+  if(splitAdults){
+    # calculate summed contributions for young (2-9) & old (10+) adults
+    sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "sPY", "BR"))]
     
-    contList$cont$newSum <- rowSums(dplyr::bind_rows(subList))
-    names(contList$cont)[which(names(contList$cont) == "newSum")] <- paste0(sumParams[x], "_sum")
+    youngAges <- 1:8
+    oldAges   <- 9:nAge
+    allAges   <- 1:nAge
+    
+    for(x in 1:length(sumParams)){
+      youngNames <- paste0(sumParams[x], "_", youngAges)
+      youngList <- contList$cont[which(names(contList$cont) %in% youngNames)]
+      contList$cont[[paste0(sumParams[x], "_2to9")]] <- rowSums(dplyr::bind_rows(youngList))
+      
+      oldNames <- paste0(sumParams[x], "_", oldAges)
+      oldList <- contList$cont[which(names(contList$cont) %in% oldNames)]
+      contList$cont[[paste0(sumParams[x], "_10up")]] <- rowSums(dplyr::bind_rows(oldList))
+      
+      allNames <- paste0(sumParams[x], "_", allAges)
+      allList <- contList$cont[which(names(contList$cont) %in% allNames)]
+      contList$cont[[paste0(sumParams[x], "_all")]] <- rowSums(dplyr::bind_rows(allList))
+    }
+  }else{
+    # calculate summed contributions for age-specific parameters
+    sumParams <- names(paramList)[which(names(paramList) %in% c("pAD", "sAD", "sPY", "BR"))]
+    
+    for(x in 1:length(sumParams)){
+      subList <- contList$cont[which(grepl(paste0(sumParams[x], "_"), names(contList$cont)))]
+      
+      contList$cont$newSum <- rowSums(dplyr::bind_rows(subList))
+      names(contList$cont)[which(names(contList$cont) == "newSum")] <- paste0(sumParams[x], "_sum")
+    }
   }
   
   # arrange results as dataframe

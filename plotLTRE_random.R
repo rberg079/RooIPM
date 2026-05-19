@@ -11,10 +11,10 @@
 
 plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
-  # # for testing purposes
-  # LTREresults <- readRDS('results/LTREresults_random.rds')
-  # plotFolder = c("figures/results12ageCs")
-  # nAge = 18 # nAge-1, because 1 year-old adults don't exist!
+  # for testing purposes
+  LTREresults <- readRDS('results/LTREresults_random.rds')
+  plotFolder = c("figures/results25&BR")
+  nAge = 18 # nAge-1, because 1 year-old adults don't exist!
   
   
   ## Set up --------------------------------------------------------------------
@@ -38,22 +38,36 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
   # split & format summed data
   contData_sum <- contData %>% 
-    dplyr::filter(Variable %in% c("Bt", "sPY_sum",
-                                  "sYF", "sSA", "sAD_sum",
-                                  "pYF", "pSA", "pAD_sum")) %>%
-    dplyr::mutate(type = dplyr::case_when(Variable == "Bt" ~ "Birth rate",
-                                          Variable == "sPY_sum" ~ "Survival of jellybeans",
-                                          Variable == "sYF" ~ "Survival of young-at-foot",
-                                          Variable == "sSA" ~ "Survival of subadults",
-                                          Variable == "sAD_sum" ~ "Survival of adults",
-                                          Variable == "pYF" ~ "Proportion of young-at-foot",
-                                          Variable == "pSA" ~ "Proportion of subadults",
-                                          Variable == "pAD_sum" ~ "Proportion of adults"))
+    dplyr::filter(
+      Variable %in% c("BR_all", "sPY_all",
+                      "sYF", "sSA", "sAD_2to9", "sAD_10up",
+                      "pYF", "pSA", "pAD_2to9", "pAD_10up")) %>%
+    dplyr::mutate(
+      type = dplyr::case_when(
+        Variable == "BR_all" ~ "Birth rate",
+        Variable == "sPY_all" ~ "Survival of pouch young",
+        Variable == "sYF" ~ "Survival of young-at-foot",
+        Variable == "sSA" ~ "Survival of subadults",
+        Variable == "sAD_2to9" ~ "Survival of adults (2-9)",
+        Variable == "sAD_10up" ~ "Survival of adults (10+)",
+        Variable == "pYF" ~ "Proportion of young-at-foot",
+        Variable == "pSA" ~ "Proportion of subadults",
+        Variable == "pAD_2to9" ~ "Proportion of adults (2-9)",
+        Variable == "pAD_10up" ~ "Proportion of adults (10+)"))
   
   # make ordered list of parameter types
-  typeList <- c("Birth rate", "Survival of jellybeans",
-                "Survival of young-at-foot", "Survival of subadults", "Survival of adults",
-                "Proportion of young-at-foot", "Proportion of subadults", "Proportion of adults")
+  typeList <- c(
+    "Birth rate",
+    "Survival of pouch young",
+    "Survival of young-at-foot",
+    "Survival of subadults",
+    "Survival of adults (2-9)",
+    "Survival of adults (10+)",
+    "Proportion of young-at-foot",
+    "Proportion of subadults",
+    "Proportion of adults (2-9)",
+    "Proportion of adults (10+)"
+  )
   
   # order factor levels
   contData_sum$type <- factor(contData_sum$type, levels = typeList)
@@ -82,13 +96,34 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
     scale_colour_manual(values = plot.colours) +
     # scale_x_discrete(labels = addline_format(typeList)) +
     scale_x_discrete(labels = c("Birth\nrate",
-                                "Surv. of\nbeans",
-                                "Surv. of\nYAFs",
-                                "Surv. of\nsubadults",
-                                "Surv. of\nadults",
-                                "Prop. of\nYAFs",
-                                "Prop. of\nsubadults",
-                                "Prop. of\nadults")) +
+                                "Surv.\nPYs",
+                                "Surv.\nYAFs",
+                                "Surv.\nSAs",
+                                "Surv.\n2-9 yrs",
+                                "Surv.\n10+ yrs",
+                                "Prop.\nYAFs",
+                                "Prop.\nSAs",
+                                "Prop.\n2-9 yrs",
+                                "Prop.\n2-9 yrs")) +
+    theme_bw() +
+    theme(legend.position = "none",
+          panel.grid = element_blank(),
+          axis.text.x = element_text(size = 10),
+          axis.title = element_text(size = 10))
+  
+  # birth rate panel
+  B.colours <- c(rep(plot.colours[1], 17))
+  names(B.colours) <- c(paste0("BR_", 2:nAge))
+  
+  p.B <- ggplot(subset(contData, Variable %in% c(paste0("BR_", 2:nAge)))) +
+    geom_violin(aes(x = factor(Variable, levels = c(paste0("BR_", 2:nAge))),
+                    y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+    geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+    ylab("Contribution") +
+    xlab("") +
+    scale_x_discrete(labels = expression(B[2], B[3], B[4], B[5], B[6], B[7], B[8], B[9], B[10],
+                                         B[11], B[12], B[13], B[14], B[15], B[16], B[17], B[18])) +
+    scale_fill_manual(values = B.colours) +
     theme_bw() +
     theme(legend.position = "none",
           panel.grid = element_blank(),
@@ -96,17 +131,17 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
           axis.title = element_text(size = 10))
   
   # reproductive success panel
-  R.colours <- c(plot.colours[1], rep(plot.colours[2], 18))
-  names(R.colours) <- c("Bt", paste0("sPY_", 2:nAge))
+  R.colours <- c(rep(plot.colours[2], 17))
+  names(R.colours) <- c(paste0("sPY_", 2:nAge))
   
-  p.R <- ggplot(subset(contData, Variable %in% c("Bt", paste0("sPY_", 2:nAge)))) +
-    geom_violin(aes(x = factor(Variable, levels = c("Bt", paste0("sPY_", 2:nAge))),
+  p.R <- ggplot(subset(contData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
+    geom_violin(aes(x = factor(Variable, levels = c(paste0("sPY_", 2:nAge))),
                     y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
     geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
     xlab("") +
-    scale_x_discrete(labels = expression(B, R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
-                                         R[11], R[12], R[13], R[14], R[15], R[16], R[17], R[18], R[19])) +
+    scale_x_discrete(labels = expression(R[2], R[3], R[4], R[5], R[6], R[7], R[8], R[9], R[10],
+                                         R[11], R[12], R[13], R[14], R[15], R[16], R[17], R[18])) +
     scale_fill_manual(values = R.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -115,7 +150,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
           axis.title = element_text(size = 10))
   
   # survival panel
-  S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 18))
+  S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 9))
   names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
   
   p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
@@ -127,7 +162,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
     scale_x_discrete(labels = expression(S[0], S[1],
                                          S[2], S[3], S[4], S[5], S[6], 
                                          S[7], S[8], S[9], S[10], S[11], S[12],
-                                         S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
+                                         S[13], S[14], S[15], S[16], S[17], S[18])) +
     scale_fill_manual(values = S.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -136,7 +171,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
           axis.title = element_text(size = 10))
   
   # population structure panel
-  P.colours <- c(plot.colours[6:7], rep(plot.colours[8], 18))
+  P.colours <- c(plot.colours[7:8], rep(plot.colours[9], 8), rep(plot.colours[10], 9))
   names(P.colours) <- c("pYF", "pSA", paste0("pAD_", 2:nAge))
   
   p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nAge)))) +
@@ -148,7 +183,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
     scale_x_discrete(labels = expression(P[0], P[1],
                                          P[2], P[3], P[4], P[5], P[6], 
                                          P[7], P[8], P[9], P[10], P[11], P[12],
-                                         P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
+                                         P[13], P[14], P[15], P[16], P[17], P[18])) +
     scale_fill_manual(values = P.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -164,10 +199,10 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   dev.off()
   
   library(patchwork)
-  pdf(paste0(plotFolder, "/LTRErandom_age.pdf"), width = 12, height = 6)
+  pdf(paste0(plotFolder, "/LTRErandom_age.pdf"), width = 14, height = 8)
   print(
     # p.sum + (p.R / p.S / p.P)
-    (p.sum + labs(tag = "a)")) + ((p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+      (p.sum + labs(tag = "a)")) + ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)")))
   )
   dev.off()
   
