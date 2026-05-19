@@ -8,11 +8,11 @@ library(data.table)
 library(patchwork)
 library(scales)
 
-nYear <- 17
-nAge  <- 18
+nYear <- 18
+nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -58,17 +58,20 @@ pop <- df %>%
   ggplot(aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#C398B7", alpha = 0.4) +
   geom_line(color = "#673C5B", linewidth = 0.8) +
-  scale_x_continuous(limits = c(2009, 2024),
-                     breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(breaks = pretty_breaks()) +
+  scale_x_continuous(limits = c(2009, 2025),
+                     breaks = c(2009, 2013, 2017, 2021, 2025)) +
+  scale_y_continuous(limits = c(200, 800),
+                     breaks = c(200, 400, 600, 800)) +
   labs(y = "Population size") +
   theme_bw() +
-  theme(axis.title.x = element_blank(),
+  theme(
+        axis.title.x = element_blank(),
         axis.text.x  = element_blank(),
         axis.ticks.x = element_blank(),
-        legend.position = "none"); pop
+        legend.position = "none"
+        ); pop
 
-# ggsave("figures/results12ageCs/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Survival --------------------------------------------------------------------
@@ -77,7 +80,7 @@ pop <- df %>%
 S_idx  <- grep("^S\\[", colnames(out.mat))
 
 # build summary dataframe
-df <- expand.grid(Age = 1:13, Year = 1:16)
+df <- expand.grid(Age = 1:13, Year = 1:17)
 df$Mean <- apply(out.mat[, S_idx, drop = FALSE], 2, mean, na.rm = TRUE)
 df$Lower <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
@@ -86,17 +89,49 @@ df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na
 plotAges <- c(0, 1, 2, 4, 6, 8, 10, 12)
 
 # pick colours
+# cols <- c(
+#   "0"  = "#F8756C",
+#   "1"  = "#CC9400",
+#   "2"  = "#7CAE00",
+#   "4"  = "#00BD65",
+#   "6"  = "#00BEC3",
+#   "8"  = "#00A8FF",
+#   "10" = "#C980FF",
+#   "12" = "#FF61CC"
+# )
+
 cols <- c(
-  "0"  = "#F8756C",
-  "1"  = "#CC9400",
-  "2"  = "#7CAE00",
-  "4"  = "#00BD65",
-  "6"  = "#00BEC3",
-  "8"  = "#00A8FF",
-  # "9"  = "#6594FF",
-  "10" = "#C980FF",
-  "12" = "#FF61CC"
+  "0"  = "#CC6673",
+  "1"  = "#AB2136",
+  "2"  = "#DE612B",
+  "4"  = "#F4A261",
+  "6"  = "#E9C46A",
+  "8"  = "#2A9D8F",
+  "10" = "#264653",
+  "12" = "#936271"
 )
+
+# cols <- c(
+#   "0"  = "#8E5EA2",
+#   "1"  = "#277DA1",
+#   "2"  = "#00A896",
+#   "4"  = "#F9C74F",
+#   "6"  = "#F8A23A",
+#   "8"  = "#F3722C",
+#   "10" = "#D62828",
+#   "12" = "#D96C9D"
+# )
+# 
+# cols <- c(
+#   "0"  = "#283D3B",
+#   "1"  = "#197278",
+#   "2"  = "#83A8A6",
+#   "4"  = "#EDDDD4",
+#   "6"  = "#AE9D96",
+#   "8"  = "#D99185",
+#   "10" = "#C44536",
+#   "12" = "#772E25"
+# )
 
 # plot
 surv <- df %>%
@@ -113,29 +148,34 @@ surv <- df %>%
   scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
   labs(x = "Year", y = "Survival", colour = "Age", fill = "Age") +
   theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.text.x  = element_blank(),
-        axis.ticks.x = element_blank()); surv
+  theme(
+    # axis.title.x = element_blank(),
+    # axis.text.x  = element_blank(),
+    # axis.ticks.x = element_blank()
+    ); surv
 
-# ggsave("figures/results12ageCs/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Reproductive success --------------------------------------------------------
 
 # indices
-Bt_idx  <- grep("^Bt\\[", colnames(out.mat))
+# Bt_idx  <- grep("^Bt\\[", colnames(out.mat))
+BR_idx  <- grep("^BR\\[", colnames(out.mat))
 sPY_idx <- grep("^sPY\\[", colnames(out.mat))
 
 # extract matrices
-Bt  <- out.mat[, Bt_idx,  drop = FALSE]
-Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
+# Bt  <- out.mat[, Bt_idx,  drop = FALSE]
+# Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
+BR  <- out.mat[, BR_idx, drop = FALSE]
 sPY <- out.mat[, sPY_idx, drop = FALSE]
 
 # compute reproductive output
-R <- 0.5 * Bt * sPY
+# R <- 0.5 * Bt * sPY
+R <- 0.5 * BR * sPY
 
 # build summary dataframe
-df <- expand.grid(Age = 1:19, Year = 1:16)
+df <- expand.grid(Age = 1:19, Year = 1:17)
 df$Mean <- apply(R, 2, mean, na.rm = TRUE)
 df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
 df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
@@ -144,13 +184,22 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 plotAges <- c(2, 4, 6, 8, 10, 12)
 
 # pick colours
+# cols <- c(
+#   "2"  = "#7CAE00",
+#   "4"  = "#00BD65",
+#   "6"  = "#00BEC3",
+#   "8"  = "#00A8FF",
+#   "10" = "#C980FF",
+#   "12" = "#FF61CC"
+# )
+
 cols <- c(
-  "2"  = "#7CAE00",
-  "4"  = "#00BD65",
-  "6"  = "#00BEC3",
-  "8"  = "#00A8FF",
-  "10" = "#C980FF",
-  "12" = "#FF61CC"
+  "2"  = "#DE612B",
+  "4"  = "#F4A261",
+  "6"  = "#E9C46A",
+  "8"  = "#2A9D8F",
+  "10" = "#264653",
+  "12" = "#936271"
 )
 
 # plot
@@ -165,20 +214,23 @@ rout <- df %>%
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(0, 0.6), breaks = c(0.0, 0.2, 0.4, 0.6)) +
+  scale_y_continuous(limits = c(0, 0.5),
+                     breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
   labs(x = "Year", y = "Reproductive output", colour = "Age", fill = "Age") +
   theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.text.x  = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "none"); rout
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x  = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+    ); rout
 
-# ggsave("figures/results12ageCs/routput.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/routput.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival plot
 # surv / rout
 
-# ggsave("figures/results12ageCs/surv&rout.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/surv&rout.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # ...& population size
 (surv / rout / pop) +
@@ -251,7 +303,7 @@ df %>%
 ## Covariate values ------------------------------------------------------------
 
 # indices
-D_idx  <- grep("^dens\\.true", colnames(out.mat))
+D_idx  <- grep("^dens\\.true", colnames(out.mat))[1:17]
 V_idx  <- grep("^veg\\.true", colnames(out.mat))
 
 # build summary dataframe
@@ -303,7 +355,7 @@ mean(lambda_vec)
 quantile(lambda_vec, c(0.025, 0.5, 0.975))
 
 # build summary dataframe
-df <- data.frame(Year  = 1:16,
+df <- data.frame(Year  = 1:17,
                  Mean  = apply(lambda_mat, 2, mean),
                  Lower = apply(lambda_mat, 2, quantile, 0.025),
                  Upper = apply(lambda_mat, 2, quantile, 0.975))
