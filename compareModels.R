@@ -25,18 +25,16 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # nYear = 17
   # minYear = 2008
   # maxYear = minYear + nYear - 1
-  # nAgeC.S = 6
+  # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds")
-  # modelNames = c("IPM_12",
-  #                "IPM_12_noW",
-  #                "IPM_12_noW_stochV",
-  #                "IPM_12_noW_stochV_long")
-  # plotFolder = c("figures/envTweaks")
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_25.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds")
+  # modelNames = c("IPM_to24",
+  #                "IPM_to25",
+  #                "IPM_to25_BR")
+  # plotFolder = c("figures/agedBirthRate")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
@@ -133,45 +131,52 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
     # # for age-dependent fixed effects
-    # CJScovEFage = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
-    #                 paste0('BetaD.S[', 1:nAgeC.S, ']'),
-    #                 paste0('BetaV.S[', 1:nAgeC.S, ']'),
-    #                 paste0('BetaW.S[', 1:nAgeC.S, ']')),
+    # CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
+    #              paste0('BetaD.S[', 1:nAgeC.S, ']'),
+    #              paste0('BetaV.S[', 1:nAgeC.S, ']'),
+    #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
     # for age-independent fixed effects
-    CJScovEF = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaW.S'),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaW.S'),
     
     # # for age-dependent random effects
-    # CJSranEFage = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
+    # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
     
     # for age-independent random effects
-    CJSranEF = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
+    CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
     
-    CJSestO = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
+    CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
-    RSestBt = c(paste0('Bt[', 1:(nYear-1), ']')),
+    RS_Bt = c(paste0('Bt[', 1:(nYear-1), ']')),
     
-    RSestrA = c(expand.grid(a = plotAges, t = plotYears) %>%
-                  mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
+    RS_BR = c(expand.grid(a = plotAges, t = plotYears) %>%
+                mutate(param = paste0('BR[', a, ', ', t, ']')) %>%
+                pull(param)),
+    
+    RS_Ra = c(expand.grid(a = plotAges, t = plotYears) %>%
+                mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
+                pull(param)),
+    
+    RS_covs = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
+    
+    RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
+               paste0('EpsilonT.B[', plotYears, ']'),
+               'SigmaT.R', 'SigmaT.B'),
+    
+    POP_NAs = c(expand.grid(a = plotAges, t = plotYears) %>%
+                  mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
                   pull(param)),
     
-    RScovEF = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
-
-    RSranEF = c(paste0('EpsilonT.R[', plotYears, ']'),
-                paste0('EpsilonT.B[', plotYears, ']'),
-                'SigmaT.R', 'SigmaT.B'),
-    
-    POPestNA = c(expand.grid(a = plotAges, t = plotYears) %>%
-                   mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
-                   pull(param)),
-    
-    POPestNT = c(paste0('nYF[', plotYears, ']'),
-                 paste0('nSA[', plotYears, ']'),
-                 paste0('nTOT[', plotYears, ']')))
+    POP_NTs = c(paste0('nYF[', plotYears, ']'),
+                paste0('nSA[', plotYears, ']'),
+                paste0('nTOT[', plotYears, ']')))
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
     ParamNames = c('Bt',
+                   expand.grid(a = plotAges) %>% 
+                     mutate(param = paste0('BR[', a, ']')) %>%
+                     pull(param),
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('sPY[', a, ']')) %>%
                      pull(param),
@@ -181,7 +186,8 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                      mutate(param = paste0('sAD[', a, ']')) %>%
                      pull(param)),
     
-    ParamLabels = c('Breeding rate',
+    ParamLabels = c('Annual breeding rate',
+                    'Age-specific breeding rate',
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
                       pull(name),
