@@ -47,7 +47,7 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
     # assemble data
     sum.data <- data.frame(
       type = rep(c("Birth rate",
-                   "Survival of jellybeans",
+                   "Survival of pouch young",
                    "Survival of young-at-foot",
                    "Survival of subadults",
                    "Survival of adults",
@@ -68,7 +68,7 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
     # order factor levels
     sum.data$type <- factor(sum.data$type,
                             levels = c("Birth rate",
-                                       "Survival of jellybeans",
+                                       "Survival of pouch young",
                                        "Survival of young-at-foot",
                                        "Survival of subadults",
                                        "Survival of adults",
@@ -117,12 +117,12 @@ plotSensitivities <- function(sensitivities, nAge = 18, plotFolder){
       scale_fill_manual(values = plot.colours) + 
       scale_colour_manual(values = plot.colours) + 
       scale_x_discrete(labels = c("Birth\nrate",
-                                  "Surv. of\nbeans",
-                                  "Surv. of\nYAFs",
-                                  "Surv. of\nsubadults",
+                                  "Surv.\nPYs",
+                                  "Surv.\nYAFs",
+                                  "Surv.\nSAs",
                                   "Surv. of\nadults",
                                   "Prop. of\nYAFs",
-                                  "Prop. of\nsubadults",
+                                  "Prop. of\nSAs",
                                   "Prop. of\nadults")) + 
       theme_bw() + 
       theme(legend.position = "none",
