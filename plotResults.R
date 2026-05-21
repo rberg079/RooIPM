@@ -298,36 +298,38 @@ df <- rbind(
 
 # pick colours
 # cols <- c(
-#   "0"  = "#CC6673",
-#   "10" = "#264653",
-#   "11" = "#5D5462",
-#   "12" = "#936271"
+#   "0"   = "#CC6673",
+#   "10"  = "#264653",
+#   "11"  = "#5D5462",
+#   "12+" = "#936271"
 # )
 # 
 # cols <- c(
-#   "0"  = "#8E5EA2",
-#   "10" = "#D62828",
-#   "11" = "#D84A63",
-#   "12" = "#D96C9D"
+#   "0"   = "#8E5EA2",
+#   "10"  = "#D62828",
+#   "11"  = "#D84A63",
+#   "12+" = "#D96C9D"
 # )
 # 
 # cols <- c(
-#   "0"  = "#714A82",
-#   "10" = "#9B1C1C",
-#   "11" = "#D43552",
-#   "12" = "#D96D9E"
+#   "0"   = "#714A82",
+#   "10"  = "#9B1C1C",
+#   "11"  = "#D43552",
+#   "12+" = "#D96D9E"
 # )
 
 cols <- c(
-  "0"  = "#7C528E",
-  "10" = "#BE2323",
-  "11" = "#696969",
-  "12" = "#D96C9D"
+  "0"   = "#7C528E",
+  "10"  = "#BE2323",
+  "11"  = "#696969",
+  "12+" = "#D96C9D"
 )
 
 # plot
 df %>%
-  mutate(Age = factor(Age-1)) %>%
+  mutate(Age = factor(Age - 1,
+                      levels = c(0, 10, 11, 12),
+                      labels = c("0", "10", "11", "12+"))) %>%
   ggplot(aes(x = x, y = Mean, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
@@ -416,6 +418,8 @@ lambda <- df %>%
   geom_line(colour = "#8D6B48", linewidth = 0.8) +
   scale_x_continuous(limits = c(2008, 2025),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_y_continuous(limits = c(NA, 1.4),
+                     breaks = c(0.6, 0.8, 1.0, 1.2, 1.4)) +
   labs(x = "Year", y = expression("Population growth" ~ (lambda))) +
   theme_bw(); lambda
 
@@ -473,17 +477,59 @@ df <- bind_rows(df_YF, df_SA, df_AD) %>%
          N = Prop * rep(nTOT_mean, each = n_distinct(AgeGroup)))
 
 # colour palette
-cols <- c("0"   = "#E8D6CB",
-          "1"   = "#D0ADA7",
-          setNames(colorRampPalette(c("#AD6A6C", "#5D2E46"))(10), as.character(2:11)),
-          "12+" = "#371B29")
+# cols <- c("0"   = "#E8D6CB",
+#           "1"   = "#D0ADA7",
+#           setNames(colorRampPalette(c("#AD6A6C", "#5D2E46"))(10), as.character(2:11)),
+#           "12+" = "#371B29")
 
-cols <- paletteer::paletteer_c("grDevices::Temps", 8)
+cols <- c("0"   = "#C9CBA3",
+          "1"   = "#FFE1A8",
+          setNames(colorRampPalette(c("#EDA297", "#DD5540"))(8), as.character(2:9)),
+          setNames(colorRampPalette(c("#854752", "#5D3239"))(3), as.character(c("10", "11", "12+"))))
+
+cols <- c("0"   = "#E3AD78",
+          "1"   = "#EFD6AC",
+          setNames(colorRampPalette(c("#A0A290", "#4D4F40"))(8), as.character(2:9)),
+          setNames(colorRampPalette(c("#695C70", "#4A404F"))(3), as.character(c("10", "11", "12+"))))
+
+cols <- c("0"   = "#CA562C",
+          "1"   = "#DE8A5A",
+          setNames(colorRampPalette(c("#FAF5DB", "#F2D4A4"))(3), as.character(2:4)),
+          setNames(colorRampPalette(c("#B5B991", "#657359"))(5), as.character(5:9)),
+          setNames(colorRampPalette(c("#324935", "#19241A"))(3), as.character(c(10:11, "12+"))))
+
+cols <- c("0"   = "#671313",
+          "1"   = "#752915",
+          setNames(colorRampPalette(c("#9E691A", "#E7D18B"))(3), as.character(2:4)),
+          setNames(colorRampPalette(c("#FFF3B0", "#798C69"))(5), as.character(5:9)),
+          setNames(colorRampPalette(c("#426061", "#1C3236"))(3), as.character(c(10:11, "12+"))))
+
+# cols <- paletteer::paletteer_c("grDevices::Temps", 7)
+
+# ribbon plot
+pAGE <- df %>% 
+  arrange(Year, desc(AgeGroup)) %>% # desc() to flip order
+  group_by(Year) %>%
+  # mutate(ymin = cumsum(lag(Prop, default = 0)),
+  #        ymax = cumsum(Prop)) %>%
+  mutate(ymin = cumsum(lag(N, default = 0)),
+  ymax = cumsum(N)) %>%
+  ungroup() %>%
+  ggplot(aes(x = Year, fill = AgeGroup)) +
+  geom_ribbon(aes(ymin = ymin, ymax = ymax), colour = NA) +
+  scale_fill_manual(values = cols) +
+  # guides(fill = guide_legend(reverse = TRUE)) +
+  scale_x_continuous(limits = c(2009, 2025),
+                     breaks = c(seq(2009, 2025, by = 2))) +
+  scale_y_continuous(limits = c(0, 750)) +
+  labs(x = "Year", y = "Population size", fill = "Age") +
+  theme_bw(); pAGE
+
+# ggsave("figures/results25&BR/NsRibbons2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # bar plot
 pAGE <- df %>%
   ggplot(aes(x = Year, y = N, fill = AgeGroup)) +
-  # ggplot(aes(x = Year, y = Prop, fill = AgeGroup)) +
   geom_col(width = 0.8) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2009, 2024),
@@ -492,26 +538,6 @@ pAGE <- df %>%
   theme_bw(); pAGE
 
 # ggsave("figures/results25&BR/NsBars.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
-
-# ribbon plot
-pAGE <- df %>% 
-  arrange(Year, AgeGroup) %>%
-  group_by(Year) %>%
-  # mutate(ymin = cumsum(lag(N, default = 0)),
-  #        ymax = cumsum(N)) %>%
-  mutate(ymin = cumsum(lag(Prop, default = 0)),
-         ymax = cumsum(Prop)) %>%
-  ungroup() %>%
-  ggplot(aes(x = Year, fill = AgeGroup)) +
-  geom_ribbon(aes(ymin = ymin, ymax = ymax), colour = NA) +
-  scale_fill_manual(values = cols) +
-  scale_x_continuous(limits = c(2009, 2024),
-                     breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  # scale_y_continuous(limits = c(0, 750)) +
-  labs(x = "Year", y = "Population size", fill = "Age") +
-  theme_bw(); pAGE
-
-# ggsave("figures/results25&BR/NsRibbons.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # summaries of t.mean to report
 p0  <- paramSamples$t.mean$pYF.mean
@@ -934,7 +960,7 @@ if(oneProp) {
 plotData$type <- factor(plotData$type, levels = types)
 plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(unique(plotData$type)))
 
-p.sum <- ggplot(plotData, aes(x = type, y = Elasticity, group = type)) +
+e.sum <- ggplot(plotData, aes(x = type, y = Elasticity, group = type)) +
   geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Elasticity") +
@@ -946,8 +972,9 @@ p.sum <- ggplot(plotData, aes(x = type, y = Elasticity, group = type)) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10)); p.sum
+        axis.title.x = element_blank(),
+        axis.text.x  = element_blank(),
+        axis.title = element_text(size = 10)); e.sum
 
 # ggsave("figures/results25&BR/ELASsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
@@ -1159,7 +1186,7 @@ if(oneProp){
 plotData$type <- factor(plotData$type, levels = types)
 plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(unique(plotData$type)))
 
-p.sum <- plotData %>% 
+c.sum <- plotData %>% 
   ggplot(aes(x = type, y = Contribution, group = type)) +
   geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
@@ -1176,9 +1203,13 @@ p.sum <- plotData %>%
         panel.grid = element_blank(),
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10),
-        plot.margin = margin(1, 3, 1, 3)); p.sum
+        plot.margin = margin(1, 3, 1, 3)); c.sum
 
 # ggsave("figures/results25&BR/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+
+e.sum / c.sum
+
+# ggsave("figures/results25&BR/elas&ltre.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
