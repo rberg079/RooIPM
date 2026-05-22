@@ -272,7 +272,9 @@ library(scales)
 # if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
-# MCMCsummary(out.mcmc, params = c('Mu.R', 'Bt', 'sPY'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('BR'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('sPY'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
 # if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
 # 

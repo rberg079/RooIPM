@@ -76,6 +76,97 @@ pop <- df %>%
 # ggsave("figures/results25&BR/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
+## Population size (by group) --------------------------------------------------
+
+# parameters to include
+nYF_idx  <- grep("^nYF\\[", colnames(out.mat))
+nSA_idx  <- grep("^nSA\\[", colnames(out.mat))
+nTOT_idx <- grep("^nTOT\\[", colnames(out.mat))
+nYear    <- length(nYF_idx)
+
+mat_2to9 <- matrix(NA, nrow = nrow(out.mat), ncol = nYear)
+mat_10up <- matrix(NA, nrow = nrow(out.mat), ncol = nYear)
+
+for(y in 1:nYear) {
+  cols_all  <- grep(paste0("^nAD\\[[0-9]+,\\s*", y, "\\]$"), colnames(out.mat)) # all adults
+  cols_2to9 <- grep(paste0("^nAD\\[[2-9],\\s*", y, "\\]$"), colnames(out.mat))  # 2-9 years
+  cols_10up <- setdiff(cols_all, cols_2to9)                                     # 10+ years
+  
+  # sum across adult age groups
+  mat_2to9[, y] <- rowSums(out.mat[, cols_2to9, drop = FALSE], na.rm = TRUE)
+  mat_10up[, y] <- rowSums(out.mat[, cols_10up, drop = FALSE], na.rm = TRUE)
+}
+
+# build summary dataframes
+df_YF   <- data.frame(Year = 1:nYear, Group = "Young-at-foot (0 years)",
+                      Mean  = apply(out.mat[, nYF_idx, drop = FALSE], 2, mean, na.rm = TRUE),
+                      Lower = apply(out.mat[, nYF_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
+                      Upper = apply(out.mat[, nYF_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
+
+df_SA   <- data.frame(Year = 1:nYear, Group = "Subadults (1 year)",
+                      Mean  = apply(out.mat[, nSA_idx, drop = FALSE], 2, mean, na.rm = TRUE),
+                      Lower = apply(out.mat[, nSA_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
+                      Upper = apply(out.mat[, nSA_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
+
+df_2to9 <- data.frame(Year = 1:nYear, Group = "Adults (2-9 years)",
+                      Mean  = apply(mat_2to9, 2, mean, na.rm = TRUE),
+                      Lower = apply(mat_2to9, 2, quantile, probs = 0.025, na.rm = TRUE),
+                      Upper = apply(mat_2to9, 2, quantile, probs = 0.975, na.rm = TRUE))
+
+df_10up <- data.frame(Year = 1:nYear, Group = "Adults (10+ years)",
+                      Mean  = apply(mat_10up, 2, mean, na.rm = TRUE),
+                      Lower = apply(mat_10up, 2, quantile, probs = 0.025, na.rm = TRUE),
+                      Upper = apply(mat_10up, 2, quantile, probs = 0.975, na.rm = TRUE))
+
+df_TOT  <- data.frame(Year = 1:nYear, Group = "Total female population",
+                      Mean  = apply(out.mat[, nTOT_idx, drop = FALSE], 2, mean, na.rm = TRUE),
+                      Lower = apply(out.mat[, nTOT_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
+                      Upper = apply(out.mat[, nTOT_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
+
+# combine everything
+df <- rbind(df_YF, df_SA, df_2to9, df_10up, df_TOT)
+
+# pick colours
+# cols <- c(
+#   "YF"       = "#F9C74F", # Yellow 
+#   "SA"       = "#F3722C", # Orange
+#   "AD (2-9)" = "#D62828", # Red
+#   "AD (10+)" = "#8E5EA2", # Purple (borrowed from survival script)
+#   "TOT"      = "#62414B"  # Dark purple/brown
+# )
+
+cols <- c(
+  "Young-at-foot (0 years)" = "#8E5EA2",
+  "Subadults (1 year)"      = "#277DA1",
+  "Adults (2-9 years)"      = "#F9C74F",
+  "Adults (10+ years)"      = "#D62828",
+  "Total female population" = "#62414B"
+)
+
+# population plot
+pop <- df %>% 
+  filter(Year > 1) %>% 
+  mutate(Year = Year + 2007,
+         Group = factor(Group,
+                        levels = c("Young-at-foot (0 years)",
+                                   "Subadults (1 year)",
+                                   "Adults (2-9 years)",
+                                   "Adults (10+ years)",
+                                   "Total female population"))) %>% 
+  ggplot(aes(x = Year, y = Mean, group = Group, colour = Group, fill = Group)) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) + 
+  geom_line(linewidth = 0.8) +
+  scale_colour_manual(values = cols) +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(2009, 2025),
+                     breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
+  scale_y_continuous(limits = c(0, 800), breaks = scales::pretty_breaks()) +
+  labs(y = "Population size", colour = "Age group", fill = "Age group") +
+  theme_bw(); pop
+
+# ggsave("figures/results25&BR/allNs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+
 ## Survival --------------------------------------------------------------------
 
 # indices
@@ -87,9 +178,6 @@ df$Mean <- apply(out.mat[, S_idx, drop = FALSE], 2, mean, na.rm = TRUE)
 df$Lower <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-# select ages!
-plotAges <- c(0, 1, 2, 4, 6, 8, 10, 12)
-
 # pick colours
 # cols <- c(
 #   "0"  = "#F8756C",
@@ -99,7 +187,7 @@ plotAges <- c(0, 1, 2, 4, 6, 8, 10, 12)
 #   "6"  = "#00BEC3",
 #   "8"  = "#00A8FF",
 #   "10" = "#C980FF",
-#   "12" = "#FF61CC"
+#   "12+" = "#FF61CC"
 # )
 # 
 # cols <- c(
@@ -110,7 +198,7 @@ plotAges <- c(0, 1, 2, 4, 6, 8, 10, 12)
 #   "6"  = "#E9C46A",
 #   "8"  = "#2A9D8F",
 #   "10" = "#264653",
-#   "12" = "#936271"
+#   "12+" = "#936271"
 # )
 
 cols <- c(
@@ -121,7 +209,7 @@ cols <- c(
   "6"  = "#F8A23A",
   "8"  = "#F3722C",
   "10" = "#D62828",
-  "12" = "#D96C9D"
+  "12+" = "#D96C9D"
 )
 
 # cols <- c(
@@ -132,14 +220,16 @@ cols <- c(
 #   "6"  = "#AE9D96",
 #   "8"  = "#D99185",
 #   "10" = "#C44536",
-#   "12" = "#772E25"
+#   "12+" = "#772E25"
 # )
 
 # plot
 surv <- df %>%
   mutate(Year = Year + 2007,
-         Age  = factor(Age-1)) %>%
-  filter(Age %in% plotAges) %>% 
+         Age  = factor(Age-1,
+                       levels = c(0, 1, 2, 4, 6, 8, 10, 12),
+                       labels = c("0", "1", "2", "4", "6", "8", "10", "12+"))) %>%
+  filter(!is.na(Age)) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
@@ -166,24 +256,33 @@ surv <- df %>%
 BR_idx  <- grep("^BR\\[", colnames(out.mat))
 sPY_idx <- grep("^sPY\\[", colnames(out.mat))
 
-# extract matrices
-# Bt  <- out.mat[, Bt_idx,  drop = FALSE]
-# Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
-BR  <- out.mat[, BR_idx, drop = FALSE]
-sPY <- out.mat[, sPY_idx, drop = FALSE]
+# # extract matrices
+# # Bt  <- out.mat[, Bt_idx,  drop = FALSE]
+# # Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
+# BR  <- out.mat[, BR_idx, drop = FALSE]
+# sPY <- out.mat[, sPY_idx, drop = FALSE]
+# 
+# # compute reproductive output
+# # R <- 0.5 * Bt * sPY
+# R <- 0.5 * BR * sPY
+# 
+# # build summary dataframe
+# df <- expand.grid(Age = 1:19, Year = 1:17)
+# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
-# compute reproductive output
-# R <- 0.5 * Bt * sPY
-R <- 0.5 * BR * sPY
-
-# build summary dataframe
+# build summary dataframe for BIRTH RATE
 df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+df$Mean <- apply(out.mat[, BR_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-# select ages!
-plotAges <- c(2, 4, 6, 8, 10, 12)
+# build summary dataframe for PY SURVIVAL
+df <- expand.grid(Age = 1:19, Year = 1:17)
+df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # pick colours
 # cols <- c(
@@ -192,7 +291,7 @@ plotAges <- c(2, 4, 6, 8, 10, 12)
 #   "6"  = "#00BEC3",
 #   "8"  = "#00A8FF",
 #   "10" = "#C980FF",
-#   "12" = "#FF61CC"
+#   "12+" = "#FF61CC"
 # )
 # 
 # cols <- c(
@@ -201,7 +300,7 @@ plotAges <- c(2, 4, 6, 8, 10, 12)
 #   "6"  = "#E9C46A",
 #   "8"  = "#2A9D8F",
 #   "10" = "#264653",
-#   "12" = "#936271"
+#   "12+" = "#936271"
 # )
 
 cols <- c(
@@ -210,45 +309,52 @@ cols <- c(
   "6"  = "#F8A23A",
   "8"  = "#F3722C",
   "10" = "#D62828",
-  "12" = "#D96C9D"
+  "12+" = "#D96C9D"
 )
 
 # plot
-rout <- df %>%
+br <- df %>%
   mutate(Year = Year + 2007,
-         Age  = factor(Age)) %>%
-  filter(Age %in% plotAges) %>% 
+         Age  = factor(Age,
+                       levels = c(2, 4, 6, 8, 10, 12),
+                       labels = c("2", "4", "6", "8", "10", "12+"))) %>%
+  filter(!is.na(Age)) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
-  geom_line(linewidth = 0.8, show.legend = F) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = T) +
+  geom_line(linewidth = 0.8, show.legend = T) +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(0, 0.5),
-                     breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
-  labs(x = "Year", y = "Reproductive success", colour = "Age", fill = "Age") +
+  scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
+  # scale_y_continuous(limits = c(0, 0.5),
+  #                    breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  labs(x = "Year", y = "Birth rate", colour = "Age", fill = "Age") +
   theme_bw() +
   theme(
     axis.title.x = element_blank(),
     axis.text.x  = element_blank(),
-    axis.ticks.x = element_blank(),
-    legend.position = "none"
-    ); rout
+    # axis.ticks.x = element_blank()
+  ); br
 
-# ggsave("figures/results25&BR/routput.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival plot
-# surv / rout
+# surv / rs
 
-# ggsave("figures/results25&BR/surv&rout.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
-
-# ...& population size
-(surv / rout / pop) +
+# combine birth rate & PY survival
+(br / rs) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/surv&rout&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/birth&PYsurv.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+
+# ...& population size
+(surv / rs / pop) +
+  plot_layout(guides = "collect") +
+  theme(legend.position = "right")
+
+# ggsave("figures/results25&BR/surv&rs&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate effects -----------------------------------------------------------
@@ -385,11 +491,11 @@ covs <- df %>%
 # ggsave("figures/results25&BR/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & reproductive output
-(surv / rout / covs) +
+(surv / rs / covs) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/surv&rout&covs.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/surv&rs&covs.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Lambda ----------------------------------------------------------------------
