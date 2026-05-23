@@ -918,9 +918,9 @@ p.P <- ggplot(subset(sensData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 (p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
-((p.B + labs(tag = "a)")) / (p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/SENSage.jpeg", width = 20.0, height = 28.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/SENSage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 sensSummary <- sensData %>%
@@ -1176,9 +1176,9 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 (p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
-((p.B + labs(tag = "a)")) / (p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/ELASage.jpeg", width = 20.0, height = 28.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/ELASage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 elasSummary <- elasData %>%
@@ -1409,9 +1409,9 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 (p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
-((p.B + labs(tag = "a)")) / (p.R + labs(tag = "b)")) / (p.S + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/LTREage.jpeg", width = 20.0, height = 28.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/LTREage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 LTREsummary <- contData %>%
