@@ -5,21 +5,24 @@
 #' @param wea.data character string. Path to xlsx file of weather data to use. As of Apr 2025: "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx".
 #' @param wind.data character string. Path to csv file of wind data to use. As of Apr 2025: "data/POWER_Point_Daily_20080101_20241231_10M.csv".
 #' @param obs.data character string. Path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2023.xlsx"
+#' @param list character string. Path to xlsx file of list of all individuals monitored. As of Apr 2025: "data/PromlistAllNov25.xlsx"
+#' @param Dave logical. If TRUE, takes Dave's population density estimates (vs Heloise's). Dave = FALSE by default.
 #'
 #' @returns a list containing year, ab, dens, veg, win, abE, densE, vegE, nNoDens, nNoVeg, nNoWin, & nNoProp.
 #' @export
 #'
 #' @examples
 
-wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list){
+wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list, Dave){
   
-  # # for testing purposes
-  # dens.data = "data/abundanceData_Proteus.csv"
-  # veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
-  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
-  # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
-  # obs.data = "data/PromObs_2008-2023.xlsx"
-  # list = "data/PromlistAllNov25.xlsx"
+  # for testing purposes
+  Dave      = TRUE
+  dens.data = if(Dave){"data/WPNP_Methods_Results_January2026.xlsx"}else{"data/abundanceData_Proteus.csv"}
+  veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
+  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
+  wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
+  obs.data  = "data/PromObs_2008-2024.xlsx"
+  list      = "data/PromlistAllNov25.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -30,7 +33,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   suppressPackageStartupMessages(library(tidyverse))
   
   # load data
-  density <- read_csv(dens.data, show_col_types = F)
+  density <- if(Dave){suppressWarnings(read_excel(dens.data))}else{read_csv(dens.data, show_col_types = F)}
   biomass <- suppressMessages(read_excel(veg.data))
   weather <- suppressWarnings(read_excel(wea.data))
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
@@ -40,15 +43,38 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   ## Density data --------------------------------------------------------------
   
-  density <- density %>% 
-    rename(Ab = "N",
-           AbE = "SD",
-           Dens = "D",
-           DensE = "SD_D") %>% 
-    mutate(NextYr = Year +1,
-           SeasYr = paste0(substr(Season, 1, 3), Year)) %>% 
-    select(SeasYr, Ab, AbE, Dens, DensE) %>% 
-    filter(!is.na(Ab))
+  if(Dave){
+    density <- density %>% 
+      rename(Dens = "Mean density",
+             lci = "L 95% CI density",
+             uci = "U 95% CI density") %>% 
+      mutate(SeasYr = paste0(substr(Season, 1, 3), Year),
+             
+             # to approximate SDs from 95% CIs
+             # calculate the scaling factor 'C' 
+             C_factor = sqrt(uci / lci),
+             # reverse-engineer the coefficient of variation
+             # CV = sqrt(exp((ln(C) / 1.96)^2) - 1)
+             cv = sqrt(exp((log(C_factor) / 1.96)^2) - 1),
+             
+             # calculate standard error
+             se_exact = Dens * cv,
+             
+             # calculate standard deviation
+             DensE = se_exact * sqrt(6)) %>% 
+      select(SeasYr, Dens, DensE)
+    
+  }else{
+    density <- density %>% 
+      rename(Ab = "N",
+             AbE = "SD",
+             Dens = "D",
+             DensE = "SD_D") %>% 
+      mutate(SeasYr = paste0(substr(Season, 1, 3), Year)) %>% 
+      select(SeasYr, Ab, AbE, Dens, DensE) %>% 
+      filter(!is.na(Ab))
+  }
+
   
   
   ## Biomass data --------------------------------------------------------------
@@ -148,7 +174,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     fill(Veg, .direction = "up") %>%
     fill(VegSE, .direction = "up") %>% 
     select(Date, Year, Month, Day, SeasYr,
-           Ab, AbE, Dens, DensE, Veg, VegSE, Rain) %>%
+           Dens, DensE, Veg, VegSE, Rain) %>%
     mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
     left_join(wind, by = c("Date", "Year", "Month", "Day"))
@@ -165,7 +191,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
            # Warns.05 = sum(Warn.05, na.rm = T),
            # Warns.10 = sum(Warn.10, na.rm = T),
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, SeasYr, Ab, AbE, Dens, DensE, Veg, VegSE, Warns.18))
+    distinct(Date, Year, Month, Day, SeasYr, Dens, DensE, Veg, VegSE, Warns.18))
              # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
   
   # summarise by year,
@@ -176,11 +202,11 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
-    filter(!is.na(Ab)) %>% 
+    filter(!is.na(Dens)) %>% 
     filter(grepl("Spr", SeasYr)) %>% 
-    distinct(SeasYr, Ab, AbE, Dens, DensE) %>% 
+    distinct(SeasYr, Dens, DensE) %>% 
     mutate(Year = as.integer(str_extract(SeasYr, "\\d{4}"))) %>% 
-    select(Year, Ab, AbE, Dens, DensE) %>% 
+    select(Year, Dens, DensE) %>% 
     complete(Year = 2007:2025)
   
   veg <- env %>% 
