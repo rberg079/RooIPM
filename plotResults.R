@@ -58,10 +58,10 @@ pop <- df %>%
   ggplot(aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#62414B", alpha = 0.2) + #C398B7
   geom_line(color = "#62414B", linewidth = 0.8) + #673C5B
-  # scale_x_continuous(limits = c(2009, 2025),
-  #                    breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
-  scale_x_continuous(limits = c(2008, 2025),
-                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_x_continuous(limits = c(2009, 2025),
+                     breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
+  # scale_x_continuous(limits = c(2008, 2025),
+  #                    breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   scale_y_continuous(limits = c(200, 800),
                      breaks = c(200, 400, 600, 800)) +
   labs(y = "Population size") +
@@ -256,33 +256,33 @@ surv <- df %>%
 BR_idx  <- grep("^BR\\[", colnames(out.mat))
 sPY_idx <- grep("^sPY\\[", colnames(out.mat))
 
-# # extract matrices
-# # Bt  <- out.mat[, Bt_idx,  drop = FALSE]
-# # Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
-# BR  <- out.mat[, BR_idx, drop = FALSE]
-# sPY <- out.mat[, sPY_idx, drop = FALSE]
-# 
-# # compute reproductive output
-# # R <- 0.5 * Bt * sPY
-# R <- 0.5 * BR * sPY
-# 
-# # build summary dataframe
+# extract matrices
+# Bt  <- out.mat[, Bt_idx,  drop = FALSE]
+# Bt  <- Bt[, rep(1:ncol(Bt), each = 19)]
+BR  <- out.mat[, BR_idx, drop = FALSE]
+sPY <- out.mat[, sPY_idx, drop = FALSE]
+
+# compute reproductive output
+# R <- 0.5 * Bt * sPY
+R <- 0.5 * BR * sPY
+
+# build summary dataframe
+df <- expand.grid(Age = 1:19, Year = 1:17)
+df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+
+# # build summary dataframe for BIRTH RATE
 # df <- expand.grid(Age = 1:19, Year = 1:17)
-# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+# df$Mean <- apply(out.mat[, BR_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+# df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-# build summary dataframe for BIRTH RATE
-df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(out.mat[, BR_idx, drop = FALSE], 2, mean, na.rm = TRUE)
-df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
-
-# build summary dataframe for PY SURVIVAL
-df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
-df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+# # build summary dataframe for PY SURVIVAL
+# df <- expand.grid(Age = 1:19, Year = 1:17)
+# df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+# df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # pick colours
 # cols <- c(
@@ -313,29 +313,29 @@ cols <- c(
 )
 
 # plot
-br <- df %>%
+rs <- df %>%
   mutate(Year = Year + 2007,
          Age  = factor(Age,
                        levels = c(2, 4, 6, 8, 10, 12),
                        labels = c("2", "4", "6", "8", "10", "12+"))) %>%
   filter(!is.na(Age)) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = T) +
-  geom_line(linewidth = 0.8, show.legend = T) +
+  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
+  geom_line(linewidth = 0.8, show.legend = F) +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
-  # scale_y_continuous(limits = c(0, 0.5),
-  #                    breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
-  labs(x = "Year", y = "Birth rate", colour = "Age", fill = "Age") +
+  # scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
+  scale_y_continuous(limits = c(0, 0.5),
+                     breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  labs(x = "Year", y = "Reproductive success", colour = "Age", fill = "Age") +
   theme_bw() +
   theme(
     axis.title.x = element_blank(),
-    axis.text.x  = element_blank(),
+    axis.text.x  = element_blank()
     # axis.ticks.x = element_blank()
-  ); br
+  ); rs
 
 # ggsave("figures/results25&BR/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
@@ -398,8 +398,8 @@ make_df <- function(betas, covariate) {
 }
 
 df <- rbind(
-  make_df(bD, "Density"),
-  make_df(bV, "Forage")
+  make_df(bD, "Population density"),
+  make_df(bV, "Forage availability")
 )
 
 # pick colours
@@ -464,15 +464,15 @@ veg  <- apply(out.mat[, V_idx, drop = FALSE], 2, mean, na.rm = TRUE)
 
 dens <- scale(dens)[,1]
 
-dens <- cbind(df, dens) %>% rename(value = dens) %>% mutate(covariate = "Density")
-veg  <- cbind(df, veg) %>% rename(value = veg) %>% mutate(covariate = "Forage")
+dens <- cbind(df, dens) %>% rename(value = dens) %>% mutate(covariate = "Population density")
+veg  <- cbind(df, veg) %>% rename(value = veg) %>% mutate(covariate = "Forage availability")
 
 df <- rbind(dens, veg)
 
 # pick colours
 cols <- c(
-  "Density" = "#335B5B",
-  "Forage"  = "#75A366"
+  "Population density" = "#335B5B",
+  "Forage availability"  = "#75A366"
 )
 
 # plot
@@ -495,7 +495,7 @@ covs <- df %>%
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/surv&rs&covs.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results25&BR/surv&rs&covs.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Lambda ----------------------------------------------------------------------
@@ -522,11 +522,13 @@ lambda <- df %>%
   geom_hline(yintercept = 1, colour = "grey60") +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, fill = "#8D6B48") +
   geom_line(colour = "#8D6B48", linewidth = 0.8) +
-  scale_x_continuous(limits = c(2008, 2025),
-                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  # scale_x_continuous(limits = c(2008, 2025),
+  #                    breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_x_continuous(limits = c(2009, 2025),
+                     breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
   scale_y_continuous(limits = c(NA, 1.4),
                      breaks = c(0.6, 0.8, 1.0, 1.2, 1.4)) +
-  labs(x = "Year", y = expression("Population growth" ~ (lambda))) +
+  labs(x = "Year", y = expression("Population growth rate" ~ (lambda))) +
   theme_bw(); lambda
 
 # ggsave("figures/results25&BR/lambda.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
