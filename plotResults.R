@@ -266,11 +266,11 @@ sPY <- out.mat[, sPY_idx, drop = FALSE]
 # R <- 0.5 * Bt * sPY
 R <- 0.5 * BR * sPY
 
-# build summary dataframe
-df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+# # build summary dataframe
+# df <- expand.grid(Age = 1:19, Year = 1:17)
+# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # # build summary dataframe for BIRTH RATE
 # df <- expand.grid(Age = 1:19, Year = 1:17)
@@ -283,6 +283,22 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 # df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
 # df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 # df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+
+# summarise by age & year
+R_array <- array(R, dim = c(nrow(R), 19, 17))
+R_age <- apply(R_array, c(1, 2), mean, na.rm = TRUE)
+
+df_age <- data.frame(Age   = 1:19,
+  Mean  = apply(R_age, 2, mean),
+  Lower = apply(R_age, 2, quantile, 0.025),
+  Upper = apply(R_age, 2, quantile, 0.975))
+
+R_year <- apply(R_array, c(1, 3), mean, na.rm = TRUE)
+
+df_year <- data.frame(Year  = 1:17,
+  Mean  = apply(R_year, 2, mean),
+  Lower = apply(R_year, 2, quantile, 0.025),
+  Upper = apply(R_year, 2, quantile, 0.975))
 
 # pick colours
 # cols <- c(
@@ -1472,3 +1488,11 @@ densities %>%
 
 # ggsave("figures/densData.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
+tmp <- as.data.frame(cbind(dave$year, dave$dens, heloise$dens)) %>% 
+  rename(year = 'V1', dave = 'V2', heloise = 'V3')
+
+library(ggpubr)
+ggscatter(tmp, x = "dave", y = "heloise",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "pearson",
+          alpha = 0.2, ggtheme = theme_bw())
