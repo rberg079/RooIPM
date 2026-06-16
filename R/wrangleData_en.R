@@ -15,14 +15,14 @@
 
 wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list, Dave){
   
-  # for testing purposes
-  Dave      = TRUE
-  dens.data = if(Dave){"data/WPNP_Methods_Results_January2026.xlsx"}else{"data/abundanceData_Proteus.csv"}
-  veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
-  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
-  wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
-  obs.data  = "data/PromObs_2008-2024.xlsx"
-  list      = "data/PromlistAllNov25.xlsx"
+  # # for testing purposes
+  # Dave      = TRUE
+  # dens.data = if(Dave){"data/WPNP_Methods_Results_January2026.xlsx"}else{"data/abundanceData_Proteus.csv"}
+  # veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
+  # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
+  # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
+  # obs.data  = "data/PromObs_2008-2024.xlsx"
+  # list      = "data/PromlistAllNov25.xlsx"
   
   
   ## Set up --------------------------------------------------------------------

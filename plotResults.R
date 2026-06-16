@@ -1423,3 +1423,52 @@ LTREsummary <- contData %>%
             Upper = quantile(Contribution, 0.975, na.rm = TRUE),
             .groups = "drop")
 
+
+## Density data ----------------------------------------------------------------
+
+# wrangle Dave's data
+source('R/wrangleData_en.R')
+enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+                         veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+                         obs.data  = "data/PromObs_2008-2024.xlsx",
+                         list      = "data/PromlistAllNov25.xlsx",
+                         Dave      = TRUE)
+
+year <- seq(2008, 2025, 1)
+dave <- as.data.frame(cbind(year, enData$dens, enData$densE)) %>% 
+  rename(dens = 'V2', densE = 'V3') %>% 
+  mutate(data = "Dave") %>% 
+  filter(year > 2008)
+
+# wrangle Heloise's data
+enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
+                         veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+                         wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+                         obs.data  = "data/PromObs_2008-2024.xlsx",
+                         list      = "data/PromlistAllNov25.xlsx",
+                         Dave      = FALSE)
+
+heloise <- as.data.frame(cbind(year, enData$dens, enData$densE)) %>% 
+  rename(dens = 'V2', densE = 'V3') %>% 
+  mutate(data = "Heloise") %>% 
+  filter(year > 2008)
+
+# combine
+densities <- rbind(dave, heloise)
+
+# plot
+densities %>% 
+  ggplot(aes(x = year, y = dens, group = data, colour = data, fill = data)) +
+  geom_ribbon(aes(ymin = dens-densE, ymax = dens+densE), alpha = 0.2, colour = NA) + 
+  geom_line(linewidth = 0.8) +
+  scale_x_continuous(breaks = c(2009, 2012, 2015, 2018, 2021, 2024)) +
+  scale_y_continuous(limits = c(1, 10),
+                     breaks = c(2, 4, 6, 8, 10)) +
+  labs(x = "Year", y = "Density estimate", colour = "Data", fill = "Data") +
+  theme_bw()
+
+# ggsave("figures/densData.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+

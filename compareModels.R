@@ -21,20 +21,20 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # for testing purposes
-  nYear = 17
-  minYear = 2008
-  maxYear = minYear + nYear - 1
-  nAgeC.S = 12
-  plotAges = c(2, 6, 10, 14)
-  plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds")
-  modelNames = c("IPM_Dave",
-                 "IPM_BR")
-  plotFolder = c("figures/DavesData")
-  returnSumData = TRUE
-  nModels <- length(modelNames)
+  # # for testing purposes
+  # nYear = 18
+  # minYear = 2008
+  # maxYear = minYear + nYear - 1
+  # nAgeC.S = 12
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds")
+  # modelNames = c("IPM_Dave",
+  #                "IPM_BR")
+  # plotFolder = c("figures/DavesData")
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
