@@ -298,26 +298,22 @@ library(scales)
 
 ## Compare model outputs -------------------------------------------------------
 
-# nYear   <- myConst$nYear
-# nAgeC.S <- myConst$nAgeC.S
-# 
-# source('compareModels.R')
-# compareModels(nYear = nYear,
-#               nAgeC.S = nAgeC.S,
-#               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_base.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_20.rds"
-#               ),
-#               modelNames = c(
-#                 "base",
-#                 "dCJS_6",
-#                 "dCJS_12",
-#                 "dCJS_20"
-#               ),
-#               plotFolder = c("figures/ageClasses"),
-#               returnSumData = TRUE)
+nYear   <- myConst$nYear
+nAgeC.S <- myConst$nAgeC.S
+
+source('compareModels.R')
+compareModels(nYear = nYear,
+              nAgeC.S = nAgeC.S,
+              postPaths = c(
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds"
+              ),
+              modelNames = c(
+                "IPM_Dave",
+                "IPM_BR"
+              ),
+              plotFolder = c("figures/DavesData"),
+              returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------

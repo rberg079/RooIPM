@@ -21,22 +21,20 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # # for testing purposes
-  # nYear = 17
-  # minYear = 2008
-  # maxYear = minYear + nYear - 1
-  # nAgeC.S = 12
-  # plotAges = c(2, 6, 10, 14)
-  # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_25.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds")
-  # modelNames = c("IPM_to24",
-  #                "IPM_to25",
-  #                "IPM_to25_BR")
-  # plotFolder = c("figures/agedBirthRate")
-  # returnSumData = TRUE
-  # nModels <- length(modelNames)
+  # for testing purposes
+  nYear = 17
+  minYear = 2008
+  maxYear = minYear + nYear - 1
+  nAgeC.S = 12
+  plotAges = c(2, 6, 10, 14)
+  plotYears = c(2, 6, 10, 14)
+  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds")
+  modelNames = c("IPM_Dave",
+                 "IPM_BR")
+  plotFolder = c("figures/DavesData")
+  returnSumData = TRUE
+  nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
@@ -109,17 +107,17 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
                                grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA', Parameter) ~ Idx1,
-                               grepl('nAD|sPY|S|sAD', Parameter) ~ Idx2),
+                               grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
            AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
-                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|sPY|sAD', Parameter) ~ Idx1),
+                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
                                # grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.R|nAD|sPY|sAD', Parameter) ~ AgeIdx,
+           Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
            ParamName = word(Parameter, 1, sep = "\\["),
-           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'sPY') & AgeIdx %in% plotAges,
+           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'BR', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
   sum.dat <- sum.dat %>%
@@ -147,7 +145,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     
     CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
-    RS_Bt = c(paste0('Bt[', 1:(nYear-1), ']')),
+    # RS_Bt = c(paste0('Bt[', 1:(nYear-1), ']')),
     
     RS_BR = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('BR[', a, ', ', t, ']')) %>%
@@ -173,7 +171,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
-    ParamNames = c('Bt',
+    ParamNames = c(# 'Bt',
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('BR[', a, ']')) %>%
                      pull(param),
@@ -186,8 +184,10 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                      mutate(param = paste0('sAD[', a, ']')) %>%
                      pull(param)),
     
-    ParamLabels = c('Annual breeding rate',
-                    'Age-specific breeding rate',
+    ParamLabels = c(# 'Annual breeding rate',
+                    expand.grid(a = plotAges) %>% 
+                      mutate(name = paste0('Breeding rate (age ', a, ')')) %>% 
+                      pull(name),
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Survival to pouch exit (', a, ' y/o moms)')) %>% 
                       pull(name),
