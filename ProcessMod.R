@@ -30,7 +30,8 @@ enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
                          wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
                          obs.data  = "data/PromObs_2008-2024.xlsx",
-                         list      = "data/PromlistAllNov25.xlsx")
+                         list      = "data/PromlistAllNov25.xlsx",
+                         Dave      = TRUE)
 
 source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(surv.data = "data/PromSurvivalNov25_RB.xlsx",
@@ -243,7 +244,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_25.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_25_Dave.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
