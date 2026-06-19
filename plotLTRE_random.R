@@ -11,10 +11,10 @@
 
 plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder){
   
-  # for testing purposes
-  LTREresults <- readRDS('results/LTREresults_random.rds')
-  plotFolder = c("figures/results25&BR")
-  nAge = 18 # nAge-1, because 1 year-old adults don't exist!
+  # # for testing purposes
+  # LTREresults <- readRDS('results/LTREresults_random.rds')
+  # plotFolder = c("figures/results25&BR&Dave")
+  # nAge = 18 # nAge-1, because 1 year-old adults don't exist!
   
   
   ## Set up --------------------------------------------------------------------

@@ -17,7 +17,7 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   # # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
   # paramSamples <- readRDS('results/paramSamples.rds')
   # t.period <- NULL
-  # nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
+  # nAge <- 19
   
   
   ## Calculate transient sensitivities -----------------------------------------

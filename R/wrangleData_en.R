@@ -22,7 +22,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
   # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
   # obs.data  = "data/PromObs_2008-2024.xlsx"
-  # list      = "data/PromlistAllNov25.xlsx"
+  # list.data = "data/PromlistAllNov25.xlsx"
   
   
   ## Set up --------------------------------------------------------------------
@@ -60,8 +60,11 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
              # calculate standard error
              se_exact = Dens * cv,
              
-             # calculate standard deviation
-             DensE = se_exact * sqrt(6)) %>% 
+             # # calculate standard deviation
+             # DensE = se_exact * sqrt(6))
+    
+             # OR set SD = 10% (Heloise's span ~4-7%)
+             DensE = 0.1*Dens) %>% 
       select(SeasYr, Dens, DensE)
     
   }else{
@@ -75,7 +78,6 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
       filter(!is.na(Ab))
   }
 
-  
   
   ## Biomass data --------------------------------------------------------------
   

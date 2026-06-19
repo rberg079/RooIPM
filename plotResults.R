@@ -12,7 +12,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
