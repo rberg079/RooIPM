@@ -103,7 +103,7 @@ writeCode <- function(){
     ## MISSING VALUES
     ## -------------------------------------------------------------------------
     
-    for(t in 1:(nYear-1)){
+    for(t in 1:nYear){
       # CRN: This is the data likelihood for the population density estimates. We need it.
       dens[t] ~ dnorm(dens.true[t], sd = densE[t])
     }
@@ -214,13 +214,13 @@ writeCode <- function(){
     nYF[1] <- initN.YF
     
     # subadults
-    log.initN.SA ~ dnorm(log(120), sd = 0.5)
+    log.initN.SA ~ dnorm(log(100), sd = 0.5)
     initN.SA <- round(exp(log.initN.SA))
     nSA[1] <- initN.SA
     
     # adults
     for(a in 2:nAge){
-      log.initN.AD[a] ~ dnorm(log(80), sd = 0.5)
+      log.initN.AD[a] ~ dnorm(log(10), sd = 0.5)
       initN.AD[a] <- round(exp(log.initN.AD[a]))
       nAD[a,1] <- initN.AD[a]
     }

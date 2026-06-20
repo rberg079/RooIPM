@@ -5,19 +5,18 @@
 #' @param wea.data character string. Path to xlsx file of weather data to use. As of Apr 2025: "data/Prom_Weather_2008-2023_updated Jan2025 RB.xlsx".
 #' @param wind.data character string. Path to csv file of wind data to use. As of Apr 2025: "data/POWER_Point_Daily_20080101_20241231_10M.csv".
 #' @param obs.data character string. Path to xlsx file of observation data to use. As of Apr 2025: "data/PromObs_2008-2023.xlsx"
-#' @param list character string. Path to xlsx file of list of all individuals monitored. As of Apr 2025: "data/PromlistAllNov25.xlsx"
-#' @param Dave logical. If TRUE, takes Dave's population density estimates (vs Heloise's). Dave = FALSE by default.
+#' @param list.data character string. Path to xlsx file of list of all individuals monitored. As of Apr 2025: "data/PromlistAllNov25.xlsx"
 #'
 #' @returns a list containing year, ab, dens, veg, win, abE, densE, vegE, nNoDens, nNoVeg, nNoWin, & nNoProp.
 #' @export
 #'
 #' @examples
 
-wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list, Dave){
+wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list.data){
   
   # # for testing purposes
-  # Dave      = TRUE
-  # dens.data = if(Dave){"data/WPNP_Methods_Results_January2026.xlsx"}else{"data/abundanceData_Proteus.csv"}
+  # # dens.data = "data/abundanceData_Proteus.csv" # OR...
+  # dens.data = "data/WPNP_Methods_Results_January2026.xlsx"
   # veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
   # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
   # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
@@ -33,51 +32,51 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   suppressPackageStartupMessages(library(tidyverse))
   
   # load data
-  density <- if(Dave){suppressWarnings(read_excel(dens.data))}else{read_csv(dens.data, show_col_types = F)}
+  # density <- read_csv(dens.data, show_col_types = F) # OR...
+  density <- suppressWarnings(read_excel(dens.data))
   biomass <- suppressMessages(read_excel(veg.data))
   weather <- suppressWarnings(read_excel(wea.data))
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
   obs <- suppressWarnings(read_excel(obs.data))
-  list <- suppressMessages(read_excel(list))
+  list <- suppressMessages(read_excel(list.data))
   
   
   ## Density data --------------------------------------------------------------
   
-  if(Dave){
-    density <- density %>% 
-      rename(Dens = "Mean density",
-             lci = "L 95% CI density",
-             uci = "U 95% CI density") %>% 
-      mutate(SeasYr = paste0(substr(Season, 1, 3), Year),
-             
-             # to approximate SDs from 95% CIs
-             # calculate the scaling factor 'C' 
-             C_factor = sqrt(uci / lci),
-             # reverse-engineer the coefficient of variation
-             # CV = sqrt(exp((ln(C) / 1.96)^2) - 1)
-             cv = sqrt(exp((log(C_factor) / 1.96)^2) - 1),
-             
-             # calculate standard error
-             se_exact = Dens * cv,
-             
-             # # calculate standard deviation
-             # DensE = se_exact * sqrt(6))
-    
-             # OR set SD = 10% (Heloise's span ~4-7%)
-             DensE = 0.1*Dens) %>% 
-      select(SeasYr, Dens, DensE)
-    
-  }else{
-    density <- density %>% 
-      rename(Ab = "N",
-             AbE = "SD",
-             Dens = "D",
-             DensE = "SD_D") %>% 
-      mutate(SeasYr = paste0(substr(Season, 1, 3), Year)) %>% 
-      select(SeasYr, Ab, AbE, Dens, DensE) %>% 
-      filter(!is.na(Ab))
-  }
+  # if Dave's data:
+  density <- density %>%
+    rename(Dens = "Mean density",
+           lci = "L 95% CI density",
+           uci = "U 95% CI density") %>%
+    mutate(SeasYr = paste0(substr(Season, 1, 3), Year),
 
+           # # to approximate SDs from 95% CIs
+           # # calculate the scaling factor 'C'
+           # C_factor = sqrt(uci / lci),
+           # # reverse-engineer the coefficient of variation
+           # # CV = sqrt(exp((ln(C) / 1.96)^2) - 1)
+           # cv = sqrt(exp((log(C_factor) / 1.96)^2) - 1),
+           # 
+           # # calculate standard error
+           # se_exact = Dens * cv,
+           # 
+           # # calculate standard deviation
+           # DensE = se_exact * sqrt(6))
+
+           # OR set SD = 10% (Heloise's span ~4-7%)
+           DensE = 0.1*Dens) %>%
+    select(SeasYr, Dens, DensE)
+  
+  # # if Heloise's:
+  # density <- density %>%
+  #   rename(Ab = "N",
+  #          AbE = "SD",
+  #          Dens = "D",
+  #          DensE = "SD_D") %>%
+  #   mutate(SeasYr = paste0(substr(Season, 1, 3), Year)) %>%
+  #   select(SeasYr, Ab, AbE, Dens, DensE) %>%
+  #   filter(!is.na(Ab))
+  
   
   ## Biomass data --------------------------------------------------------------
   
