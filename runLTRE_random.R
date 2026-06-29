@@ -27,7 +27,7 @@ runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 18, s
   # paramSamples <- readRDS('results/paramSamples.rds')
   # sensitivities <- readRDS('results/sensitivities.rds')
   # nYear <- 18
-  # nAge <- 18 # nAge-1, because 1 year-old adults don't exist!
+  # nAge <- 19
   # splitAdults = TRUE
   
   

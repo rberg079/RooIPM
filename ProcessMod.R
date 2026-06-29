@@ -247,7 +247,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs2.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -259,7 +259,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs

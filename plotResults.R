@@ -12,7 +12,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -62,8 +62,8 @@ pop <- df %>%
                      breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
   # scale_x_continuous(limits = c(2008, 2025),
   #                    breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(200, 800),
-                     breaks = c(200, 400, 600, 800)) +
+  scale_y_continuous(limits = c(200, 600),
+                     breaks = c(200, 300, 400, 500, 600)) +
   labs(y = "Population size") +
   theme_bw() +
   theme(
@@ -73,7 +73,7 @@ pop <- df %>%
         legend.position = "none"
         ); pop
 
-# ggsave("figures/results25&BR/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Population size (by group) --------------------------------------------------
@@ -144,7 +144,7 @@ cols <- c(
 )
 
 # population plot
-pop <- df %>% 
+popA <- df %>% 
   filter(Year > 1) %>% 
   mutate(Year = Year + 2007,
          Group = factor(Group,
@@ -162,9 +162,9 @@ pop <- df %>%
                      breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
   scale_y_continuous(limits = c(0, 800), breaks = scales::pretty_breaks()) +
   labs(y = "Population size", colour = "Age group", fill = "Age group") +
-  theme_bw(); pop
+  theme_bw(); popA
 
-# ggsave("figures/results25&BR/allNs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/allNs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Survival --------------------------------------------------------------------
@@ -246,7 +246,7 @@ surv <- df %>%
     axis.ticks.x = element_blank()
     ); surv
 
-# ggsave("figures/results25&BR/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Reproductive success --------------------------------------------------------
@@ -266,11 +266,11 @@ sPY <- out.mat[, sPY_idx, drop = FALSE]
 # R <- 0.5 * Bt * sPY
 R <- 0.5 * BR * sPY
 
-# # build summary dataframe
-# df <- expand.grid(Age = 1:19, Year = 1:17)
-# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+# build summary dataframe
+df <- expand.grid(Age = 1:19, Year = 1:17)
+df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # # build summary dataframe for BIRTH RATE
 # df <- expand.grid(Age = 1:19, Year = 1:17)
@@ -284,21 +284,21 @@ R <- 0.5 * BR * sPY
 # df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 # df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-# summarise by age & year
-R_array <- array(R, dim = c(nrow(R), 19, 17))
-R_age <- apply(R_array, c(1, 2), mean, na.rm = TRUE)
-
-df_age <- data.frame(Age   = 1:19,
-  Mean  = apply(R_age, 2, mean),
-  Lower = apply(R_age, 2, quantile, 0.025),
-  Upper = apply(R_age, 2, quantile, 0.975))
-
-R_year <- apply(R_array, c(1, 3), mean, na.rm = TRUE)
-
-df_year <- data.frame(Year  = 1:17,
-  Mean  = apply(R_year, 2, mean),
-  Lower = apply(R_year, 2, quantile, 0.025),
-  Upper = apply(R_year, 2, quantile, 0.975))
+# # summarise by age & year
+# R_array <- array(R, dim = c(nrow(R), 19, 17))
+# R_age <- apply(R_array, c(1, 2), mean, na.rm = TRUE)
+# 
+# df_age <- data.frame(Age   = 1:19,
+#   Mean  = apply(R_age, 2, mean),
+#   Lower = apply(R_age, 2, quantile, 0.025),
+#   Upper = apply(R_age, 2, quantile, 0.975))
+# 
+# R_year <- apply(R_array, c(1, 3), mean, na.rm = TRUE)
+# 
+# df_year <- data.frame(Year  = 1:17,
+#   Mean  = apply(R_year, 2, mean),
+#   Lower = apply(R_year, 2, quantile, 0.025),
+#   Upper = apply(R_year, 2, quantile, 0.975))
 
 # pick colours
 # cols <- c(
@@ -353,7 +353,7 @@ rs <- df %>%
     # axis.ticks.x = element_blank()
   ); rs
 
-# ggsave("figures/results25&BR/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival plot
 # surv / rs
@@ -363,14 +363,14 @@ rs <- df %>%
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/birth&PYsurv.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/birth&PYsurv.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # ...& population size
 (surv / rs / pop) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/surv&rs&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/surv&rs&pop.jpeg", width = 18.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate effects -----------------------------------------------------------
@@ -463,7 +463,7 @@ df %>%
        colour = "Age", fill = "Age") +
   theme_bw()
 
-# ggsave("figures/results25&BR/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate values ------------------------------------------------------------
@@ -504,14 +504,14 @@ covs <- df %>%
   labs(y = "Scaled covariate value", colour = "Covariate") +
   theme_bw(); covs
 
-# ggsave("figures/results25&BR/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & reproductive output
 (surv / rs / covs) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/results25&BR/surv&rs&covs.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/surv&rs&covs.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
 
 
 ## Lambda ----------------------------------------------------------------------
@@ -542,18 +542,18 @@ lambda <- df %>%
   #                    breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   scale_x_continuous(limits = c(2009, 2025),
                      breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
-  scale_y_continuous(limits = c(NA, 1.4),
-                     breaks = c(0.6, 0.8, 1.0, 1.2, 1.4)) +
+  scale_y_continuous(limits = c(NA, 1.25),
+                     breaks = c(0.6, 0.8, 1.0, 1.2)) +
   labs(x = "Year", y = expression("Population growth rate" ~ (lambda))) +
   theme_bw(); lambda
 
-# ggsave("figures/results25&BR/lambda.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/lambda.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with pop size
 pop / lambda
 pAGE / lambda
 
-# ggsave("figures/results25&BR/pop&lambda.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/pop&lambda.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 
 ## Age structure ---------------------------------------------------------------
@@ -605,22 +605,22 @@ df <- bind_rows(df_YF, df_SA, df_AD) %>%
 #           "1"   = "#D0ADA7",
 #           setNames(colorRampPalette(c("#AD6A6C", "#5D2E46"))(10), as.character(2:11)),
 #           "12+" = "#371B29")
-
-cols <- c("0"   = "#C9CBA3",
-          "1"   = "#FFE1A8",
-          setNames(colorRampPalette(c("#EDA297", "#DD5540"))(8), as.character(2:9)),
-          setNames(colorRampPalette(c("#854752", "#5D3239"))(3), as.character(c("10", "11", "12+"))))
-
-cols <- c("0"   = "#E3AD78",
-          "1"   = "#EFD6AC",
-          setNames(colorRampPalette(c("#A0A290", "#4D4F40"))(8), as.character(2:9)),
-          setNames(colorRampPalette(c("#695C70", "#4A404F"))(3), as.character(c("10", "11", "12+"))))
-
-cols <- c("0"   = "#CA562C",
-          "1"   = "#DE8A5A",
-          setNames(colorRampPalette(c("#FAF5DB", "#F2D4A4"))(3), as.character(2:4)),
-          setNames(colorRampPalette(c("#B5B991", "#657359"))(5), as.character(5:9)),
-          setNames(colorRampPalette(c("#324935", "#19241A"))(3), as.character(c(10:11, "12+"))))
+# 
+# cols <- c("0"   = "#C9CBA3",
+#           "1"   = "#FFE1A8",
+#           setNames(colorRampPalette(c("#EDA297", "#DD5540"))(8), as.character(2:9)),
+#           setNames(colorRampPalette(c("#854752", "#5D3239"))(3), as.character(c("10", "11", "12+"))))
+# 
+# cols <- c("0"   = "#E3AD78",
+#           "1"   = "#EFD6AC",
+#           setNames(colorRampPalette(c("#A0A290", "#4D4F40"))(8), as.character(2:9)),
+#           setNames(colorRampPalette(c("#695C70", "#4A404F"))(3), as.character(c("10", "11", "12+"))))
+# 
+# cols <- c("0"   = "#CA562C",
+#           "1"   = "#DE8A5A",
+#           setNames(colorRampPalette(c("#FAF5DB", "#F2D4A4"))(3), as.character(2:4)),
+#           setNames(colorRampPalette(c("#B5B991", "#657359"))(5), as.character(5:9)),
+#           setNames(colorRampPalette(c("#324935", "#19241A"))(3), as.character(c(10:11, "12+"))))
 
 cols <- c("0"   = "#671313",
           "1"   = "#752915",
@@ -634,10 +634,10 @@ cols <- c("0"   = "#671313",
 pAGE <- df %>% 
   arrange(Year, desc(AgeGroup)) %>% # desc() to flip order
   group_by(Year) %>%
-  # mutate(ymin = cumsum(lag(Prop, default = 0)),
-  #        ymax = cumsum(Prop)) %>%
-  mutate(ymin = cumsum(lag(N, default = 0)),
-  ymax = cumsum(N)) %>%
+  mutate(ymin = cumsum(lag(Prop, default = 0)),
+         ymax = cumsum(Prop)) %>%
+  # mutate(ymin = cumsum(lag(N, default = 0)),
+  # ymax = cumsum(N)) %>%
   ungroup() %>%
   ggplot(aes(x = Year, fill = AgeGroup)) +
   geom_ribbon(aes(ymin = ymin, ymax = ymax), colour = NA) +
@@ -645,11 +645,11 @@ pAGE <- df %>%
   # guides(fill = guide_legend(reverse = TRUE)) +
   scale_x_continuous(limits = c(2009, 2025),
                      breaks = c(seq(2009, 2025, by = 2))) +
-  scale_y_continuous(limits = c(0, 750)) +
+  # scale_y_continuous(limits = c(0, 750)) +
   labs(x = "Year", y = "Population size", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/results25&BR/NsRibbons2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/propsRibbons.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # bar plot
 pAGE <- df %>%
@@ -661,7 +661,7 @@ pAGE <- df %>%
   labs(x = "Year", y = "Proportion of the population", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/results25&BR/NsBars.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/NsBars.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # summaries of t.mean to report
 p0  <- paramSamples$t.mean$pYF.mean
@@ -842,7 +842,7 @@ p.sum <- ggplot(plotData, aes(x = type, y = Sensitivity, group = type)) +
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10)); p.sum
 
-# ggsave("figures/results25&BR/SENSsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/SENSsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
@@ -938,7 +938,7 @@ p.P <- ggplot(subset(sensData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 
 ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/SENSage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/SENSage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 sensSummary <- sensData %>%
@@ -1100,7 +1100,7 @@ e.sum <- ggplot(plotData, aes(x = type, y = Elasticity, group = type)) +
         axis.text.x  = element_blank(),
         axis.title = element_text(size = 10)); e.sum
 
-# ggsave("figures/results25&BR/ELASsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/ELASsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
@@ -1196,7 +1196,7 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 
 ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/ELASage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/ELASage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 elasSummary <- elasData %>%
@@ -1217,7 +1217,7 @@ library(scales)
 oneProp <- TRUE # whether age structure should be summed
 
 LTREresults <- readRDS('results/LTREresults_random.rds')
-plotFolder <- c("figures/results25&BR")
+plotFolder <- c("figures/resultsShrunkCIs")
 nAge <- 19
 
 # extract relevant data
@@ -1319,9 +1319,9 @@ c.sum <- plotData %>%
   scale_fill_manual(values = plot.colours) +
   scale_colour_manual(values = plot.colours) +
   scale_x_discrete(labels = names) +
-  scale_y_continuous(limits = c(-0.005, 0.008),
+  scale_y_continuous(limits = c(-0.008, 0.008),
                      expand = expansion(mult = c(0, 0.02)),
-                     breaks = c(-0.006, -0.004, -0.002, 0.00, 0.002, 0.004, 0.006, 0.008)) +
+                     breaks = c(-0.008, -0.006, -0.004, -0.002, 0.00, 0.002, 0.004, 0.006, 0.008)) +
   theme_bw() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
@@ -1329,11 +1329,11 @@ c.sum <- plotData %>%
         axis.title = element_text(size = 10),
         plot.margin = margin(1, 3, 1, 3)); c.sum
 
-# ggsave("figures/results25&BR/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
 e.sum / c.sum
 
-# ggsave("figures/results25&BR/elas&ltre.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/elas&ltre.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
@@ -1429,7 +1429,7 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 
 ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
 
-# ggsave("figures/results25&BR/LTREage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsShrunkCIs/LTREage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 LTREsummary <- contData %>%
@@ -1444,30 +1444,33 @@ LTREsummary <- contData %>%
 
 # wrangle Dave's data
 source('R/wrangleData_en.R')
-enData <- wrangleData_en(dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
-                         veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
-                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
-                         wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
-                         obs.data  = "data/PromObs_2008-2024.xlsx",
-                         list      = "data/PromlistAllNov25.xlsx",
-                         Dave      = TRUE)
+dave <- wrangleData_en(
+  # dens.data = "data/abundanceData_Proteus.csv" # OR...
+  dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+  wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+  obs.data  = "data/PromObs_2008-2024.xlsx",
+  list.data = "data/PromlistAllNov25.xlsx")
 
 year <- seq(2008, 2025, 1)
-dave <- as.data.frame(cbind(year, enData$dens, enData$densE)) %>% 
+dave <- as.data.frame(cbind(year, dave$dens, dave$densE)) %>% 
   rename(dens = 'V2', densE = 'V3') %>% 
   mutate(data = "Dave") %>% 
   filter(year > 2008)
 
 # wrangle Heloise's data
-enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-                         veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
-                         wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
-                         wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
-                         obs.data  = "data/PromObs_2008-2024.xlsx",
-                         list      = "data/PromlistAllNov25.xlsx",
-                         Dave      = FALSE)
+source('R/wrangleData_en.R')
+heloise <- wrangleData_en(
+  dens.data = "data/abundanceData_Proteus.csv", # OR...
+  # dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+  wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+  wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+  obs.data  = "data/PromObs_2008-2024.xlsx",
+  list.data = "data/PromlistAllNov25.xlsx")
 
-heloise <- as.data.frame(cbind(year, enData$dens, enData$densE)) %>% 
+heloise <- as.data.frame(cbind(year, heloise$dens, heloise$densE)) %>% 
   rename(dens = 'V2', densE = 'V3') %>% 
   mutate(data = "Heloise") %>% 
   filter(year > 2008)
@@ -1486,7 +1489,7 @@ densities %>%
   labs(x = "Year", y = "Density estimate", colour = "Data", fill = "Data") +
   theme_bw()
 
-# ggsave("figures/densData.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/densData_shrunkCIs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 tmp <- as.data.frame(cbind(dave$year, dave$dens, heloise$dens)) %>% 
   rename(year = 'V1', dave = 'V2', heloise = 'V3')

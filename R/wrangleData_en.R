@@ -257,7 +257,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # vegE <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE))
   
   # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE/sd(env$Dens, na.rm = T)))
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE/sd(env$Veg, na.rm = T)))
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T)))
   
   densM <- mean(dens, na.rm = T)
   
