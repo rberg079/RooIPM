@@ -54,7 +54,6 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # 
   # dens <- enData$dens
   # veg <- enData$veg
-  # win <- enData$win
   # propF <- enData$propF
   # knownStates <- svData$state
   # 
@@ -82,24 +81,20 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # missing values
   noDens <- is.na(dens)
   noVeg  <- is.na(veg)
-  noWin  <- is.na(win)
   noProp <- is.na(propF)
   
   nNoDens <- length(which(noDens))
   nNoVeg  <- length(which(noVeg))
-  nNoWin  <- length(which(noWin))
   nNoProp <- length(which(noProp))
   
   dens  <- round(ifelse(noDens, rnorm(1, 3.9, .4), dens), 2)
   veg   <- round(ifelse(noVeg, rnorm(1, 0, .1), veg), 4)
-  win   <- round(ifelse(noWin, rnorm(1, 0, .1), win), 4)
   propF <- round(ifelse(noProp, pmax(pmin(rnorm(1, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   dens.true <- dens
   dens.cov  <- dens - mean(dens)
   veg.true  <- veg
-  win.true  <- win 
   
   # latent states
   state <- knownStates
@@ -117,26 +112,17 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   ## Survival model
   if(envEffectsS){
-    # # for age-dependent fixed effects
-    # BetaD.S <- runif(nAgeC.S, -1, 1)
-    # BetaV.S <- runif(nAgeC.S, -1, 1)
-    # BetaW.S <- runif(nAgeC.S, -1, 1)
-    
-    # for age-independent fixed effects
     BetaD.S <- runif(1, -1, 1)
     BetaV.S <- runif(1, -1, 1)
-    BetaW.S <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
   if(envEffectsR){
     BetaD.R <- runif(1, -1, 1)
-    # BetaV.R <- runif(1, -1, 1)
-    # BetaW.R <- runif(1, -1, 1)
   }
   
   # dummy variable
-  # for targets of covariate effects
+  # to target covariate effects
   if(ageClasses == 6){
     dummy = c(1, rep(0,4), 1)
   }else if(ageClasses == 12){
@@ -148,31 +134,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   ## Simulate vital rate random effects ----------------------------------------
   
-  ## Survival model
-  # # for age-dependent random effects
-  # # variance-covariance matrix
-  # Xi.S <- rnorm(nAgeC.S, 1, 0.1)
-  # 
-  # Epsilon.S <- matrix(rnorm((nYear-1)*nAgeC.S, 0, 0.1),
-  #                     nrow = (nYear-1), ncol = nAgeC.S)
-  # 
-  # Gamma.S <- matrix(NA, ncol = nAgeC.S, nrow = nYear-1)
-  # 
-  # for(t in 1:(nYear-1)){
-  #   for(a in 1:nAgeC.S){
-  #     Gamma.S[t, a] <- Xi.S[a] * Epsilon.S[t, a]
-  #   }
-  # }
-  # 
-  # # Tau.S <- diag(nAgeC.S) + rnorm(nAgeC.S^2, 0, 0.1)
-  # # Tau.S <- (Tau.S + t(Tau.S)) / 2
-  # 
-  # # alternative init Tau.S that guarantees positive-definite values
-  # # (apparently potentially problematic the way I had it above)
-  # A <- matrix(rnorm(nAgeC.S^2, 0, 0.1), nAgeC.S, nAgeC.S)
-  # Tau.S <- crossprod(A) + diag(nAgeC.S)  # positive-definite
-  
-  # for age-independent random effect
+  # age-independent random effect
   XiT.S <- rnorm(nYear-1, 0, 1)
   SigmaT.S <- runif(1, .5, 2)
   EpsilonT.S <- XiT.S * SigmaT.S
@@ -200,26 +162,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # age-class-specific survival
   Mu.S <- c(rep(runif(nAgeC.S, 0.1, 0.9)))
   
-  # # for age-dependent fixed effects
-  # S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
-  # for(a in 1:nAgeC.S){
-  #   for(t in 1:(nYear - 1)){
-  #     if(envEffectsS){
-  #       S[a, t] <- plogis(
-  #         qlogis(Mu.S[a]) +
-  #           BetaD.S[a] * dens.cov[t] +
-  #           BetaV.S[a] * veg.true[t] +
-  #           BetaW.S[a] * win.true[t] +
-  #           Gamma.S[t]) # [t, a]
-  #     }else{
-  #       S[a, t] <- plogis(
-  #         qlogis(Mu.S[a]) +
-  #           Gamma.S[t]) # [t, a]
-  #     }
-  #   }
-  # }
-  
-  # for age-independent fixed effects
+  # age-independent fixed effects
   S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
   for(a in 1:nAgeC.S){
     for(t in 1:(nYear - 1)){
@@ -228,28 +171,16 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
           qlogis(Mu.S[a]) +
             BetaD.S * dens.cov[t] * dummy[a] +
             BetaV.S * veg.true[t] * dummy[a] +
-            # Gamma.S[t, a] +
             EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
-            # Gamma.S[t, a] +
             EpsilonT.S[t])
       }
     }
   }
   
   ## Reproductive success model
-  # # yearly birth rate
-  # Mu.B <- runif(1, 0.4, 1)
-  # 
-  # Bt <- numeric(nYear-1)
-  # for(t in 1:(nYear-1)){
-  #   Bt[t] <- plogis(
-  #     qlogis(Mu.B) +
-  #       EpsilonT.B[t])
-  # }
-  
   # age-specific birth rate
   Mu.B <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
 
@@ -376,7 +307,7 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   O <- runif(nYear, 0.1, 0.9)
   Mu.O <- runif(1, 0.1, 0.9)
   EpsilonT.O <- rnorm(nYear, 0, 0.2)
-  SigmaT.O <- runif(1, 0.01, 2) # or rnorm(1, 0.2, 0.1)
+  SigmaT.O <- runif(1, 0.01, 2)
   
   
   ## Simulate initial population sizes -----------------------------------------
@@ -415,31 +346,18 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   area <- rep(76.2, nYear)
   
-  # ab <- round(pmax((nTOT / pmax(propF, .4)) + rnorm(length(nTOT), 0, 2), 1))
-  # # pmax(propF, .4) returns .4 if propF falls below it
-  # # pmax(..., 1) returns 1 if ab falls below it
-  # # so propF is at least 40% & ab at least 1
-
-  # nYF; nSA; nAD; nTOT
   
   ## Assemble myinits list -----------------------------------------------------
   
   initList <- list(
     dens = dens,
     veg = veg,
-    win = win,
     propF = propF,
     dens.true = dens.true,
     dens.cov = dens.cov,
     veg.true = veg.true,
-    win.true = win.true,
     
     state = state,
-    
-    # Xi.S = Xi.S,
-    # Epsilon.S = Epsilon.S,
-    # Gamma.S = Gamma.S,
-    # Tau.S = Tau.S,
     
     XiT.S = XiT.S,
     SigmaT.S = SigmaT.S,
@@ -459,7 +377,6 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
     
     Mu.B = Mu.B,
     Mu.R = Mu.R,
-    # Bt = Bt,
     Bi = Bi,
     Ba = Ba,
     Ri = Ri,
@@ -495,16 +412,13 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   if(envEffectsS){
     initList <- c(initList, list(
       BetaD.S = BetaD.S,
-      BetaV.S = BetaV.S,
-      BetaW.S = BetaW.S
+      BetaV.S = BetaV.S
     ))
   }
   
   if(envEffectsR){
     initList <- c(initList, list(
       BetaD.R = BetaD.R
-      # BetaV.R = BetaV.R,
-      # BetaW.R = BetaW.R
     ))
   }
   
