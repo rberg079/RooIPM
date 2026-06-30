@@ -254,10 +254,12 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   propF <- as.numeric(env$PropF)        # length nYear
   
   densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
-  # vegE <- as.numeric(ifelse(is.na(env$VegSE), 1, env$VegSE))
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # to scale uncertainty too
   
-  # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE/sd(env$Dens, na.rm = T)))
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T)))
+  # TEMPORARY:
+  # TO SEE IF EXTRA 2 YEARS IN DAVE'S DATA MAKE A DIFFERENCE
+  dens <- c(dens[1:16], NA, NA)
+  densE <- c(densE[1:16], 1, 1)
   
   densM <- mean(dens, na.rm = T)
   
