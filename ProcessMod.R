@@ -89,6 +89,7 @@ myConst <- list(nYear = svData$nYear,
                 last = svData$last,
                 
                 densM = enData$densM,
+                densSD = enData$densSD,
                 noVeg = enData$noVeg,
                 noWin = enData$noWin,
                 noProp = enData$noProp,
@@ -247,7 +248,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs2.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs_densSD.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

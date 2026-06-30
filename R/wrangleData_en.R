@@ -248,20 +248,16 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   year <- seq(from = 1, to = 17, by = 1)
   
-  dens <- as.numeric(env$Dens)          # length nYear
-  veg  <- as.numeric(sc(env$Veg[1:17])) # length nYear-1
-  win <- as.numeric(sc(env$Win[1:17]))  # length nYear-1
+  dens  <- as.numeric(env$Dens)          # length nYear
+  veg   <- as.numeric(sc(env$Veg[1:17])) # length nYear-1
+  win   <- as.numeric(sc(env$Win[1:17]))  # length nYear-1
   propF <- as.numeric(env$PropF)        # length nYear
   
   densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # to scale uncertainty too
   
-  # TEMPORARY:
-  # TO SEE IF EXTRA 2 YEARS IN DAVE'S DATA MAKE A DIFFERENCE
-  dens <- c(dens[1:16], NA, NA)
-  densE <- c(densE[1:16], 1, 1)
-  
-  densM <- mean(dens, na.rm = T)
+  densM  <- mean(dens, na.rm = T)
+  densSD <- sd(dens, na.rm = T)
   
   noDens <- which(is.na(dens))
   noVeg  <- which(is.na(veg))
@@ -282,6 +278,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
               win = win,
               propF = propF,
               densM = densM,
+              densSD = densSD,
               densE = densE,
               vegE = vegE,
               noDens = noDens,

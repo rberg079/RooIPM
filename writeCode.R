@@ -232,7 +232,7 @@ writeCode <- function(){
     #### Likelihood ####
     for(t in 1:nYear){
       dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      dens.cov[t] <- dens.true[t] - densM # center dens for its use as a covariate
+      dens.cov[t] <- (dens.true[t] - densM) / densSD # center & scale dens for its use as a covariate
     }
     
     
