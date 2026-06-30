@@ -21,11 +21,6 @@ writeCode <- function(){
   # nAgeC.S = number of age classes in the survival model (was nAgeC)
   # nAgeC.R = number of age classes in the reproductive success model
   
-  # nNoDens = number of years for which population density is unknown
-  # nNoVeg = number of years for which available vegetation is unknown
-  # nNoWin = number of years for which weather harshness is unknown
-  # nNoProp = number of years for which proportion of females in the population is unknown
-  
   # nYF = number of young-at-foot (near pouch exit at 0 years old) in the population (was nYAF)
   # nYFa = number of young-at-foot of mothers of each age in the population (was nYAFa)
   # nSA = number of subadults (1 year old) in the population
@@ -33,28 +28,21 @@ writeCode <- function(){
   # nTOT = number of female kangaroos from YAF age onwards in the population
   
   # S = year & age-specific survival probabilities from the Cormack-Jolly-Seber (CJS) model
-  # Bt = year-specific probability of a female of any age producing a jellybean, from the reproductive success (RS) model
+  # Ba = year & age-specific probability of a female producing a jellybean, from the reproductive success (RS) model
   # Ra = year & age-specific probability of successfully bringing a jellybean to its 1st Sept as a YAF from the RS model
   # sPY = survival of pouch young/jellybean to their 1st Sept as YAF in the population model (taken from the RS model's Ra)
   # sYF = survival of young-at-foot to their 1st Sept as 1-year-old subadults in the population model (taken from the CJS model's S)
   # sSA = survival of 1-year-old subadults to their 1st Sept as 2-year-olds in the population model (taken from the CJS model's S)
   # sAD = survival of adult females from one Sept to the next in the population model (taken from the CJS model's S)
+  # BR = year & age-specific birth rate in the population model (taken from the RS model's)
   
   # Mu.S = age-specific mean probability of survival (S)
   # BetaD.S = covariate effect of density (D) on survival (S) (was B.dens)
   # BetaV.S = covariate effect of vegetation (V) on survival (S) (was B.veg)
-  # BetaW.S = covariate effect of weather harshness (W) on survival (S)
   
   # dens.true = "true" yearly population density, from which the observed values were hypothetically sampled
   # dens.cov = centered "true" yearly population density, for its use as a covariate in survival & reproductive success models
   # veg.true = "true" yearly available vegetation, from which the observed values were hypothetically sampled
-  # win.true = "true" yearly weather harshness, from which the observed values were hypothetically sampled
-  
-  # Gamma.S = correlated random effect of year on probability of survival (was gamma)
-  # Xi.S = scaling factor for how big the random effect variation is per age class (was xi)
-  # Epsilon.S = raw random effect sampled from a multivariate normal with precision Tau.S (was eps.raw)
-  # Tau.S = precision matrix (inverse of covariance) describing variance & correlation among age classes (was Tau.raw)
-  # Sigma.S = covariance matrix (inverse of precision) describing variance & covariance among age classes (was Sigma.raw)
   
   # EpsilonT.S = random effect of year (T) on survival (S), for uncorrelated random effect
   # XiT.S = latent standard normal scale of the random effect, for uncorrelated random effect
@@ -103,25 +91,21 @@ writeCode <- function(){
     ## MISSING VALUES
     ## -------------------------------------------------------------------------
     
+    # density data likelihood
     for(t in 1:nYear){
-      # CRN: This is the data likelihood for the population density estimates. We need it.
       dens[t] ~ dnorm(dens.true[t], sd = densE[t])
     }
     
+    # data imputation for missing vegetation data
+    # assuming observation error with known SD
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        # CRN: This is an additional level of stochasticity you impose, assuming that vegetation is observed with a known error.
-        # This makes sense to include, but perhaps only once everything else works.
         veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
-        # veg[t] <- veg.true[t]
       }
-      
-      # for(m in 1:nNoVeg){
-      #   veg.true[noVeg[m]] ~ dnorm(0, sd = 1)
-      # }
       veg.true[noVeg] ~ dnorm(0, sd = 1)
     }
     
+    # data imputation for missing propF data
     for(m in 1:nNoProp){
       propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     }
@@ -232,7 +216,7 @@ writeCode <- function(){
     #### Likelihood ####
     for(t in 1:nYear){
       dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      dens.cov[t] <- (dens.true[t] - densM) / densSD # center & scale dens for its use as a covariate
+      dens.cov[t] <- dens.true[t] - densM # center dens for its use as a covariate
     }
     
     
@@ -330,15 +314,6 @@ writeCode <- function(){
     ## -------------------------------------------------------------------------
     
     #### Likelihood & constraints ####
-    # # yearly birth rate
-    # for(x in 1:nB){
-    #   B[x] ~ dbern(Bt[year.B[x]])
-    # }
-    # 
-    # for(t in 1:(nYear-1)){
-    #   logit(Bt[t]) <- logit(Mu.B) + EpsilonT.B[t]
-    # }
-    
     # individual birth rate
     for(x in 1:nB){
       B[x] ~ dbern(Bi[x])
@@ -392,7 +367,6 @@ writeCode <- function(){
       Mu.R[a] ~ dunif(0, 1)
       Mu.B[a] ~ dunif(0, 1)
     }
-    # Mu.B ~ dunif(0, 1)
     
     if(envEffectsR){
       BetaD.R ~ dunif(-5, 5)
@@ -412,18 +386,9 @@ writeCode <- function(){
     EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # actual random effect
     EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # actual random effect
     
-    # NOTES:
-    # this way sampler can move Xi & Sigma independently
-    # apparently helps avoid strong correlations between variance parameters & effects, improving mixing
-    # & apparently analogous to my already non-centered random effects in the survival model block (ref: chatGPT...)
-    
     SigmaI.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.R ~ dunif(0, 10) # scale of the random effect
     SigmaT.B ~ dunif(0, 10) # scale of the random effect
-    
-    # NOTES:
-    # Survival: interpret Gamma & summarize variation using Sigma (correlated SDs per age class)
-    # Reproduction or Survival: interpret Epsilons & summarize variation using Sigmas (uncorrelated SDs)
     
   }) # nimbleCode
   
