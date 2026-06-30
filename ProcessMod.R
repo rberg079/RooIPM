@@ -26,8 +26,8 @@ library(parallel)
 # load data
 source('R/wrangleData_en.R')
 enData <- wrangleData_en(
-  # dens.data = "data/abundanceData_Proteus.csv" # OR...
-  dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  H_dens.data = "data/abundanceData_Proteus.csv", # OR...
+  D_dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
   veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
   wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
   wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
@@ -58,8 +58,14 @@ myData  <- list(obs = svData$obs,
                 
                 area = enData$area,
                 propF = enData$propF,
-                dens = enData$dens,
-                densE = enData$densE,
+                
+                H_dens = enData$H_dens,
+                D_dens = enData$D_dens,
+                H_densE = enData$H_densE,
+                D_densE = enData$D_densE,
+                
+                # dens = enData$dens,
+                # densE = enData$densE,
                 veg = enData$veg,
                 vegE = enData$vegE,
                 win = enData$win)
@@ -88,13 +94,12 @@ myConst <- list(nYear = svData$nYear,
                 first = svData$first,
                 last = svData$last,
                 
-                densM = enData$densM,
-                densSD = enData$densSD,
+                H_densM = enData$H_densM,
+                D_densM = enData$D_densM,
+                
                 noVeg = enData$noVeg,
-                noWin = enData$noWin,
                 noProp = enData$noProp,
                 nNoVeg = enData$nNoVeg,
-                nNoWin = enData$nNoWin,
                 nNoProp = enData$nNoProp,
                 
                 envEffectsS = envEffectsS,
@@ -118,9 +123,8 @@ set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    dens = myData$dens,
+    H_dens = myData$H_dens,
     veg = myData$veg,
-    win = myData$win,
     propF = myData$propF,
     knownStates = svData$state,
     nYear = myConst$nYear,
@@ -144,7 +148,7 @@ for(c in 1:nchains){
 # select parameters to monitors
 params <- c(
   # Population model
-  'S', 'BR', 'sPY', 'sYF', 'sSA', 'sAD', # 'Bt',
+  'S', 'BR', 'sPY', 'sYF', 'sSA', 'sAD',
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
@@ -161,9 +165,9 @@ params <- c(
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
-if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true')}
+if(envEffectsS){params <- c(params, 'BetaV.S')} # 'BetaD.S', 
+# if(envEffectsR){params <- c(params, 'BetaD.R')}
+if(envEffectsS || envEffectsR){params <- c(params, 'H_dens.true', 'veg.true')}
 
 # select MCMC settings
 if(testRun){
@@ -248,7 +252,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs_densSD.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
