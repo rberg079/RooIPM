@@ -25,7 +25,7 @@
 #'
 #' @examples
 
-simulateInits <- function(H_dens, veg, propF, knownStates, 
+simulateInits <- function(H_dens, D_dens, veg, propF, knownStates, 
                           nYear = 18, nAge = 19, nB = 0, nR = 0, nID.R = 0, ageClasses = 20,
                           year.B = 0, year.R = 0, id.R = 0, age.B = 0, age.R = 0, ageC.R, ageC.S,
                           envEffectsS = TRUE, envEffectsR = TRUE){
@@ -79,21 +79,23 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
   
   ## Survival model
   # missing values
-  noDens <- is.na(H_dens)
+  H_noDens <- is.na(H_dens)
+  D_noDens <- is.na(D_Dens)
   noVeg  <- is.na(veg)
   noProp <- is.na(propF)
   
-  nNoDens <- length(which(noDens))
+  # nNoDens <- length(which(noDens))
   nNoVeg  <- length(which(noVeg))
   nNoProp <- length(which(noProp))
   
-  H_dens  <- round(ifelse(noDens, rnorm(1, 3.9, .4), H_dens), 2)
+  H_dens  <- round(ifelse(H_noDens, rnorm(1, 3.9, .4), H_dens), 2)
+  D_dens  <- round(ifelse(D_noDens, rnorm(1, 3.4, 1), D_dens), 2)
   veg   <- round(ifelse(noVeg, rnorm(1, 0, .1), veg), 4)
   propF <- round(ifelse(noProp, pmax(pmin(rnorm(1, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   H_dens.true <- H_dens
-  H_dens.cov  <- H_dens - mean(H_dens)
+  dens.cov  <- D_dens - mean(D_dens)
   veg.true  <- veg
   
   # latent states
@@ -112,14 +114,14 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
   
   ## Survival model
   if(envEffectsS){
-    # BetaD.S <- runif(1, -1, 1)
+    BetaD.S <- runif(1, -1, 1)
     BetaV.S <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
-  # if(envEffectsR){
-  #   BetaD.R <- runif(1, -1, 1)
-  # }
+  if(envEffectsR){
+    BetaD.R <- runif(1, -1, 1)
+  }
   
   # dummy variable
   # to target covariate effects
@@ -169,7 +171,7 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
       if(envEffectsS){
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
-            # BetaD.S * H_dens.cov[t] * dummy[a] +
+            BetaD.S * dens.cov[t] * dummy[a] +
             BetaV.S * veg.true[t] * dummy[a] +
             EpsilonT.S[t])
       }else{
@@ -208,7 +210,7 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
     if(envEffectsR){
       Ri[x] <- plogis(
         qlogis(Mu.R[ageC.R[age.R[x]]]) +
-          # BetaD.R * H_dens.cov[year.R[x]] +
+          BetaD.R * dens.cov[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]])
     }else{
@@ -225,7 +227,7 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
       if(envEffectsR){
         Ra[a, t] <- plogis(
           qlogis(Mu.R[a]) +
-            # BetaD.R * H_dens.cov[t] +
+            BetaD.R * dens.cov[t] +
             EpsilonT.R[t])
       }else{
         Ra[a, t] <- plogis(
@@ -351,10 +353,11 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
   
   initList <- list(
     H_dens = H_dens,
+    D_dens = D_dens,
     veg = veg,
     propF = propF,
     H_dens.true = H_dens.true,
-    H_dens.cov = H_dens.cov,
+    dens.cov = dens.cov,
     veg.true = veg.true,
     
     state = state,
@@ -411,16 +414,16 @@ simulateInits <- function(H_dens, veg, propF, knownStates,
   
   if(envEffectsS){
     initList <- c(initList, list(
-      # BetaD.S = BetaD.S,
+      BetaD.S = BetaD.S,
       BetaV.S = BetaV.S
     ))
   }
   
-  # if(envEffectsR){
-  #   initList <- c(initList, list(
-  #     BetaD.R = BetaD.R
-  #   ))
-  # }
+  if(envEffectsR){
+    initList <- c(initList, list(
+      BetaD.R = BetaD.R
+    ))
+  }
   
   return(initList)
   

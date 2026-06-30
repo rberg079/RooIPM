@@ -96,6 +96,10 @@ writeCode <- function(){
       H_dens[t] ~ dnorm(H_dens.true[t], sd = H_densE[t])
     }
     
+    for(t in 1:nYear){
+      D_dens[t] ~ dnorm(D_dens.true[t], sd = D_densE[t])
+    }
+    
     # data imputation for missing vegetation data
     # assuming observation error with known SD
     if(envEffectsS || envEffectsR){
@@ -216,7 +220,7 @@ writeCode <- function(){
     #### Likelihood ####
     for(t in 1:nYear){
       H_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      # dens.cov[t] <- dens.true[t] - densM # center dens for its use as a covariate
+      dens.cov[t] <- D_dens.true[t] - D_densM # center dens for its use as a covariate
     }
     
     
@@ -270,7 +274,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            # BetaD.S * dens.cov[t] * dummy[a] +
+            BetaD.S * dens.cov[t] * dummy[a] +
             BetaV.S * veg.true[t] * dummy[a] +
             EpsilonT.S[t]
         }else{
@@ -334,7 +338,7 @@ writeCode <- function(){
       if(envEffectsR){
         R[x] ~ dbern(Ri[x])
         logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          # BetaD.R * dens.cov[year.R[x]] +
+          BetaD.R * dens.cov[year.R[x]] +
           EpsilonI.R[id.R[x]] +
           EpsilonT.R[year.R[x]]
       }else{
@@ -352,7 +356,7 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsR){
           logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            # BetaD.R * dens.cov[t] +
+            BetaD.R * dens.cov[t] +
             EpsilonT.R[t]
         }else{
           logit(Ra[a, t]) <- logit(Mu.R[a]) +

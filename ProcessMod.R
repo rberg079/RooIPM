@@ -124,6 +124,7 @@ myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
     H_dens = myData$H_dens,
+    D_dens = myData$D_dens,
     veg = myData$veg,
     propF = myData$propF,
     knownStates = svData$state,
@@ -165,9 +166,9 @@ params <- c(
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaV.S')} # 'BetaD.S', 
-# if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'H_dens.true', 'veg.true')}
+if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
+if(envEffectsR){params <- c(params, 'BetaD.R')}
+if(envEffectsS || envEffectsR){params <- c(params, 'H_dens.true', 'D_dens.true', 'veg.true')}
 
 # select MCMC settings
 if(testRun){
@@ -252,7 +253,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
