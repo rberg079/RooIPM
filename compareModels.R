@@ -28,13 +28,15 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds")
-  # modelNames = c("IPM_shrunkCIs",
-  #                "IPM_Dave",
-  #                "IPM_BR")
-  # plotFolder = c("figures/DavesData")
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds")
+  # modelNames = c("IPM_Hpop",
+  #                "IPM_Dpop",
+  #                "IPM_DcovHpop",
+  #                "IPM_HcovDpop")
+  # plotFolder = c("figures/densityChecks")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
