@@ -93,10 +93,6 @@ writeCode <- function(){
     
     # density data likelihood
     for(t in 1:nYear){
-      H_dens[t] ~ dnorm(H_dens.true[t], sd = H_densE[t])
-    }
-    
-    for(t in 1:nYear){
       D_dens[t] ~ dnorm(D_dens.true[t], sd = D_densE[t])
     }
     
@@ -104,7 +100,8 @@ writeCode <- function(){
     # assuming observation error with known SD
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
-        veg[t]  ~ dnorm(veg.true[t], sd = vegE[t])
+        veg[t] ~ dnorm(veg.true[t], sd = vegE[t])
+        # veg.true[t] ~ dnorm(0, sd = 1)
       }
       veg.true[noVeg] ~ dnorm(0, sd = 1)
     }
@@ -113,6 +110,12 @@ writeCode <- function(){
     for(m in 1:nNoProp){
       propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     }
+    
+    # # assuming observation error with unknown SD
+    # for(t in 1:nYear){
+    #   propF[t] ~ T(dnorm(propF.true[t], sd = 0.05), 0, 1)
+    #   propF.true[t] ~ dbeta(shape1 = 8, shape2 = 4)
+    # }
     
     
     ## POPULATION MODEL
@@ -220,7 +223,7 @@ writeCode <- function(){
     #### Likelihood ####
     for(t in 1:nYear){
       D_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      dens.cov[t] <- H_dens.true[t] - H_densM # center dens for its use as a covariate
+      dens.cov[t] <- D_dens.true[t] - D_densM # center dens for its use as a covariate
     }
     
     
@@ -275,7 +278,7 @@ writeCode <- function(){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
             BetaD.S * dens.cov[t] * dummy[a] +
-            BetaV.S * veg.true[t] * dummy[a] +
+            # BetaV.S * veg.true[t] * dummy[a] +
             EpsilonT.S[t]
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +

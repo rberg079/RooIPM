@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=RooIPM_HcovDpop          # Nom de la tâche
-#SBATCH --output=job_output_HcovDpop.txt    # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_HcovDpop.txt      # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=RooIPM_DaveNoVeg          # Nom de la tâche
+#SBATCH --output=job_output_DaveNoVeg.txt    # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_DaveNoVeg.txt      # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 
-#SBATCH --time=48:00:00                 # Temps maximum
+#SBATCH --time=8:00:00                  # Temps maximum
 
 # Chargement des modules nécessaires
 module load r/4.5.0                     # Version de R à charger

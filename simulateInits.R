@@ -96,7 +96,7 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   # true environment
   H_dens.true <- H_dens
   D_dens.true <- D_dens
-  dens.cov  <- H_dens - mean(H_dens)
+  dens.cov  <- D_dens - mean(D_dens)
   veg.true  <- veg
   
   # latent states

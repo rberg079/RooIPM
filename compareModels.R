@@ -21,28 +21,30 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # for testing purposes
-  nYear = 18
-  minYear = 2008
-  maxYear = minYear + nYear - 1
-  nAgeC.S = 12
-  plotAges = c(2, 6, 10, 14)
-  plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds")
-  modelNames = c("IPM_Hpop",
-                 "IPM_Dpop",
-                 "IPM_DcovHpop",
-                 "IPM_HcovDpop",
-                 "IPM_HeloiseOG",
-                 "IPM_DaveOG")
-  plotFolder = c("figures/densityChecks2")
-  returnSumData = TRUE
-  nModels <- length(modelNames)
+  # # for testing purposes
+  # nYear = 18
+  # minYear = 2008
+  # maxYear = minYear + nYear - 1
+  # nAgeC.S = 12
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_stochV&P_Heloise.rds")
+  # modelNames = c("IPM_Hpop",
+  #                "IPM_Dpop",
+  #                "IPM_DcovHpop",
+  #                "IPM_HcovDpop",
+  #                "IPM_HeloiseOG",
+  #                "IPM_DaveOG",
+  #                "IPM_P&V_Heloise")
+  # plotFolder = c("figures/densityChecks2")
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------

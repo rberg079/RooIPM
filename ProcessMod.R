@@ -162,13 +162,13 @@ params <- c(
   'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
   
   # Abundance model
-  'propF'
+  'propF' # , 'propF.true'
 )
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
 if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'H_dens.true', 'D_dens.true', 'veg.true')}
+if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')} # 'H_dens.true', 
 
 # select MCMC settings
 if(testRun){
@@ -253,7 +253,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DaveNoVeg.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
