@@ -21,24 +21,28 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # # for testing purposes
-  # nYear = 18
-  # minYear = 2008
-  # maxYear = minYear + nYear - 1
-  # nAgeC.S = 12
-  # plotAges = c(2, 6, 10, 14)
-  # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds")
-  # modelNames = c("IPM_Hpop",
-  #                "IPM_Dpop",
-  #                "IPM_DcovHpop",
-  #                "IPM_HcovDpop")
-  # plotFolder = c("figures/densityChecks")
-  # returnSumData = TRUE
-  # nModels <- length(modelNames)
+  # for testing purposes
+  nYear = 18
+  minYear = 2008
+  maxYear = minYear + nYear - 1
+  nAgeC.S = 12
+  plotAges = c(2, 6, 10, 14)
+  plotYears = c(2, 6, 10, 14)
+  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds")
+  modelNames = c("IPM_Hpop",
+                 "IPM_Dpop",
+                 "IPM_DcovHpop",
+                 "IPM_HcovDpop",
+                 "IPM_HeloiseOG",
+                 "IPM_DaveOG")
+  plotFolder = c("figures/densityChecks2")
+  returnSumData = TRUE
+  nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
@@ -110,7 +114,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA', Parameter) ~ Idx1,
+                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true|D_dens.true|H_dens.true', Parameter) ~ Idx1,
                                grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
            AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
                                grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
@@ -123,6 +127,10 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
            ParamName = word(Parameter, 1, sep = "\\["),
            ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'BR', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
+  
+  # to replace D_dens.true or H_dens.true with dens.true
+  sum.dat <- sum.dat %>%
+    mutate(Parameter = sub("^(D|H)_dens\\.true", "dens.true", Parameter))
   
   sum.dat <- sum.dat %>%
     left_join(idx.dat, by = "Parameter")
@@ -186,7 +194,9 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                    'sSA', 
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('sAD[', a, ']')) %>%
-                     pull(param)),
+                     pull(param),
+                   'dens.true',
+                   'veg.true'),
     
     ParamLabels = c(# 'Annual breeding rate',
                     expand.grid(a = plotAges) %>% 
@@ -199,7 +209,9 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                     'Survival of subadults (1 yr)',
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Survival of adults(', a, ' yrs)')) %>% 
-                      pull(name)))
+                      pull(name),
+                    '"True" density',
+                    '"True" forage'))
   
   plotTS.Ns <- list(
     ParamNames = c('nYF',
