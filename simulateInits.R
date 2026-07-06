@@ -34,30 +34,35 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   # library(readxl)
   # library(tidyverse)
   # 
-  # ageClasses <- 20
+  # ageClasses <- 12
   # source('R/wrangleData_en.R')
-  # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-  #                          veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
-  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
-  #                          wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
-  #                          obs.data  = "data/PromObs_2008-2024.xlsx",
-  #                          list      = "data/PromlistAllNov25.xlsx")
+  # enData <- wrangleData_en(
+  #   H_dens.data = "data/abundanceData_Proteus.csv", # OR...
+  #   D_dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  #   veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+  #   wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+  #   wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+  #   obs.data  = "data/PromObs_2008-2024.xlsx",
+  #   list.data = "data/PromlistAllNov25.xlsx")
   # 
   # source('R/wrangleData_sv.R')
-  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalNov25_RB.xlsx",
-  #                          yafs.data = "data/RSmainRB_May26.xlsx",
-  #                          ageClasses = ageClasses, known.age = TRUE)
+  # svData <- wrangleData_sv(
+  #   surv.data = "data/PromSurvivalNov25_RB.xlsx",
+  #   yafs.data = "data/RSmainRB_May26.xlsx",
+  #   ageClasses = ageClasses, known.age = TRUE)
   # 
   # source('R/wrangleData_rs.R')
-  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_May26.xlsx",
-  #                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
+  # rsData <- wrangleData_rs(
+  #   rs.data = "data/RSmainRB_May26.xlsx",
+  #   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
   # 
-  # dens <- enData$dens
+  # H_dens <- enData$H_dens
+  # D_dens <- enData$D_dens
   # veg <- enData$veg
   # propF <- enData$propF
   # knownStates <- svData$state
   # 
-  # nYear <- 18
+  # nYear <- 14
   # nAge <- 19
   # 
   # nB <- rsData$nB
@@ -88,15 +93,15 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   nNoVeg  <- length(which(noVeg))
   nNoProp <- length(which(noProp))
   
-  H_dens  <- round(ifelse(H_noDens, rnorm(1, 3.9, .4), H_dens), 2)
-  D_dens  <- round(ifelse(D_noDens, rnorm(1, 3.4, 1), D_dens), 2)
+  H_dens  <- round(ifelse(H_noDens, rnorm(1, 3.5, .4), H_dens), 2) # 3.9
+  D_dens  <- round(ifelse(D_noDens, rnorm(1, 3.0, 1), D_dens), 2) # 3.4
   veg   <- round(ifelse(noVeg, rnorm(1, 0, .1), veg), 4)
   propF <- round(ifelse(noProp, pmax(pmin(rnorm(1, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
   H_dens.true <- H_dens
   D_dens.true <- D_dens
-  dens.cov  <- D_dens - mean(D_dens)
+  dens.cov  <- H_dens - mean(H_dens)
   veg.true  <- veg
   
   # latent states

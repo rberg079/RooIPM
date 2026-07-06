@@ -93,7 +93,7 @@ writeCode <- function(){
     
     # density data likelihood
     for(t in 1:nYear){
-      D_dens[t] ~ dnorm(D_dens.true[t], sd = D_densE[t])
+      H_dens[t] ~ dnorm(H_dens.true[t], sd = H_densE[t])
     }
     
     # data imputation for missing vegetation data
@@ -103,7 +103,7 @@ writeCode <- function(){
         veg[t] ~ dnorm(veg.true[t], sd = vegE[t])
         # veg.true[t] ~ dnorm(0, sd = 1)
       }
-      veg.true[noVeg] ~ dnorm(0, sd = 1)
+      # veg.true[noVeg] ~ dnorm(0, sd = 1)
     }
     
     # data imputation for missing propF data
@@ -222,8 +222,8 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      D_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      dens.cov[t] <- D_dens.true[t] - D_densM # center dens for its use as a covariate
+      H_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
+      dens.cov[t] <- H_dens.true[t] - H_densM # center dens for its use as a covariate
     }
     
     
