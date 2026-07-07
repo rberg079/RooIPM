@@ -11,6 +11,7 @@ envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 12
 use_dCJS <- TRUE
+# splitCovs <- TRUE
 
 # load packages
 library(tidyverse)
@@ -38,7 +39,7 @@ source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(
   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   yafs.data = "data/RSmainRB_May26.xlsx",
-  ageClasses = ageClasses, known.age = TRUE)
+  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE) # , splitCovs = TRUE
 
 source('R/wrangleData_rs.R')
 rsData <- wrangleData_rs(
@@ -90,7 +91,6 @@ myConst <- list(nYear = svData$nYear,
                 ageC.R = rsData$ageC.R,
                 nAgeC.R = rsData$nAgeC.R,
                 
-                dummy = svData$dummy,
                 first = svData$first,
                 last = svData$last,
                 
@@ -106,6 +106,12 @@ myConst <- list(nYear = svData$nYear,
                 envEffectsR = envEffectsR,
                 ageClasses = ageClasses,
                 use_dCJS = use_dCJS)
+
+# if(splitCovs){
+  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO))
+# }else{
+#   myConst <- c(myConst, list(dummy = svData$dummy))
+# }
 
 
 ## Assemble --------------------------------------------------------------------
@@ -166,9 +172,9 @@ params <- c(
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaD.S', 'BetaV.S')}
+if(envEffectsS){params <- c(params, 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So')} # 'BetaD.S', 'BetaV.S'
 if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'H_dens.true', 'veg.true')} # 'D_dens.true', 
+if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')} # 'H_dens.true', 
 
 # select MCMC settings
 if(testRun){
@@ -253,7 +259,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePost12.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

@@ -101,7 +101,7 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   # true environment
   H_dens.true <- H_dens
   D_dens.true <- D_dens
-  dens.cov  <- H_dens - mean(H_dens)
+  dens.cov  <- D_dens - mean(D_dens)
   veg.true  <- veg
   
   # latent states
@@ -120,8 +120,13 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   
   ## Survival model
   if(envEffectsS){
-    BetaD.S <- runif(1, -1, 1)
-    BetaV.S <- runif(1, -1, 1)
+    # BetaD.S <- runif(1, -1, 1)
+    # BetaV.S <- runif(1, -1, 1)
+    
+    BetaD.Sy <- runif(1, -1, 1)
+    BetaD.So <- runif(1, -1, 1)
+    BetaV.Sy <- runif(1, -1, 1)
+    BetaV.So <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
@@ -131,12 +136,23 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   
   # dummy variable
   # to target covariate effects
+  # if(ageClasses == 6){
+  #   dummy = c(1, rep(0,4), 1)
+  # }else if(ageClasses == 12){
+  #   dummy = c(1, rep(0,8), rep(1,4))
+  # }else if(ageClasses == 20){
+  #   dummy = c(1, rep(0,8), rep(1,11))
+  # }
+  
   if(ageClasses == 6){
-    dummy = c(1, rep(0,4), 1)
+    dummyY = c(1, rep(0, 5))
+    dummyO = c(rep(0, 5), 1)
   }else if(ageClasses == 12){
-    dummy = c(1, rep(0,8), rep(1,4))
+    dummyY = c(1, rep(0, 12))
+    dummyO = c(rep(0, 10), rep(1, 3))
   }else if(ageClasses == 20){
-    dummy = c(1, rep(0,8), rep(1,11))
+    dummyY = c(1, rep(0, 19))
+    dummyO = c(rep(0, 10), rep(1, 10))
   }
   
   
@@ -177,8 +193,13 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
       if(envEffectsS){
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
-            BetaD.S * dens.cov[t] * dummy[a] +
-            BetaV.S * veg.true[t] * dummy[a] +
+            # BetaD.S * dens.cov[t] * dummy[a] +
+            # BetaV.S * veg.true[t] * dummy[a] +
+            
+            BetaD.Sy * dens.cov[t] * dummyY[a] +
+            BetaD.So * dens.cov[t] * dummyO[a] +
+            BetaV.Sy * veg.true[t] * dummyY[a] +
+            BetaV.So * veg.true[t] * dummyO[a] +
             EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
@@ -421,8 +442,13 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   
   if(envEffectsS){
     initList <- c(initList, list(
-      BetaD.S = BetaD.S,
-      BetaV.S = BetaV.S
+      # BetaD.S = BetaD.S,
+      # BetaV.S = BetaV.S
+      
+      BetaD.Sy = BetaD.Sy,
+      BetaD.So = BetaD.So,
+      BetaV.Sy = BetaV.Sy,
+      BetaV.So = BetaV.So
     ))
   }
   

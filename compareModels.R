@@ -21,30 +21,24 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # # for testing purposes
-  # nYear = 18
-  # minYear = 2008
-  # maxYear = minYear + nYear - 1
-  # nAgeC.S = 12
-  # plotAges = c(2, 6, 10, 14)
-  # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Hpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DcovHpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HcovDpop.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_stochV&P_Heloise.rds")
-  # modelNames = c("IPM_Hpop",
-  #                "IPM_Dpop",
-  #                "IPM_DcovHpop",
-  #                "IPM_HcovDpop",
-  #                "IPM_HeloiseOG",
-  #                "IPM_DaveOG",
-  #                "IPM_P&V_Heloise")
-  # plotFolder = c("figures/densityChecks2")
-  # returnSumData = TRUE
-  # nModels <- length(modelNames)
+  # for testing purposes
+  nYear = 18
+  minYear = 2008
+  maxYear = minYear + nYear - 1
+  nAgeC.S = 12
+  plotAges = c(2, 6, 10, 14)
+  plotYears = c(2, 6, 10, 14)
+  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise2Covs.rds")
+  modelNames = c("IPM_DavePtII",
+                 "IPM_HeloisePtII",
+                 "IPM_Dave2Covs",
+                 "IPM_Heloise2Covs")
+  plotFolder = c("figures/densityChecks/2CovBetas")
+  returnSumData = TRUE
+  nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
@@ -118,8 +112,8 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
                                grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true|D_dens.true|H_dens.true', Parameter) ~ Idx1,
                                grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
-           AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
-                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
+           AgeIdx  = case_when(grepl('Beta|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
+                               grepl('Beta|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
                                # grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
            Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
@@ -149,7 +143,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
     # for age-independent fixed effects
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaW.S'),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'),
     
     # # for age-dependent random effects
     # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
@@ -169,7 +163,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                 mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
                 pull(param)),
     
-    RS_covs = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
+    RS_covs = c('BetaD.R'),
     
     RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
                paste0('EpsilonT.B[', plotYears, ']'),

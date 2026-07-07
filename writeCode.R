@@ -93,7 +93,7 @@ writeCode <- function(){
     
     # density data likelihood
     for(t in 1:nYear){
-      H_dens[t] ~ dnorm(H_dens.true[t], sd = H_densE[t])
+      D_dens[t] ~ dnorm(D_dens.true[t], sd = D_densE[t])
     }
     
     # data imputation for missing vegetation data
@@ -103,7 +103,7 @@ writeCode <- function(){
         veg[t] ~ dnorm(veg.true[t], sd = vegE[t])
         # veg.true[t] ~ dnorm(0, sd = 1)
       }
-      # veg.true[noVeg] ~ dnorm(0, sd = 1)
+      veg.true[noVeg] ~ dnorm(0, sd = 1)
     }
     
     # data imputation for missing propF data
@@ -222,8 +222,8 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      H_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
-      dens.cov[t] <- H_dens.true[t] - H_densM # center dens for its use as a covariate
+      D_dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
+      dens.cov[t] <- D_dens.true[t] - D_densM # center dens for its use as a covariate
     }
     
     
@@ -272,13 +272,30 @@ writeCode <- function(){
     }
     
     #### Constraints ####
-    # survival function
+    # # survival function
+    # for(a in 1:nAgeC.S){
+    #   for(t in 1:(nYear-1)){
+    #     if(envEffectsS){
+    #       logit(S[a, t]) <- logit(Mu.S[a]) +
+    #         BetaD.S * dens.cov[t] * dummy[a] +
+    #         BetaV.S * veg.true[t] * dummy[a] +
+    #         EpsilonT.S[t]
+    #     }else{
+    #       logit(S[a, t]) <- logit(Mu.S[a]) +
+    #         EpsilonT.S[t]
+    #     }
+    #   }
+    # }
+    
+    # to split covariate effects
     for(a in 1:nAgeC.S){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            BetaD.S * dens.cov[t] * dummy[a] +
-            # BetaV.S * veg.true[t] * dummy[a] +
+            BetaD.Sy * dens.cov[t] * dummyY[a] +
+            BetaD.So * dens.cov[t] * dummyO[a] +
+            BetaV.Sy * veg.true[t] * dummyY[a] +
+            BetaV.So * veg.true[t] * dummyO[a] +
             EpsilonT.S[t]
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
@@ -299,10 +316,18 @@ writeCode <- function(){
       Mu.S[a] ~ dunif(0, 1)
     }
     
-    # fixed effects
+    # # fixed effects
+    # if(envEffectsS){
+    #   BetaD.S ~ dunif(-5, 5)
+    #   BetaV.S ~ dunif(-5, 5)
+    # }
+    
+    # to split covariate effects
     if(envEffectsS){
-      BetaD.S ~ dunif(-5, 5)
-      BetaV.S ~ dunif(-5, 5)
+      BetaD.Sy ~ dunif(-5, 5)
+      BetaD.So ~ dunif(-5, 5)
+      BetaV.Sy ~ dunif(-5, 5)
+      BetaV.So ~ dunif(-5, 5)
     }
     
     # random effects
