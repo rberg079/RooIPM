@@ -72,9 +72,6 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
     rs <- rs[!is.na(rs$Age),]
   }
   
-  # TEMP: TO START IN 2012
-  rs <- rs %>% filter(Year > 2011)
-  
   
   ## Calculate individual covariates -------------------------------------------
 

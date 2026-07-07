@@ -5,6 +5,7 @@
 #' @param surv.sheet character string. Sheet to select from Excel spreadsheet of survival data. surv.sheet = "YEARLY SURV" by default.
 #' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
+#' @param from2012 logical. If TRUE, model is run from 2012 onwards. from 2012 = FALSE by default.
 #'
 #' @returns a list containing the obs, state, & age matrices & other parameters needed for the CJS survival model.
 #' @export
@@ -12,7 +13,7 @@
 #' @examples
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
-                           ageClasses = 20, known.age = TRUE){
+                           ageClasses = 20, known.age = TRUE, from2012 = FALSE){ # , splitCovs
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalNov25_RB.xlsx"
@@ -20,6 +21,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # surv.sheet = "YEARLY SURV"
   # ageClasses = 12
   # known.age = TRUE
+  # from2012 = FALSE
   
   
   ## Set up --------------------------------------------------------------------
@@ -51,8 +53,9 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     surv <- surv %>% filter(!if_all(starts_with("Age"), is.na))
   }
   
-  # TEMP: TO START ANALYSIS IN 2012
-  surv <- surv %>% select(-in2008, -in2009, -in2010, -in2011)
+  if(from2012){
+    surv <- surv %>% select(-in2008, -in2009, -in2010, -in2011)
+  }
   
   
   ## Sort YAF survival data from RS file ---------------------------------------
@@ -101,315 +104,327 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   yafs_new <- yafs %>% filter(ID %in% newbies) %>% select(ID, in2008:in2025)
   yafs_old <- yafs %>% filter(!(ID %in% newbies)) %>% select(ID, in2008:in2025)
   
-  # TEMP: TO START ANALYSIS IN 2012
-  yafs_new <- yafs_new %>% select(-in2008, -in2009, -in2010, -in2011)
-  yafs_old <- yafs_old %>% select(-in2008, -in2009, -in2010, -in2011)
+  if(from2012){
+    yafs_new <- yafs_new %>% select(-in2008, -in2009, -in2010, -in2011)
+    yafs_old <- yafs_old %>% select(-in2008, -in2009, -in2010, -in2011)
+  }
   
   
   ## Create obs matrix ---------------------------------------------------------
   
-  # obs <- surv %>%
-  #   select(ID, in2008:in2025) %>%
-  #   mutate_at(vars(in2008:in2025), ~ifelse(.> 1 | is.na(.), 0, .))
-  # 
-  # # add yafs_old
-  # year_cols <- 2:19
-  # 
-  # for(i in 1:nrow(yafs_old)) {
-  #   id <- yafs_old$ID[i]
-  #   obs_row <- which(obs$ID == id)
-  #   
-  #   if(length(obs_row) == 1) {
-  #     for(j in year_cols) {
-  #       if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
-  #         obs[obs_row, j] <- 1
-  #       }
-  #     }
-  #   }
-  # }
-  # 
-  # # add yafs_new
-  # obs <- rbind(obs, yafs_new) %>%
-  #   arrange(ID) %>%
-  #   select(in2008:in2025) %>%
-  #   mutate(across(everything(), ~ replace_na(., 0)))
-  # 
-  # # roos observed outside of the study area,
-  # # roadkilled or poached treated as unobserved
-  
-  
-  # TEMP: TO START ANALYSIS IN 2012
-  obs <- surv %>% 
-    select(ID, in2012:in2025) %>% 
-    mutate_at(vars(in2012:in2025), ~ifelse(.> 1 | is.na(.), 0, .))
-  
-  # add yafs_old
-  year_cols <- 2:15
-  
-  for(i in 1:nrow(yafs_old)) {
-    id <- yafs_old$ID[i]
-    obs_row <- which(obs$ID == id)
+  if(from2012){
     
-    if(length(obs_row) == 1) {
-      for(j in year_cols) {
-        if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
-          obs[obs_row, j] <- 1
+    obs <- surv %>% 
+      select(ID, in2012:in2025) %>% 
+      mutate_at(vars(in2012:in2025), ~ifelse(.> 1 | is.na(.), 0, .))
+    
+    # add yafs_old
+    year_cols <- 2:15
+    
+    for(i in 1:nrow(yafs_old)) {
+      id <- yafs_old$ID[i]
+      obs_row <- which(obs$ID == id)
+      
+      if(length(obs_row) == 1) {
+        for(j in year_cols) {
+          if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
+            obs[obs_row, j] <- 1
+          }
         }
       }
     }
+    
+    # add yafs_new
+    obs <- rbind(obs, yafs_new) %>% 
+      arrange(ID) %>% 
+      select(in2012:in2025) %>% 
+      mutate(across(everything(), ~ replace_na(., 0)))
+    
+    # roos observed outside of the study area,
+    # roadkilled or poached treated as unobserved
+    
+  }else{
+    
+    obs <- surv %>%
+      select(ID, in2008:in2025) %>%
+      mutate_at(vars(in2008:in2025), ~ifelse(.> 1 | is.na(.), 0, .))
+    
+    # add yafs_old
+    year_cols <- 2:19
+    
+    for(i in 1:nrow(yafs_old)) {
+      id <- yafs_old$ID[i]
+      obs_row <- which(obs$ID == id)
+      
+      if(length(obs_row) == 1) {
+        for(j in year_cols) {
+          if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && obs[obs_row, j] == 0) {
+            obs[obs_row, j] <- 1
+          }
+        }
+      }
+    }
+    
+    # add yafs_new
+    obs <- rbind(obs, yafs_new) %>%
+      arrange(ID) %>%
+      select(in2008:in2025) %>%
+      mutate(across(everything(), ~ replace_na(., 0)))
+    
+    # roos observed outside of the study area,
+    # roadkilled or poached treated as unobserved
+    
   }
-  
-  # add yafs_new
-  obs <- rbind(obs, yafs_new) %>% 
-    arrange(ID) %>% 
-    select(in2012:in2025) %>% 
-    mutate(across(everything(), ~ replace_na(., 0)))
-  
-  # roos observed outside of the study area,
-  # roadkilled or poached treated as unobserved
   
   
   ## Create state matrix -------------------------------------------------------
   
-  # # convert all surv scores to 0 or 1
-  # state <- surv %>% 
-  #   mutate(HRDead = as.numeric(apply(select(., starts_with("in")) == 2, 1, any)),
-  #          HRDead = replace_na(HRDead, 0)) %>% 
-  #   select(ID, Dead, HRDead, in2012:in2025) %>% 
-  #   mutate_at(vars(in2012:in2025), ~case_when(
-  #     . == 2 ~ 0,  # roadkills are dead
-  #     . == 3 ~ 1,  # observed emigrants are alive
-  #     . == 4 ~ NA, # unobserved emigrants are unknown
-  #     TRUE ~ .))
-  # 
-  # id <- state %>% select(ID, Dead, HRDead)
-  # state <- state %>% select(ID, in2008:in2025)
-  # 
-  # # add yafs_old
-  # year_cols <- 2:19
-  # 
-  # for(i in 1:nrow(yafs_old)) {
-  #   who <- yafs_old$ID[i]
-  #   state_row <- which(state$ID == who)
-  #   
-  #   if(length(state_row) == 1) {
-  #     for(j in year_cols) {
-  #       if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
-  #         state[state_row, j] <- 1
-  #       }
-  #     }
-  #   }
-  # }
-  # 
-  # # NAs become 0s for roos found dead...
-  # state.found <- rbind(state, yafs_new) %>% 
-  #   left_join(id, by = "ID") %>% 
-  #   mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
-  #   select(ID, Dead, HRDead, in2012:in2025) %>% 
-  #   filter(!is.na(Dead)) %>% 
-  #   arrange(ID)
-  # 
-  # for(i in which(is.na(state.found[,21]))){
-  #   state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
-  # }
-  # 
-  # # ...but remain NAs for vanished roos
-  # state.vanished <- state %>% 
-  #   left_join(id, by = "ID") %>% 
-  #   mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
-  #   select(ID, Dead, HRDead, in2012:in2025) %>% 
-  #   filter(is.na(Dead)) %>% 
-  #   mutate_at(vars(in2012:in2025), ~na_if(., 0))
-  # 
-  # # join all roos again
-  # state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
-  # id <- state %>% select(ID, Dead, HRDead)
-  # 
-  # # roos that were missed one year but seen the next were alive
-  # state[, 4:17] <- t(apply(state[, 4:17], 1, function(row) {
-  #   ones <- which(row == 1)
-  #   if(length(ones) >= 2) {
-  #     row[min(ones):max(ones)] <- 1
-  #   }
-  #   return(row)
-  # }))
-  # 
-  # # create first & last
-  # state <- suppressWarnings(state %>%
-  #   mutate(HRDead = replace_na(HRDead, 0)) %>%
-  #   rowwise() %>%
-  #   mutate(first = min(which(c_across(4:21) == 1)),
-  #          last = min(which(c_across(4:21) == 0)),
-  #          last = ifelse(HRDead == 1, last-1, last),
-  #          last = ifelse(last == Inf, ncol(obs), last)))
-  # 
-  # # save first & last in id dataframe
-  # id <- state %>% select(ID, Dead, HRDead, first, last)
-  # state <- state %>% select(in2008:in2025)
-  
-  
-  # TEMP: TO START ANALYSIS IN 2012
-  # convert all surv scores to 0 or 1
-  state <- surv %>% 
-    mutate(HRDead = as.numeric(apply(select(., starts_with("in")) == 2, 1, any)),
-           HRDead = replace_na(HRDead, 0)) %>% 
-    select(ID, Dead, HRDead, in2012:in2025) %>% 
-    mutate_at(vars(in2012:in2025), ~case_when(
-      . == 2 ~ 0,  # roadkills are dead
-      . == 3 ~ 1,  # observed emigrants are alive
-      . == 4 ~ NA, # unobserved emigrants are unknown
-      TRUE ~ .))
-  
-  id <- state %>% select(ID, Dead, HRDead)
-  state <- state %>% select(ID, in2012:in2025)
-  
-  # add yafs_old
-  year_cols <- 2:15
-  
-  for(i in 1:nrow(yafs_old)) {
-    who <- yafs_old$ID[i]
-    state_row <- which(state$ID == who)
+  if(from2012){
     
-    if(length(state_row) == 1) {
-      for(j in year_cols) {
-        if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
-          state[state_row, j] <- 1
+    state <- surv %>% 
+      mutate(HRDead = as.numeric(apply(select(., starts_with("in")) == 2, 1, any)),
+             HRDead = replace_na(HRDead, 0)) %>% 
+      select(ID, Dead, HRDead, in2012:in2025) %>% 
+      mutate_at(vars(in2012:in2025), ~case_when(
+        . == 2 ~ 0,  # roadkills are dead
+        . == 3 ~ 1,  # observed emigrants are alive
+        . == 4 ~ NA, # unobserved emigrants are unknown
+        TRUE ~ .))
+    
+    id <- state %>% select(ID, Dead, HRDead)
+    state <- state %>% select(ID, in2012:in2025)
+    
+    # add yafs_old
+    year_cols <- 2:15
+    
+    for(i in 1:nrow(yafs_old)) {
+      who <- yafs_old$ID[i]
+      state_row <- which(state$ID == who)
+      
+      if(length(state_row) == 1) {
+        for(j in year_cols) {
+          if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
+            state[state_row, j] <- 1
+          }
         }
       }
     }
-  }
-  
-  # NAs become 0s for roos found dead...
-  state.found <- rbind(state, yafs_new) %>% 
-    left_join(id, by = "ID") %>% 
-    mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
-    select(ID, Dead, HRDead, in2012:in2025) %>% 
-    filter(!is.na(Dead)) %>% 
-    arrange(ID)
-  
-  for(i in which(is.na(state.found[,17]))){
-    state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
-  }
-  
-  # ...but remain NAs for vanished roos
-  state.vanished <- state %>% 
-    left_join(id, by = "ID") %>% 
-    mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
-    select(ID, Dead, HRDead, in2012:in2025) %>% 
-    filter(is.na(Dead)) %>% 
-    mutate_at(vars(in2012:in2025), ~na_if(., 0))
-  
-  # join all roos again
-  state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
-  id <- state %>% select(ID, Dead, HRDead)
-  
-  # roos that were missed one year but seen the next were alive
-  state[, 4:17] <- t(apply(state[, 4:17], 1, function(row) {
-    ones <- which(row == 1)
-    if(length(ones) >= 2) {
-      row[min(ones):max(ones)] <- 1
+    
+    # NAs become 0s for roos found dead...
+    state.found <- rbind(state, yafs_new) %>% 
+      left_join(id, by = "ID") %>% 
+      mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+      select(ID, Dead, HRDead, in2012:in2025) %>% 
+      filter(!is.na(Dead)) %>% 
+      arrange(ID)
+    
+    for(i in which(is.na(state.found[,17]))){
+      state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
     }
-    return(row)
-  }))
-  
-  # create first & last
-  state <- state %>% 
-    mutate(HRDead = replace_na(HRDead, 0)) %>%
-    rowwise() %>% 
-    mutate(first = min(which(c_across(4:17) == 1)),
-           last = min(which(c_across(4:17) == 0)),
-           last = ifelse(HRDead == 1 & last > 1, last-1, last),
-           last = ifelse(last == Inf, ncol(obs), last))
-  
-  # force a 1 in obs at the occasion of first
-  obs <- as.data.frame(obs)
-  
-  for(i in 1:nrow(obs)) {
-    first_idx <- as.integer(state$first[i])
-    if(is.finite(first_idx)) {
-      obs[i, first_idx] <- 1
+    
+    # ...but remain NAs for vanished roos
+    state.vanished <- state %>% 
+      left_join(id, by = "ID") %>% 
+      mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
+      select(ID, Dead, HRDead, in2012:in2025) %>% 
+      filter(is.na(Dead)) %>% 
+      mutate_at(vars(in2012:in2025), ~na_if(., 0))
+    
+    # join all roos again
+    state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
+    id <- state %>% select(ID, Dead, HRDead)
+    
+    # roos that were missed one year but seen the next were alive
+    state[, 4:17] <- t(apply(state[, 4:17], 1, function(row) {
+      ones <- which(row == 1)
+      if(length(ones) >= 2) {
+        row[min(ones):max(ones)] <- 1
+      }
+      return(row)
+    }))
+    
+    # create first & last
+    state <- state %>% 
+      mutate(HRDead = replace_na(HRDead, 0)) %>%
+      rowwise() %>% 
+      mutate(first = min(which(c_across(4:17) == 1)),
+             last = min(which(c_across(4:17) == 0)),
+             last = ifelse(HRDead == 1 & last > 1, last-1, last),
+             last = ifelse(last == Inf, ncol(obs), last))
+    
+    # force a 1 in obs at the occasion of first
+    obs <- as.data.frame(obs)
+    
+    for(i in 1:nrow(obs)) {
+      first_idx <- as.integer(state$first[i])
+      if(is.finite(first_idx)) {
+        obs[i, first_idx] <- 1
+      }
     }
+    
+    # save first & last in id dataframe
+    id <- state %>% select(ID, Dead, HRDead, first, last)
+    state <- state %>% select(in2012:in2025)
+    obs <- obs %>% select(in2012:in2025)
+    
+  }else{
+    
+    # convert all surv scores to 0 or 1
+    state <- surv %>%
+      mutate(HRDead = as.numeric(apply(select(., starts_with("in")) == 2, 1, any)),
+             HRDead = replace_na(HRDead, 0)) %>%
+      select(ID, Dead, HRDead, in2008:in2025) %>%
+      mutate_at(vars(in2008:in2025), ~case_when(
+        . == 2 ~ 0,  # roadkills are dead
+        . == 3 ~ 1,  # observed emigrants are alive
+        . == 4 ~ NA, # unobserved emigrants are unknown
+        TRUE ~ .))
+    
+    id <- state %>% select(ID, Dead, HRDead)
+    state <- state %>% select(ID, in2008:in2025)
+    
+    # add yafs_old
+    year_cols <- 2:19
+    
+    for(i in 1:nrow(yafs_old)) {
+      who <- yafs_old$ID[i]
+      state_row <- which(state$ID == who)
+      
+      if(length(state_row) == 1) {
+        for(j in year_cols) {
+          if(!is.na(yafs_old[i, j]) && yafs_old[i, j] == 1 && is.na(state[state_row, j])) {
+            state[state_row, j] <- 1
+          }
+        }
+      }
+    }
+    
+    # NAs become 0s for roos found dead...
+    state.found <- rbind(state, yafs_new) %>%
+      left_join(id, by = "ID") %>%
+      mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>%
+      select(ID, Dead, HRDead, in2008:in2025) %>%
+      filter(!is.na(Dead)) %>%
+      arrange(ID)
+    
+    for(i in which(is.na(state.found[,21]))){
+      state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
+    }
+    
+    # ...but remain NAs for vanished roos
+    state.vanished <- state %>%
+      left_join(id, by = "ID") %>%
+      mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>%
+      select(ID, Dead, HRDead, in2008:in2025) %>%
+      filter(is.na(Dead)) %>%
+      mutate_at(vars(in2008:in2025), ~na_if(., 0))
+    
+    # join all roos again
+    state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
+    id <- state %>% select(ID, Dead, HRDead)
+    
+    # roos that were missed one year but seen the next were alive
+    state[, 4:21] <- t(apply(state[, 4:21], 1, function(row) {
+      ones <- which(row == 1)
+      if(length(ones) >= 2) {
+        row[min(ones):max(ones)] <- 1
+      }
+      return(row)
+    }))
+    
+    # create first & last
+    state <- suppressWarnings(state %>%
+      mutate(HRDead = replace_na(HRDead, 0)) %>%
+        rowwise() %>%
+        mutate(first = min(which(c_across(4:21) == 1)),
+               last = min(which(c_across(4:21) == 0)),
+               last = ifelse(HRDead == 1, last-1, last),
+               last = ifelse(last == Inf, ncol(obs), last)))
+    
+    # save first & last in id dataframe
+    id <- state %>% select(ID, Dead, HRDead, first, last)
+    state <- state %>% select(in2008:in2025)
+    
   }
-  
-  # save first & last in id dataframe
-  id <- state %>% select(ID, Dead, HRDead, first, last)
-  state <- state %>% select(in2012:in2025)
-  obs <- obs %>% select(in2012:in2025)
   
   
   ## Create age matrix ---------------------------------------------------------
   
-  # age <- surv %>% 
-  #   select(ID, Age08:Age25) %>% 
-  #   mutate_at(vars(Age08:Age25), ~ifelse(. == "A", NA, .)) %>% 
-  #   mutate_all(~as.numeric(.)) %>% 
-  #   {names(.)[-1] <- sub("Age", "in20", names(.)[-1]); .}
-  # 
-  # # get age from YAF data
-  # yafs_age <- yafs_new %>% 
-  #   mutate(across(in2008:in2025, ~ ifelse(is.na(.), NA, 1 - .)))
-  # 
-  # # add yafs_new
-  # age <- rbind(age, yafs_age) %>%
-  #   arrange(ID) %>%
-  #   select(-ID)
-  # 
-  # # fill in some NAs
-  # fill_ages <- function(row) {
-  #   if(all(is.na(row))) return(row) # if all NAs, return as is
-  #   first <- which(!is.na(row))[1]  # first non-NA value
-  #   
-  #   # fill forward from first known age
-  #   row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
-  #   
-  #   # fill backward if needed
-  #   if(first > 1) {
-  #     row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
-  #   }
-  #   return(row)
-  # }
-  # 
-  # age <- as.data.frame(t(apply(age, 1, fill_ages))) %>%
-  #   mutate_all(~replace(., . < 0, NA))
-  # 
-  # id$uka <- as.logical(is.na(age[,ncol(age)]))
-  
-  
-  # TEMP: TO START ANALYSIS IN 2012
-  age <- surv %>% 
-    select(ID, Age12:Age25) %>% 
-    mutate_at(vars(Age12:Age25), ~ifelse(. == "A", NA, .)) %>% 
-    mutate_all(~as.numeric(.)) %>% 
-    {names(.)[-1] <- sub("Age", "in20", names(.)[-1]); .}
-  
-  # get age from YAF data
-  yafs_age <- yafs_new %>% 
-    mutate(across(in2012:in2025, ~ ifelse(is.na(.), NA, 1 - .)))
-  
-  # add yafs_new
-  age <- rbind(age, yafs_age) %>%
-    arrange(ID) %>%
-    select(-ID)
-  
-  # fill in some NAs
-  fill_ages <- function(row) {
-    if(all(is.na(row))) return(row) # if all NAs, return as is
-    first <- which(!is.na(row))[1]  # first non-NA value
+  if(from2012){
     
-    # fill forward from first known age
-    row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
+    age <- surv %>% 
+      select(ID, Age12:Age25) %>% 
+      mutate_at(vars(Age12:Age25), ~ifelse(. == "A", NA, .)) %>% 
+      mutate_all(~as.numeric(.)) %>% 
+      {names(.)[-1] <- sub("Age", "in20", names(.)[-1]); .}
     
-    # fill backward if needed
-    if(first > 1) {
-      row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
+    # get age from YAF data
+    yafs_age <- yafs_new %>% 
+      mutate(across(in2012:in2025, ~ ifelse(is.na(.), NA, 1 - .)))
+    
+    # add yafs_new
+    age <- rbind(age, yafs_age) %>%
+      arrange(ID) %>%
+      select(-ID)
+    
+    # fill in some NAs
+    fill_ages <- function(row) {
+      if(all(is.na(row))) return(row) # if all NAs, return as is
+      first <- which(!is.na(row))[1]  # first non-NA value
+      
+      # fill forward from first known age
+      row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
+      
+      # fill backward if needed
+      if(first > 1) {
+        row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
+      }
+      return(row)
     }
-    return(row)
+    
+    age <- as.data.frame(t(apply(age, 1, fill_ages))) %>%
+      mutate_all(~replace(., . < 0, NA))
+    
+    id$uka <- as.logical(is.na(age[,ncol(age)]))
+    
+  }else{
+    
+    age <- surv %>%
+      select(ID, Age08:Age25) %>%
+      mutate_at(vars(Age08:Age25), ~ifelse(. == "A", NA, .)) %>%
+      mutate_all(~as.numeric(.)) %>%
+      {names(.)[-1] <- sub("Age", "in20", names(.)[-1]); .}
+    
+    # get age from YAF data
+    yafs_age <- yafs_new %>%
+      mutate(across(in2008:in2025, ~ ifelse(is.na(.), NA, 1 - .)))
+    
+    # add yafs_new
+    age <- rbind(age, yafs_age) %>%
+      arrange(ID) %>%
+      select(-ID)
+    
+    # fill in some NAs
+    fill_ages <- function(row) {
+      if(all(is.na(row))) return(row) # if all NAs, return as is
+      first <- which(!is.na(row))[1]  # first non-NA value
+      
+      # fill forward from first known age
+      row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
+      
+      # fill backward if needed
+      if(first > 1) {
+        row[1:(first - 1)] <- seq(from = row[first] - first + 1, by = 1, length.out = first - 1)
+      }
+      return(row)
+    }
+    
+    age <- as.data.frame(t(apply(age, 1, fill_ages))) %>%
+      mutate_all(~replace(., . < 0, NA))
+    
+    id$uka <- as.logical(is.na(age[,ncol(age)]))
+    
   }
-  
-  age <- as.data.frame(t(apply(age, 1, fill_ages))) %>%
-    mutate_all(~replace(., . < 0, NA))
-  
-  id$uka <- as.logical(is.na(age[,ncol(age)]))
   
   
   ## Return (mostly) scaled data -----------------------------------------------
@@ -429,8 +444,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   id <- id %>% arrange(first, id)
   
   # remove inds who were only in the dataset 1 year
-  noInfo <- id$first == id$last | id$first == Inf # TEMP: TO START ANALYSIS IN 2012
-  # noInfo <- id$first == id$last
+  noInfo <- id$first == id$last | id$first == Inf
   # length(which(noInfo))
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
@@ -448,13 +462,30 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   
   # create dummy variable
   # for targets of covariate effects
-  if(ageClasses == 6){
-    dummy = c(1, rep(0,4), 1)
-  }else if(ageClasses == 12){
-    dummy = c(1, rep(0,9), rep(1,3))
-  }else if(ageClasses == 20){
-    dummy = c(1, rep(0,9), rep(1,10))
-  }
+  # if(splitCovs){
+    
+    if(ageClasses == 6){
+      dummyY = c(1, rep(0, 5))
+      dummyO = c(rep(0, 5), 1)
+    }else if(ageClasses == 12){
+      dummyY = c(1, rep(0, 12))
+      dummyO = c(rep(0, 10), rep(1, 3))
+    }else if(ageClasses == 20){
+      dummyY = c(1, rep(0, 19))
+      dummyO = c(rep(0, 10), rep(1, 10))
+    }
+    
+  # }else{
+  #   
+  #   if(ageClasses == 6){
+  #     dummy = c(1, rep(0,4), 1)
+  #   }else if(ageClasses == 12){
+  #     dummy = c(1, rep(0,9), rep(1,3))
+  #   }else if(ageClasses == 20){
+  #     dummy = c(1, rep(0,9), rep(1,10))
+  #   }
+  #   
+  # }
   
   nYear <- ncol(state)
   nID.S <- nrow(state)
@@ -478,7 +509,9 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
               state = state,
               age.S = age.S,
               ageC.S = ageC.S,
-              dummy = dummy,
+              # dummy = dummy,
+              dummyY = dummyY,
+              dummyO = dummyO,
               
               noAge = noAge,
               nNoAge = nNoAge))

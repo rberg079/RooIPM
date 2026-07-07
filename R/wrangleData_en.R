@@ -239,11 +239,7 @@ wrangleData_en <- function(H_dens.data, D_dens.data, veg.data, wea.data, wind.da
   # centre and scale data
   sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
   
-  # TEMP: TO START ANALYSIS IN 2012
-  env <- env[5:18,]
-  year <- seq(from = 1, to = 15, by = 1)
-  
-  # year <- seq(from = 1, to = 18, by = 1)
+  year <- seq(from = 1, to = 18, by = 1)
   
   H_dens  <- as.numeric(env$H_dens)
   H_densE <- as.numeric(ifelse(is.na(env$H_densE), 1, env$H_densE))
@@ -254,12 +250,12 @@ wrangleData_en <- function(H_dens.data, D_dens.data, veg.data, wea.data, wind.da
   D_densM <- mean(D_dens, na.rm = T)
   
   # dens  <- as.numeric(env$Dens)          # length nYear
-  veg   <- as.numeric(sc(env$Veg[1:13])) # length nYear-1
-  win   <- as.numeric(sc(env$Win[1:13])) # length nYear-1
+  veg   <- as.numeric(sc(env$Veg[1:17])) # length nYear-1
+  win   <- as.numeric(sc(env$Win[1:17])) # length nYear-1
   propF <- as.numeric(env$PropF)         # length nYear
   
   # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:13]), 1, env$VegSE[1:13]/sd(env$Veg[1:13], na.rm = T))) # scale uncertainty too
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # scale uncertainty too
   
   # densM  <- mean(dens, na.rm = T)
   # densSD <- sd(dens, na.rm = T)
@@ -270,7 +266,7 @@ wrangleData_en <- function(H_dens.data, D_dens.data, veg.data, wea.data, wind.da
   nNoVeg  <- length(noVeg)
   nNoProp <- length(noProp)
   
-  area = rep(76.2, 14)
+  area = rep(76.2, 18)
   
   return(list(year = year,
               area = area,
