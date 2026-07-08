@@ -293,8 +293,10 @@ writeCode <- function(){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
             BetaD.Sy * dens.cov[t] * dummyY[a] +
+            BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
             BetaV.Sy * veg.true[t] * dummyY[a] +
+            BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
             EpsilonT.S[t]
         }else{
@@ -325,8 +327,10 @@ writeCode <- function(){
     # to split covariate effects
     if(envEffectsS){
       BetaD.Sy ~ dunif(-5, 5)
+      BetaD.Sp ~ dunif(-5, 5)
       BetaD.So ~ dunif(-5, 5)
       BetaV.Sy ~ dunif(-5, 5)
+      BetaV.Sp ~ dunif(-5, 5)
       BetaV.So ~ dunif(-5, 5)
     }
     

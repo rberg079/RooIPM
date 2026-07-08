@@ -124,8 +124,10 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
     # BetaV.S <- runif(1, -1, 1)
     
     BetaD.Sy <- runif(1, -1, 1)
+    BetaD.Sp <- runif(1, -1, 1)
     BetaD.So <- runif(1, -1, 1)
     BetaV.Sy <- runif(1, -1, 1)
+    BetaV.Sp <- runif(1, -1, 1)
     BetaV.So <- runif(1, -1, 1)
   }
   
@@ -146,12 +148,15 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   
   if(ageClasses == 6){
     dummyY = c(1, rep(0, 5))
+    dummyP = c(0, rep(1, 4), 0)
     dummyO = c(rep(0, 5), 1)
   }else if(ageClasses == 12){
     dummyY = c(1, rep(0, 12))
+    dummyP = c(0, rep(1, 9), rep(0, 3))
     dummyO = c(rep(0, 10), rep(1, 3))
   }else if(ageClasses == 20){
     dummyY = c(1, rep(0, 19))
+    dummyP = c(0, rep(1, 9), rep(0, 10))
     dummyO = c(rep(0, 10), rep(1, 10))
   }
   
@@ -197,8 +202,10 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
             # BetaV.S * veg.true[t] * dummy[a] +
             
             BetaD.Sy * dens.cov[t] * dummyY[a] +
+            BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
             BetaV.Sy * veg.true[t] * dummyY[a] +
+            BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
             EpsilonT.S[t])
       }else{
@@ -446,8 +453,10 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
       # BetaV.S = BetaV.S
       
       BetaD.Sy = BetaD.Sy,
+      BetaD.Sp = BetaD.Sp,
       BetaD.So = BetaD.So,
       BetaV.Sy = BetaV.Sy,
+      BetaV.Sp = BetaV.Sp,
       BetaV.So = BetaV.So
     ))
   }

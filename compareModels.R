@@ -21,24 +21,24 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
-  # for testing purposes
-  nYear = 18
-  minYear = 2008
-  maxYear = minYear + nYear - 1
-  nAgeC.S = 12
-  plotAges = c(2, 6, 10, 14)
-  plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise2Covs.rds")
-  modelNames = c("IPM_DavePtII",
-                 "IPM_HeloisePtII",
-                 "IPM_Dave2Covs",
-                 "IPM_Heloise2Covs")
-  plotFolder = c("figures/densityChecks/2CovBetas")
-  returnSumData = TRUE
-  nModels <- length(modelNames)
+  # # for testing purposes
+  # nYear = 18
+  # minYear = 2008
+  # maxYear = minYear + nYear - 1
+  # nAgeC.S = 12
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise3Covs.rds")
+  # modelNames = c("IPM_DavePtII",
+  #                "IPM_HeloisePtII",
+  #                "IPM_Dave3Covs",
+  #                "IPM_Heloise3Covs")
+  # plotFolder = c("figures/densityChecks/3CovBetas")
+  # returnSumData = TRUE
+  # nModels <- length(modelNames)
   
 
   ## Set up --------------------------------------------------------------------
@@ -143,7 +143,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
     # for age-independent fixed effects
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So'),
     
     # # for age-dependent random effects
     # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),

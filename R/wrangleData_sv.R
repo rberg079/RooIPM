@@ -466,12 +466,15 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     
     if(ageClasses == 6){
       dummyY = c(1, rep(0, 5))
+      dummyP = c(0, rep(1, 4), 0)
       dummyO = c(rep(0, 5), 1)
     }else if(ageClasses == 12){
       dummyY = c(1, rep(0, 12))
+      dummyP = c(0, rep(1, 9), rep(0, 3))
       dummyO = c(rep(0, 10), rep(1, 3))
     }else if(ageClasses == 20){
       dummyY = c(1, rep(0, 19))
+      dummyP = c(0, rep(1, 9), rep(0, 10))
       dummyO = c(rep(0, 10), rep(1, 10))
     }
     
@@ -511,6 +514,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
               ageC.S = ageC.S,
               # dummy = dummy,
               dummyY = dummyY,
+              dummyP = dummyP,
               dummyO = dummyO,
               
               noAge = noAge,

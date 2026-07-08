@@ -108,7 +108,7 @@ myConst <- list(nYear = svData$nYear,
                 use_dCJS = use_dCJS)
 
 # if(splitCovs){
-  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO))
+  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
 # }else{
 #   myConst <- c(myConst, list(dummy = svData$dummy))
 # }
@@ -172,7 +172,7 @@ params <- c(
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So')} # 'BetaD.S', 'BetaV.S'
+if(envEffectsS){params <- c(params, 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So')} # 'BetaD.S', 'BetaV.S'
 if(envEffectsR){params <- c(params, 'BetaD.R')}
 if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')} # 'H_dens.true', 
 
@@ -259,7 +259,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
