@@ -30,19 +30,23 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # plotYears = c(2, 6, 10, 14)
   # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
   #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise3Covs.rds")
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise3CovsII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII_8chains.rds"
+  #               )
   # modelNames = c("IPM_DavePtII",
   #                "IPM_HeloisePtII",
-  #                "IPM_Dave3Covs",
-  #                "IPM_Heloise3Covs")
-  # plotFolder = c("figures/densityChecks/3CovBetas")
+  #                "IPM_Dave3CovsII",
+  #                "IPM_Heloise3CovsII",
+  #                "IPM_Dave3CovsII_8chains"
+  #                )
+  # plotFolder = c("figures/densityChecks/3CovBetasII")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
-
+  
   ## Set up --------------------------------------------------------------------
-
+  
   library(coda)
   suppressPackageStartupMessages(library(tidyverse))
   suppressPackageStartupMessages(library(data.table))
@@ -143,7 +147,8 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
     # for age-independent fixed effects
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So'),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S',
+                 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So', 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'),
     
     # # for age-dependent random effects
     # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
