@@ -30,17 +30,19 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # plotYears = c(2, 6, 10, 14)
   # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
   #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise3CovsII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII_8chains.rds"
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochVP.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Heloise3Covs_stochVP.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochVP_tighterPriors.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochVP.rds"
   #               )
   # modelNames = c("IPM_DavePtII",
   #                "IPM_HeloisePtII",
-  #                "IPM_Dave3CovsII",
-  #                "IPM_Heloise3CovsII",
-  #                "IPM_Dave3CovsII_8chains"
+  #                "IPM_Dave3Covs_stochVP",
+  #                "IPM_Heloise3Covs_stochVP",
+  #                "IPM_Dave3Covs_stochVP_priors",
+  #                "IPM_Dave2Covs_stochVP"
   #                )
-  # plotFolder = c("figures/densityChecks/3CovBetasII")
+  # plotFolder = c("figures/densityChecks/3CovBetas&stochVP")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   

@@ -108,7 +108,7 @@ myConst <- list(nYear = svData$nYear,
                 use_dCJS = use_dCJS)
 
 # if(splitCovs){
-  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
+  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO)) # dummyP = svData$dummyP, 
 # }else{
 #   myConst <- c(myConst, list(dummy = svData$dummy))
 # }
@@ -120,8 +120,8 @@ source('writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 4
-seedMod   <- 1:nchains
-seedInits <- 1
+seedMod   <- c(112, 114, 116, 118)
+seedInits <- 128
 
 # assign initial values
 source('simulateInits.R')
@@ -168,13 +168,18 @@ params <- c(
   'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
   
   # Abundance model
-  'propF' # , 'propF.true'
+  'propF', 'propF.true'
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So')} # 'BetaD.S', 'BetaV.S'
+if(envEffectsS){params <- c(params, # 'BetaD.S', 'BetaV.S'
+                            'BetaD.Sy', 'BetaD.So', # 'BetaD.Sp', 
+                            'BetaV.Sy', 'BetaV.So'  # 'BetaV.Sp', 
+                            # 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'
+                            )} 
+
 if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')} # 'H_dens.true', 
+if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')}
 
 # select MCMC settings
 if(testRun){
@@ -259,7 +264,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2CovsII.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -271,7 +276,7 @@ library(ggplot2)
 library(scales)
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -298,7 +303,7 @@ library(scales)
 # 
 # # chainplots
 # MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
-# MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
+# MCMCtrace(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE)
 # if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)}
 # MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 # 

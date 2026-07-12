@@ -101,21 +101,21 @@ writeCode <- function(){
     if(envEffectsS || envEffectsR){
       for(t in 1:(nYear-1)){
         veg[t] ~ dnorm(veg.true[t], sd = vegE[t])
-        # veg.true[t] ~ dnorm(0, sd = 1)
+        veg.true[t] ~ dnorm(0, sd = 1)
       }
-      veg.true[noVeg] ~ dnorm(0, sd = 1)
+      # veg.true[noVeg] ~ dnorm(0, sd = 1)
     }
     
     # data imputation for missing propF data
-    for(m in 1:nNoProp){
-      propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
-    }
-    
-    # # assuming observation error with unknown SD
-    # for(t in 1:nYear){
-    #   propF[t] ~ T(dnorm(propF.true[t], sd = 0.05), 0, 1)
-    #   propF.true[t] ~ dbeta(shape1 = 8, shape2 = 4)
+    # for(m in 1:nNoProp){
+    #   propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     # }
+    
+    # assuming observation error with unknown SD
+    for(t in 1:nYear){
+      propF[t] ~ T(dnorm(propF.true[t], sd = 0.05), 0, 1)
+      propF.true[t] ~ dbeta(shape1 = 8, shape2 = 4)
+    }
     
     
     ## POPULATION MODEL
@@ -292,12 +292,18 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
+            # main effects: density
             BetaD.Sy * dens.cov[t] * dummyY[a] +
-            BetaD.Sp * dens.cov[t] * dummyP[a] +
+            # BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
+            # main effects: vegetation
             BetaV.Sy * veg.true[t] * dummyY[a] +
-            BetaV.Sp * veg.true[t] * dummyP[a] +
+            # BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
+            # # interaction effects: density x vegetation
+            # BetaDV.Sy * dens.cov[t] * veg.true[t] * dummyY[a] +
+            # BetaDV.Sp * dens.cov[t] * veg.true[t] * dummyP[a] +
+            # BetaDV.So * dens.cov[t] * veg.true[t] * dummyO[a] +
             EpsilonT.S[t]
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
@@ -327,11 +333,16 @@ writeCode <- function(){
     # to split covariate effects
     if(envEffectsS){
       BetaD.Sy ~ dunif(-5, 5)
-      BetaD.Sp ~ dunif(-5, 5)
+      # BetaD.Sp ~ dunif(-5, 5)
       BetaD.So ~ dunif(-5, 5)
+      
       BetaV.Sy ~ dunif(-5, 5)
-      BetaV.Sp ~ dunif(-5, 5)
+      # BetaV.Sp ~ dunif(-5, 5)
       BetaV.So ~ dunif(-5, 5)
+      
+      # BetaDV.Sy ~ dunif(-5, 5)
+      # BetaDV.Sp ~ dunif(-5, 5)
+      # BetaDV.So ~ dunif(-5, 5)
     }
     
     # random effects

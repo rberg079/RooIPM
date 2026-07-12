@@ -124,11 +124,16 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
     # BetaV.S <- runif(1, -1, 1)
     
     BetaD.Sy <- runif(1, -1, 1)
-    BetaD.Sp <- runif(1, -1, 1)
+    # BetaD.Sp <- runif(1, -1, 1)
     BetaD.So <- runif(1, -1, 1)
+    
     BetaV.Sy <- runif(1, -1, 1)
-    BetaV.Sp <- runif(1, -1, 1)
+    # BetaV.Sp <- runif(1, -1, 1)
     BetaV.So <- runif(1, -1, 1)
+    
+    # BetaDV.Sy <- runif(1, -1, 1)
+    # BetaDV.Sp <- runif(1, -1, 1)
+    # BetaDV.So <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
@@ -202,11 +207,16 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
             # BetaV.S * veg.true[t] * dummy[a] +
             
             BetaD.Sy * dens.cov[t] * dummyY[a] +
-            BetaD.Sp * dens.cov[t] * dummyP[a] +
+            # BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
+            
             BetaV.Sy * veg.true[t] * dummyY[a] +
-            BetaV.Sp * veg.true[t] * dummyP[a] +
+            # BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
+            
+            # BetaDV.Sy * dens.cov[t] * veg.true[t] * dummyY[a] +
+            # BetaDV.Sp * dens.cov[t] * veg.true[t] * dummyP[a] +
+            # BetaDV.So * dens.cov[t] * veg.true[t] * dummyO[a] +
             EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
@@ -453,11 +463,16 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
       # BetaV.S = BetaV.S
       
       BetaD.Sy = BetaD.Sy,
-      BetaD.Sp = BetaD.Sp,
+      # BetaD.Sp = BetaD.Sp,
       BetaD.So = BetaD.So,
+      
       BetaV.Sy = BetaV.Sy,
-      BetaV.Sp = BetaV.Sp,
+      # BetaV.Sp = BetaV.Sp,
       BetaV.So = BetaV.So
+      
+      # BetaDV.Sy = BetaDV.Sy,
+      # BetaDV.Sp = BetaDV.Sp,
+      # BetaDV.So = BetaDV.So
     ))
   }
   
