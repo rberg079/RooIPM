@@ -119,9 +119,9 @@ myConst <- list(nYear = svData$nYear,
 source('writeCode.R')
 myCode <- writeCode()
 
-nchains   <- 4
-seedMod   <- c(112, 114, 116, 118)
-seedInits <- 128
+nchains   <- 8
+seedMod   <- c(30, 31, 32, 33, 34, 35, 36, 37)
+seedInits <- 38
 
 # assign initial values
 source('simulateInits.R')
@@ -168,13 +168,13 @@ params <- c(
   'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
   
   # Abundance model
-  'propF', 'propF.true'
+  'propF' #, 'propF.true'
 )
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, # 'BetaD.S', 'BetaV.S'
                             'BetaD.Sy', 'BetaD.So', # 'BetaD.Sp', 
-                            'BetaV.Sy', 'BetaV.So'  # 'BetaV.Sp', 
+                            'BetaV.Sy', 'BetaV.So' # 'BetaV.Sp'
                             # 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'
                             )} 
 
@@ -264,7 +264,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2CovsII.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochV_8chains.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

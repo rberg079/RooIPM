@@ -107,15 +107,15 @@ writeCode <- function(){
     }
     
     # data imputation for missing propF data
-    # for(m in 1:nNoProp){
-    #   propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
-    # }
-    
-    # assuming observation error with unknown SD
-    for(t in 1:nYear){
-      propF[t] ~ T(dnorm(propF.true[t], sd = 0.05), 0, 1)
-      propF.true[t] ~ dbeta(shape1 = 8, shape2 = 4)
+    for(m in 1:nNoProp){
+      propF[noProp[m]] ~ T(dnorm(0.8, sd = 0.2), 0, 1)
     }
+    
+    # # assuming observation error with unknown SD
+    # for(t in 1:nYear){
+    #   propF[t] ~ T(dnorm(propF.true[t], sd = 0.05), 0, 1)
+    #   propF.true[t] ~ dbeta(shape1 = 8, shape2 = 4)
+    # }
     
     
     ## POPULATION MODEL
