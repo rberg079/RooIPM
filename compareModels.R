@@ -28,19 +28,27 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_shrunkCIs.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR.rds")
-  # modelNames = c("IPM_shrunkCIs",
-  #                "IPM_Dave",
-  #                "IPM_BR")
-  # plotFolder = c("figures/DavesData")
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochVP.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochVP.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochV_8chains.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochV_8chains.rds"
+  #               )
+  # modelNames = c("IPM_DavePtII",
+  #                "IPM_HeloisePtII",
+  #                "IPM_Dave2_stochVP",
+  #                "IPM_Dave3_stochVP",
+  #                "IPM_Dave2_stochV",
+  #                "IPM_Dave3_stochV"
+  #                )
+  # plotFolder = c("figures/densityChecks/someCovs&stochV")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
-
+  
   ## Set up --------------------------------------------------------------------
-
+  
   library(coda)
   suppressPackageStartupMessages(library(tidyverse))
   suppressPackageStartupMessages(library(data.table))
@@ -108,10 +116,10 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA', Parameter) ~ Idx1,
+                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true|D_dens.true|H_dens.true', Parameter) ~ Idx1,
                                grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
-           AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
-                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
+           AgeIdx  = case_when(grepl('Beta|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
+                               grepl('Beta|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
                                # grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
            Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
@@ -121,6 +129,10 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
            ParamName = word(Parameter, 1, sep = "\\["),
            ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'BR', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
+  
+  # to replace D_dens.true or H_dens.true with dens.true
+  sum.dat <- sum.dat %>%
+    mutate(Parameter = sub("^(D|H)_dens\\.true", "dens.true", Parameter))
   
   sum.dat <- sum.dat %>%
     left_join(idx.dat, by = "Parameter")
@@ -137,7 +149,8 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
     
     # for age-independent fixed effects
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S', 'BetaW.S'),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S',
+                 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So', 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'),
     
     # # for age-dependent random effects
     # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
@@ -157,7 +170,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                 mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
                 pull(param)),
     
-    RS_covs = c('BetaD.R', 'BetaV.R', 'BetaW.R'),
+    RS_covs = c('BetaD.R'),
     
     RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
                paste0('EpsilonT.B[', plotYears, ']'),
@@ -184,7 +197,9 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                    'sSA', 
                    expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('sAD[', a, ']')) %>%
-                     pull(param)),
+                     pull(param),
+                   'dens.true',
+                   'veg.true'),
     
     ParamLabels = c(# 'Annual breeding rate',
                     expand.grid(a = plotAges) %>% 
@@ -197,7 +212,9 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                     'Survival of subadults (1 yr)',
                     expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Survival of adults(', a, ' yrs)')) %>% 
-                      pull(name)))
+                      pull(name),
+                    '"True" density',
+                    '"True" forage'))
   
   plotTS.Ns <- list(
     ParamNames = c('nYF',

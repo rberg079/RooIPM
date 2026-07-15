@@ -12,11 +12,11 @@
 #'
 #' @examples
 
-wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list.data){
+wrangleData_en <- function(H_dens.data, D_dens.data, veg.data, wea.data, wind.data, obs.data, list.data){
   
   # # for testing purposes
-  # # dens.data = "data/abundanceData_Proteus.csv" # OR...
-  # dens.data = "data/WPNP_Methods_Results_January2026.xlsx"
+  # H_dens.data = "data/abundanceData_Proteus.csv" # OR...
+  # D_dens.data = "data/WPNP_Methods_Results_January2026.xlsx"
   # veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx"
   # wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx"
   # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
@@ -32,8 +32,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   suppressPackageStartupMessages(library(tidyverse))
   
   # load data
-  # density <- read_csv(dens.data, show_col_types = F) # OR...
-  density <- suppressWarnings(read_excel(dens.data))
+  H_density <- read_csv(H_dens.data, show_col_types = F) # OR...
+  D_density <- suppressWarnings(read_excel(D_dens.data))
   biomass <- suppressMessages(read_excel(veg.data))
   weather <- suppressWarnings(read_excel(wea.data))
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
@@ -43,39 +43,36 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   ## Density data --------------------------------------------------------------
   
+  # if Heloise's data:
+  H_density <- H_density %>%
+    rename(H_dens = "D", H_densE = "SD_D") %>%
+    mutate(SeasYr = paste0(substr(Season, 1, 3), Year)) %>%
+    select(SeasYr, H_dens, H_densE) %>%
+    filter(!is.na(H_dens))
+  
   # if Dave's data:
-  density <- density %>%
-    rename(Dens = "Mean density",
+  D_density <- D_density %>%
+    rename(D_dens = "Mean density",
            lci = "L 95% CI density",
            uci = "U 95% CI density") %>%
     mutate(SeasYr = paste0(substr(Season, 1, 3), Year),
 
-           # # to approximate SDs from 95% CIs
-           # # calculate the scaling factor 'C'
-           # C_factor = sqrt(uci / lci),
-           # # reverse-engineer the coefficient of variation
-           # # CV = sqrt(exp((ln(C) / 1.96)^2) - 1)
-           # cv = sqrt(exp((log(C_factor) / 1.96)^2) - 1),
-           # 
-           # # calculate standard error
-           # se_exact = Dens * cv,
-           # 
-           # # calculate standard deviation
-           # DensE = se_exact * sqrt(6))
+           # to approximate SDs from 95% CIs
+           # calculate the scaling factor 'C'
+           C_factor = sqrt(uci / lci),
+           # reverse-engineer the coefficient of variation
+           # CV = sqrt(exp((ln(C) / 1.96)^2) - 1)
+           cv = sqrt(exp((log(C_factor) / 1.96)^2) - 1),
 
-           # OR set SD = 10% (Heloise's span ~4-7%)
-           DensE = 0.1*Dens) %>%
-    select(SeasYr, Dens, DensE)
-  
-  # # if Heloise's:
-  # density <- density %>%
-  #   rename(Ab = "N",
-  #          AbE = "SD",
-  #          Dens = "D",
-  #          DensE = "SD_D") %>%
-  #   mutate(SeasYr = paste0(substr(Season, 1, 3), Year)) %>%
-  #   select(SeasYr, Ab, AbE, Dens, DensE) %>%
-  #   filter(!is.na(Ab))
+           # calculate standard error
+           se_exact = D_dens * cv,
+
+           # calculate standard deviation
+           D_densE = se_exact * sqrt(6)) %>% 
+
+           # # OR set CV = 10% (Heloise's span ~4-7%)
+           # DensE = 0.1*Dens) %>%
+    select(SeasYr, D_dens, D_densE)
   
   
   ## Biomass data --------------------------------------------------------------
@@ -145,7 +142,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
            Wind = "WS10M", Gusts = "WS10M_MAX") %>%  # wind is in m/s at 10 m
     mutate(Date = ymd(paste(Year, Month, Day)),
            Wind = -0.863+0.427*Wind,                 # calculate wind at 0.4 m
-           Gusts = -0.863+0.427*Gusts) %>%           # calculate wind at 0.4 m
+           Gusts = -0.863+0.427*Gusts) %>%           # calculate gusts at 0.4 m
     select(-PRECTOTCORR)
   
   
@@ -171,11 +168,12 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   env <- weather %>% 
     left_join(biomass, by = "Date") %>% 
-    left_join(density, by = "SeasYr") %>%
+    left_join(H_density, by = "SeasYr") %>%
+    left_join(D_density, by = "SeasYr") %>%
     fill(Veg, .direction = "up") %>%
     fill(VegSE, .direction = "up") %>% 
     select(Date, Year, Month, Day, SeasYr,
-           Dens, DensE, Veg, VegSE, Rain) %>%
+           H_dens, H_densE, D_dens, D_densE, Veg, VegSE, Rain) %>%
     mutate(Veg = ifelse(Date < "2009-04-22", NA, Veg),
            VegSE = ifelse(Date < "2009-04-22", NA, VegSE)) %>% 
     left_join(wind, by = c("Date", "Year", "Month", "Day"))
@@ -184,16 +182,11 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # C = (11.7 + 3.1(wind^0.5))(40 - T) + 481 + 418(1 - e^-0.04*R)
   env <- suppressWarnings(env %>%
     mutate(Chill = ((11.7 + 3.1*(sqrt(Gusts)))*(40 - Min)) + 418 + (418*(1 - exp(-0.04*Rain))),
-           Warn.18 = ifelse(Chill >= 1000, 1, 0)) %>%  # 0.82 percentile
-           # Warn.10 = ifelse(Chill >= 1062, 1, 0),    # 0.90 percentile
-           # Warn.05 = ifelse(Chill >= 1124, 1, 0),    # 0.95 percentile
+           Warn.18 = ifelse(Chill >= 1000, 1, 0)) %>%  # BOM alerts sent out at values >1000
     group_by(Year, Month) %>% 
-    mutate(Warns.18 = sum(Warn.18, na.rm = T)) %>% 
-           # Warns.05 = sum(Warn.05, na.rm = T),
-           # Warns.10 = sum(Warn.10, na.rm = T),
+    mutate(Warns.18 = sum(Warn.18, na.rm = T)) %>%     # represents 18% of observed days
     ungroup() %>% 
-    distinct(Date, Year, Month, Day, SeasYr, Dens, DensE, Veg, VegSE, Warns.18))
-             # Rain, Max, Min, Wind, Gusts, Chill, Warn.18, Warns.18
+    distinct(Date, Year, Month, Day, SeasYr, H_dens, H_densE, D_dens, D_densE, Veg, VegSE, Warns.18))
   
   # summarise by year,
   # where year X spans Sept 1 X to Aug 31 X+1
@@ -203,11 +196,11 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   
   # propagate uncertainty in density & vegetation data
   dens <- env %>% 
-    filter(!is.na(Dens)) %>% 
+    filter(!is.na(D_dens)) %>% 
     filter(grepl("Spr", SeasYr)) %>% 
-    distinct(SeasYr, Dens, DensE) %>% 
+    distinct(SeasYr, H_dens, H_densE, D_dens, D_densE) %>% 
     mutate(Year = as.integer(str_extract(SeasYr, "\\d{4}"))) %>% 
-    select(Year, Dens, DensE) %>% 
+    select(Year, H_dens, H_densE, D_dens, D_densE) %>% 
     complete(Year = 2007:2025)
   
   veg <- env %>% 
@@ -236,8 +229,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     left_join(dens, by = "Year") %>% 
     left_join(veg,  by = "Year") %>% 
     left_join(win,  by = "Year") %>% 
-    mutate(VegRoo = Veg / Dens,
-           VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) %>% 
+    # mutate(VegRoo = Veg / Dens,
+    #        VegRooSE = abs(VegRoo) * sqrt((VegSE / Veg)^2 + (DensE / Dens)^2)) %>% 
     left_join(obs, by = "Year")
   
   
@@ -246,48 +239,52 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # centre and scale data
   sc <- function(x) (x - mean(x, na.rm = T)) / sd(x, na.rm = T)
   
-  year <- seq(from = 1, to = 17, by = 1)
+  year <- seq(from = 1, to = 18, by = 1)
   
-  dens  <- as.numeric(env$Dens)          # length nYear
+  H_dens  <- as.numeric(env$H_dens)
+  H_densE <- as.numeric(ifelse(is.na(env$H_densE), 1, env$H_densE))
+  H_densM <- mean(H_dens, na.rm = T)
+  
+  D_dens  <- as.numeric(env$D_dens)
+  D_densE <- as.numeric(ifelse(is.na(env$D_densE), 1, env$D_densE))
+  D_densM <- mean(D_dens, na.rm = T)
+  
+  # dens  <- as.numeric(env$Dens)          # length nYear
   veg   <- as.numeric(sc(env$Veg[1:17])) # length nYear-1
-  win   <- as.numeric(sc(env$Win[1:17]))  # length nYear-1
-  propF <- as.numeric(env$PropF)        # length nYear
+  win   <- as.numeric(sc(env$Win[1:17])) # length nYear-1
+  propF <- as.numeric(env$PropF)         # length nYear
   
-  densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
-  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # to scale uncertainty too
+  # densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
+  vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # scale uncertainty too
   
-  densM  <- mean(dens, na.rm = T)
-  densSD <- sd(dens, na.rm = T)
+  # densM  <- mean(dens, na.rm = T)
+  # densSD <- sd(dens, na.rm = T)
   
-  noDens <- which(is.na(dens))
   noVeg  <- which(is.na(veg))
-  noWin  <- which(is.na(win))
   noProp <- which(is.na(propF))
   
-  nNoDens <- length(noDens)
   nNoVeg  <- length(noVeg)
-  nNoWin  <- length(noWin)
   nNoProp <- length(noProp)
   
   area = rep(76.2, 18)
   
   return(list(year = year,
               area = area,
-              dens = dens,
+              H_dens = H_dens,
+              D_dens = D_dens,
+              H_densE = H_densE,
+              D_densE = D_densE,
+              H_densM = H_densM,
+              D_densM = D_densM,
               veg = veg,
               win = win,
               propF = propF,
-              densM = densM,
-              densSD = densSD,
-              densE = densE,
+              # densM = densM,
+              # densE = densE,
               vegE = vegE,
-              noDens = noDens,
               noVeg = noVeg,
-              noWin = noWin,
               noProp = noProp,
-              nNoDens = nNoDens,
               nNoVeg = nNoVeg,
-              nNoWin = nNoWin,
               nNoProp = nNoProp))
   
 }

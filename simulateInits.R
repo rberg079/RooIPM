@@ -25,7 +25,7 @@
 #'
 #' @examples
 
-simulateInits <- function(dens, veg, win, propF, knownStates, 
+simulateInits <- function(H_dens, D_dens, veg, propF, knownStates, 
                           nYear = 18, nAge = 19, nB = 0, nR = 0, nID.R = 0, ageClasses = 20,
                           year.B = 0, year.R = 0, id.R = 0, age.B = 0, age.R = 0, ageC.R, ageC.S,
                           envEffectsS = TRUE, envEffectsR = TRUE){
@@ -34,30 +34,35 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   # library(readxl)
   # library(tidyverse)
   # 
-  # ageClasses <- 20
+  # ageClasses <- 12
   # source('R/wrangleData_en.R')
-  # enData <- wrangleData_en(dens.data = "data/abundanceData_Proteus.csv",
-  #                          veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
-  #                          wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
-  #                          wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
-  #                          obs.data  = "data/PromObs_2008-2024.xlsx",
-  #                          list      = "data/PromlistAllNov25.xlsx")
+  # enData <- wrangleData_en(
+  #   H_dens.data = "data/abundanceData_Proteus.csv", # OR...
+  #   D_dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  #   veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
+  #   wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
+  #   wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
+  #   obs.data  = "data/PromObs_2008-2024.xlsx",
+  #   list.data = "data/PromlistAllNov25.xlsx")
   # 
   # source('R/wrangleData_sv.R')
-  # svData <- wrangleData_sv(surv.data = "data/PromSurvivalNov25_RB.xlsx",
-  #                          yafs.data = "data/RSmainRB_May26.xlsx",
-  #                          ageClasses = ageClasses, known.age = TRUE)
+  # svData <- wrangleData_sv(
+  #   surv.data = "data/PromSurvivalNov25_RB.xlsx",
+  #   yafs.data = "data/RSmainRB_May26.xlsx",
+  #   ageClasses = ageClasses, known.age = TRUE)
   # 
   # source('R/wrangleData_rs.R')
-  # rsData <- wrangleData_rs(rs.data = "data/RSmainRB_May26.xlsx",
-  #                          ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
+  # rsData <- wrangleData_rs(
+  #   rs.data = "data/RSmainRB_May26.xlsx",
+  #   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
   # 
-  # dens <- enData$dens
+  # H_dens <- enData$H_dens
+  # D_dens <- enData$D_dens
   # veg <- enData$veg
   # propF <- enData$propF
   # knownStates <- svData$state
   # 
-  # nYear <- 18
+  # nYear <- 14
   # nAge <- 19
   # 
   # nB <- rsData$nB
@@ -79,21 +84,24 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   ## Survival model
   # missing values
-  noDens <- is.na(dens)
+  H_noDens <- is.na(H_dens)
+  D_noDens <- is.na(D_dens)
   noVeg  <- is.na(veg)
   noProp <- is.na(propF)
   
-  nNoDens <- length(which(noDens))
+  # nNoDens <- length(which(noDens))
   nNoVeg  <- length(which(noVeg))
   nNoProp <- length(which(noProp))
   
-  dens  <- round(ifelse(noDens, rnorm(1, 3.9, .4), dens), 2)
+  H_dens  <- round(ifelse(H_noDens, rnorm(1, 3.5, .4), H_dens), 2) # 3.9
+  D_dens  <- round(ifelse(D_noDens, rnorm(1, 3.0, 1), D_dens), 2) # 3.4
   veg   <- round(ifelse(noVeg, rnorm(1, 0, .1), veg), 4)
   propF <- round(ifelse(noProp, pmax(pmin(rnorm(1, .7, .1), 0.99), 0.4), propF), 4)
   
   # true environment
-  dens.true <- dens
-  dens.cov  <- dens - mean(dens)
+  H_dens.true <- H_dens
+  D_dens.true <- D_dens
+  dens.cov  <- D_dens - mean(D_dens)
   veg.true  <- veg
   
   # latent states
@@ -112,8 +120,20 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   ## Survival model
   if(envEffectsS){
-    BetaD.S <- runif(1, -1, 1)
-    BetaV.S <- runif(1, -1, 1)
+    # BetaD.S <- runif(1, -1, 1)
+    # BetaV.S <- runif(1, -1, 1)
+    
+    BetaD.Sy <- runif(1, -1, 1)
+    # BetaD.Sp <- runif(1, -1, 1)
+    BetaD.So <- runif(1, -1, 1)
+    
+    BetaV.Sy <- runif(1, -1, 1)
+    # BetaV.Sp <- runif(1, -1, 1)
+    BetaV.So <- runif(1, -1, 1)
+    
+    # BetaDV.Sy <- runif(1, -1, 1)
+    # BetaDV.Sp <- runif(1, -1, 1)
+    # BetaDV.So <- runif(1, -1, 1)
   }
   
   ## Reproductive success model
@@ -123,12 +143,26 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   # dummy variable
   # to target covariate effects
+  # if(ageClasses == 6){
+  #   dummy = c(1, rep(0,4), 1)
+  # }else if(ageClasses == 12){
+  #   dummy = c(1, rep(0,8), rep(1,4))
+  # }else if(ageClasses == 20){
+  #   dummy = c(1, rep(0,8), rep(1,11))
+  # }
+  
   if(ageClasses == 6){
-    dummy = c(1, rep(0,4), 1)
+    dummyY = c(1, rep(0, 5))
+    dummyP = c(0, rep(1, 4), 0)
+    dummyO = c(rep(0, 5), 1)
   }else if(ageClasses == 12){
-    dummy = c(1, rep(0,8), rep(1,4))
+    dummyY = c(1, rep(0, 12))
+    dummyP = c(0, rep(1, 9), rep(0, 3))
+    dummyO = c(rep(0, 10), rep(1, 3))
   }else if(ageClasses == 20){
-    dummy = c(1, rep(0,8), rep(1,11))
+    dummyY = c(1, rep(0, 19))
+    dummyP = c(0, rep(1, 9), rep(0, 10))
+    dummyO = c(rep(0, 10), rep(1, 10))
   }
   
   
@@ -169,8 +203,20 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
       if(envEffectsS){
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
-            BetaD.S * dens.cov[t] * dummy[a] +
-            BetaV.S * veg.true[t] * dummy[a] +
+            # BetaD.S * dens.cov[t] * dummy[a] +
+            # BetaV.S * veg.true[t] * dummy[a] +
+            
+            BetaD.Sy * dens.cov[t] * dummyY[a] +
+            # BetaD.Sp * dens.cov[t] * dummyP[a] +
+            BetaD.So * dens.cov[t] * dummyO[a] +
+            
+            BetaV.Sy * veg.true[t] * dummyY[a] +
+            # BetaV.Sp * veg.true[t] * dummyP[a] +
+            BetaV.So * veg.true[t] * dummyO[a] +
+            
+            # BetaDV.Sy * dens.cov[t] * veg.true[t] * dummyY[a] +
+            # BetaDV.Sp * dens.cov[t] * veg.true[t] * dummyP[a] +
+            # BetaDV.So * dens.cov[t] * veg.true[t] * dummyO[a] +
             EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
@@ -350,10 +396,12 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   ## Assemble myinits list -----------------------------------------------------
   
   initList <- list(
-    dens = dens,
+    H_dens = H_dens,
+    D_dens = D_dens,
     veg = veg,
     propF = propF,
-    dens.true = dens.true,
+    H_dens.true = H_dens.true,
+    D_dens.true = D_dens.true,
     dens.cov = dens.cov,
     veg.true = veg.true,
     
@@ -411,8 +459,20 @@ simulateInits <- function(dens, veg, win, propF, knownStates,
   
   if(envEffectsS){
     initList <- c(initList, list(
-      BetaD.S = BetaD.S,
-      BetaV.S = BetaV.S
+      # BetaD.S = BetaD.S,
+      # BetaV.S = BetaV.S
+      
+      BetaD.Sy = BetaD.Sy,
+      # BetaD.Sp = BetaD.Sp,
+      BetaD.So = BetaD.So,
+      
+      BetaV.Sy = BetaV.Sy,
+      # BetaV.Sp = BetaV.Sp,
+      BetaV.So = BetaV.So
+      
+      # BetaDV.Sy = BetaDV.Sy,
+      # BetaDV.Sp = BetaDV.Sp,
+      # BetaDV.So = BetaDV.So
     ))
   }
   
