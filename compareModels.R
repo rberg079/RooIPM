@@ -28,21 +28,19 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_DavePtII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_HeloisePtII.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochVP.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochVP.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochV_8chains.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3Covs_stochV_8chains.rds"
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_DavePtII.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs_stochV_8chains.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs_stochV_8chains_2.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs_stochVP_8chains.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs3REs_stochV_8chains.rds"
   #               )
   # modelNames = c("IPM_DavePtII",
-  #                "IPM_HeloisePtII",
-  #                "IPM_Dave2_stochVP",
+  #                "IPM_Dave3_stochV",
+  #                "IPM_Dave3_stochV2",
   #                "IPM_Dave3_stochVP",
-  #                "IPM_Dave2_stochV",
-  #                "IPM_Dave3_stochV"
+  #                "IPM_Dave3REs_stochV"
   #                )
-  # plotFolder = c("figures/densityChecks/someCovs&stochV")
+  # plotFolder = c("figures/densityChecks/3covs3REs")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
@@ -152,11 +150,14 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S',
                  'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So', 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'),
     
-    # # for age-dependent random effects
-    # CJS_REs = c(paste0('Sigma.S[', 1:nAgeC.S, ', ', 1:nAgeC.S, ']')),
+    # for age-dependent random effects
+    CJS_REs = c(paste0('EpsilonT.Sy[', plotYears, ']'),
+                paste0('EpsilonT.Sp[', plotYears, ']'),
+                paste0('EpsilonT.So[', plotYears, ']'),
+                'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'),
     
-    # for age-independent random effects
-    CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
+    # # for age-independent random effects
+    # CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
     
     CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
