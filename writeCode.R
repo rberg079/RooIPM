@@ -292,22 +292,31 @@ writeCode <- function(){
       for(t in 1:(nYear-1)){
         if(envEffectsS){
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            # main effects: density
+            # age-dependent covariate effects: density
             BetaD.Sy * dens.cov[t] * dummyY[a] +
-            # BetaD.Sp * dens.cov[t] * dummyP[a] +
+            BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
-            # main effects: vegetation
+            # age-dependent covariate effects: vegetation
             BetaV.Sy * veg.true[t] * dummyY[a] +
-            # BetaV.Sp * veg.true[t] * dummyP[a] +
+            BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
-            # # interaction effects: density x vegetation
+            # # age-dependent interaction: density x vegetation
             # BetaDV.Sy * dens.cov[t] * veg.true[t] * dummyY[a] +
             # BetaDV.Sp * dens.cov[t] * veg.true[t] * dummyP[a] +
             # BetaDV.So * dens.cov[t] * veg.true[t] * dummyO[a] +
+            
+            # # age-dependent random year effects
+            # EpsilonT.Sy[t] * dummyY[a] +
+            # EpsilonT.Sp[t] * dummyP[a] +
+            # EpsilonT.So[t] * dummyO[a]
             EpsilonT.S[t]
         }else{
           logit(S[a, t]) <- logit(Mu.S[a]) +
-            EpsilonT.S[t]
+            # # age-dependent random year effects
+            # EpsilonT.Sy[t] * dummyY[a] +
+            # EpsilonT.Sp[t] * dummyP[a] +
+            # EpsilonT.So[t] * dummyO[a]
+          EpsilonT.S[t]
         }
       }
     }
@@ -324,20 +333,20 @@ writeCode <- function(){
       Mu.S[a] ~ dunif(0, 1)
     }
     
-    # # fixed effects
+    # # age-independent covariate effects
     # if(envEffectsS){
     #   BetaD.S ~ dunif(-5, 5)
     #   BetaV.S ~ dunif(-5, 5)
     # }
     
-    # to split covariate effects
+    # age-dependent covariate effects
     if(envEffectsS){
       BetaD.Sy ~ dunif(-5, 5)
-      # BetaD.Sp ~ dunif(-5, 5)
+      BetaD.Sp ~ dunif(-5, 5)
       BetaD.So ~ dunif(-5, 5)
       
       BetaV.Sy ~ dunif(-5, 5)
-      # BetaV.Sp ~ dunif(-5, 5)
+      BetaV.Sp ~ dunif(-5, 5)
       BetaV.So ~ dunif(-5, 5)
       
       # BetaDV.Sy ~ dunif(-5, 5)
@@ -345,12 +354,27 @@ writeCode <- function(){
       # BetaDV.So ~ dunif(-5, 5)
     }
     
-    # random effects
+    # age-independent random effects
     for(t in 1:(nYear-1)){
       XiT.S[t] ~ dnorm(0, sd = 1) # latent standard normal
       EpsilonT.S[t] <- SigmaT.S * XiT.S[t] # actual random effect
     }
     SigmaT.S ~ dunif(0, 10) # scale of the random effect
+    
+    # # age-dependent random effects
+    # for(t in 1:(nYear-1)){
+    #   XiT.Sy[t] ~ dnorm(0, sd = 1) # latent standard normal for young
+    #   XiT.Sp[t] ~ dnorm(0, sd = 1) # latent standard normal for prime
+    #   XiT.So[t] ~ dnorm(0, sd = 1) # latent standard normal for old
+    #   
+    #   EpsilonT.Sy[t] <- SigmaT.Sy * XiT.Sy[t] # actual random effect for young
+    #   EpsilonT.Sp[t] <- SigmaT.Sp * XiT.Sp[t] # actual random effect for prime
+    #   EpsilonT.So[t] <- SigmaT.So * XiT.So[t] # actual random effect for old
+    # }
+    # 
+    # SigmaT.Sy ~ dunif(0, 10) # scale of the random effect for young
+    # SigmaT.Sp ~ dunif(0, 10) # scale of the random effect for prime
+    # SigmaT.So ~ dunif(0, 10) # scale of the random effect for old
     
     # observation
     Mu.O ~ dunif(0.01, 0.99) # or dunif(0, 1)

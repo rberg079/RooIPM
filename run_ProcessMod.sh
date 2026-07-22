@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=RooIPM_Dave2Covs_stochV          # Nom de la tâche
-#SBATCH --output=job_output_Dave2Covs_stochV.txt    # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_Dave2Covs_stochV.txt      # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=RooIPM_Dave3Covs          # Nom de la tâche
+#SBATCH --output=job_output_Dave3Covs.txt    # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_Dave3Covs.txt      # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 

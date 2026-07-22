@@ -124,11 +124,11 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
     # BetaV.S <- runif(1, -1, 1)
     
     BetaD.Sy <- runif(1, -1, 1)
-    # BetaD.Sp <- runif(1, -1, 1)
+    BetaD.Sp <- runif(1, -1, 1)
     BetaD.So <- runif(1, -1, 1)
     
     BetaV.Sy <- runif(1, -1, 1)
-    # BetaV.Sp <- runif(1, -1, 1)
+    BetaV.Sp <- runif(1, -1, 1)
     BetaV.So <- runif(1, -1, 1)
     
     # BetaDV.Sy <- runif(1, -1, 1)
@@ -168,10 +168,27 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
   
   ## Simulate vital rate random effects ----------------------------------------
   
-  # age-independent random effect
+  ## Survival model
+  # age-independent random effects
   XiT.S <- rnorm(nYear-1, 0, 1)
   SigmaT.S <- runif(1, .5, 2)
   EpsilonT.S <- XiT.S * SigmaT.S
+  
+  # # age-dependent random effects
+  # # latent standard normals
+  # XiT.Sy <- rnorm(nYear-1, 0, 1)
+  # XiT.Sp <- rnorm(nYear-1, 0, 1)
+  # XiT.So <- rnorm(nYear-1, 0, 1)
+  # 
+  # # scales
+  # SigmaT.Sy <- runif(1, .5, 2)
+  # SigmaT.Sp <- runif(1, .5, 2)
+  # SigmaT.So <- runif(1, .5, 2)
+  # 
+  # # scaled random effects
+  # EpsilonT.Sy <- XiT.Sy * SigmaT.Sy
+  # EpsilonT.Sp <- XiT.Sp * SigmaT.Sp
+  # EpsilonT.So <- XiT.So * SigmaT.So
   
   ## Reproductive success model
   # latent standard normals
@@ -207,20 +224,30 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
             # BetaV.S * veg.true[t] * dummy[a] +
             
             BetaD.Sy * dens.cov[t] * dummyY[a] +
-            # BetaD.Sp * dens.cov[t] * dummyP[a] +
+            BetaD.Sp * dens.cov[t] * dummyP[a] +
             BetaD.So * dens.cov[t] * dummyO[a] +
             
             BetaV.Sy * veg.true[t] * dummyY[a] +
-            # BetaV.Sp * veg.true[t] * dummyP[a] +
+            BetaV.Sp * veg.true[t] * dummyP[a] +
             BetaV.So * veg.true[t] * dummyO[a] +
             
             # BetaDV.Sy * dens.cov[t] * veg.true[t] * dummyY[a] +
             # BetaDV.Sp * dens.cov[t] * veg.true[t] * dummyP[a] +
             # BetaDV.So * dens.cov[t] * veg.true[t] * dummyO[a] +
+            
+            # EpsilonT.Sy[t] * dummyY[a] +
+            # EpsilonT.Sp[t] * dummyP[a] +
+            # EpsilonT.So[t] * dummyO[a])
+            
             EpsilonT.S[t])
       }else{
         S[a, t] <- plogis(
           qlogis(Mu.S[a]) +
+            
+            # EpsilonT.Sy[t] * dummyY[a] +
+            # EpsilonT.Sp[t] * dummyP[a] +
+            # EpsilonT.So[t] * dummyO[a])
+          
             EpsilonT.S[t])
       }
     }
@@ -411,6 +438,18 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
     SigmaT.S = SigmaT.S,
     EpsilonT.S = EpsilonT.S,
     
+    # XiT.Sy = XiT.Sy,
+    # XiT.Sp = XiT.Sp,
+    # XiT.So = XiT.So,
+    # 
+    # SigmaT.Sy = SigmaT.Sy,
+    # SigmaT.Sp = SigmaT.Sp,
+    # SigmaT.So = SigmaT.So,
+    # 
+    # EpsilonT.Sy = EpsilonT.Sy,
+    # EpsilonT.Sp = EpsilonT.Sp,
+    # EpsilonT.So = EpsilonT.So,
+    
     XiI.R = XiI.R,
     XiT.R = XiT.R,
     XiT.B = XiT.B,
@@ -463,11 +502,11 @@ simulateInits <- function(H_dens, D_dens, veg, propF, knownStates,
       # BetaV.S = BetaV.S
       
       BetaD.Sy = BetaD.Sy,
-      # BetaD.Sp = BetaD.Sp,
+      BetaD.Sp = BetaD.Sp,
       BetaD.So = BetaD.So,
       
       BetaV.Sy = BetaV.Sy,
-      # BetaV.Sp = BetaV.Sp,
+      BetaV.Sp = BetaV.Sp,
       BetaV.So = BetaV.So
       
       # BetaDV.Sy = BetaDV.Sy,

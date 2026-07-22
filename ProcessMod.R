@@ -108,7 +108,7 @@ myConst <- list(nYear = svData$nYear,
                 use_dCJS = use_dCJS)
 
 # if(splitCovs){
-  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO)) # dummyP = svData$dummyP, 
+  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
 # }else{
 #   myConst <- c(myConst, list(dummy = svData$dummy))
 # }
@@ -159,7 +159,10 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
-  'Mu.S', 'EpsilonT.S', 'SigmaT.S',
+  'Mu.S', 
+  'EpsilonT.S', 'SigmaT.S',
+  # 'EpsilonT.Sy','EpsilonT.Sp','EpsilonT.So',
+  # 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So',
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
@@ -173,8 +176,8 @@ params <- c(
 
 # conditionally add covariate effects
 if(envEffectsS){params <- c(params, # 'BetaD.S', 'BetaV.S'
-                            'BetaD.Sy', 'BetaD.So', # 'BetaD.Sp', 
-                            'BetaV.Sy', 'BetaV.So' # 'BetaV.Sp'
+                            'BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 
+                            'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'
                             # 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'
                             )} 
 
@@ -264,7 +267,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave2Covs_stochV_8chains.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs_stochV_8chains_2.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -290,7 +293,7 @@ library(scales)
 # # summaries
 # MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
 # MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
-# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2, pg0 = T)}
+# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), n.eff = TRUE, round = 2, pg0 = T)}
 # MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
 # MCMCsummary(out.mcmc, params = c('BR'), n.eff = TRUE, round = 2)
