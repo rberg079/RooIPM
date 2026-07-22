@@ -378,6 +378,7 @@ rs <- df %>%
 inv_logit <- function(x) 1 / (1 + exp(-x))
 
 keep_ages <- c(1, 11, 12, 13)
+age_labels <- c("0", "10", "11", "12+")
 
 # extract betas
 bDy <- out.mat[, grep("^BetaD\\.Sy", colnames(out.mat))]
@@ -385,9 +386,14 @@ bDo <- out.mat[, grep("^BetaD\\.So", colnames(out.mat))]
 bVy <- out.mat[, grep("^BetaV\\.Sy", colnames(out.mat))]
 bVo <- out.mat[, grep("^BetaV\\.So", colnames(out.mat))]
 
+bDr <- out.mat[, grep("^BetaD\\.R", colnames(out.mat))]
+
 # extract baseline intercepts
-mus  <- paste0("Mu.S[", keep_ages, "]")
-base <- out.mat[, mus, drop = FALSE]
+muS  <- paste0("Mu.S[", keep_ages, "]")
+base <- out.mat[, muS, drop = FALSE]
+
+muR <- grep("^Mu\\.R\\[", colnames(out.mat))
+baseR <- rowMeans(out.mat[, muR, drop = FALSE])
 
 # covariate sequence
 x <- seq(-2, 2, length.out = 50)
@@ -398,6 +404,7 @@ make_df <- function(betas_young, betas_old, covariate) {
   
   for (i in seq_along(keep_ages)) {
     age <- keep_ages[i]
+    label <- age_labels[i]
     intercepts <- base[, i]
     
     # assign the right beta
@@ -410,7 +417,7 @@ make_df <- function(betas_young, betas_old, covariate) {
     for (xx in x) {
       preds <- inv_logit(intercepts + betas * xx)
       results[[length(results) + 1]] <- data.frame(
-        Age       = age,
+        Age       = label,
         x         = xx,
         Mean      = mean(preds),
         Lower     = quantile(preds, 0.025),
@@ -422,9 +429,27 @@ make_df <- function(betas_young, betas_old, covariate) {
   do.call(rbind, results)
 }
 
+# build summary df for PY
+make_py_df <- function(betas, covariate) {
+  results <- list()
+  for (xx in x) {
+    preds <- inv_logit(baseR + betas * xx)
+    results[[length(results) + 1]] <- data.frame(
+      Age       = "PY",
+      x         = xx,
+      Mean      = mean(preds),
+      Lower     = quantile(preds, 0.025),
+      Upper     = quantile(preds, 0.975),
+      covariate = covariate
+    )
+  }
+  do.call(rbind, results)
+}
+
 df <- rbind(
   make_df(bDy, bDo, "Population density"),
-  make_df(bVy, bVo, "Forage availability")
+  make_df(bVy, bVo, "Forage availability"),
+  make_py_df(bDr, "Population density")
 )
 
 # pick colours
@@ -450,6 +475,7 @@ df <- rbind(
 # )
 
 cols <- c(
+  "PY"  = "#BFA4CB",
   "0"   = "#7C528E",
   "10"  = "#BE2323",
   "11"  = "#696969",
@@ -458,17 +484,17 @@ cols <- c(
 
 # plot
 df %>%
-  mutate(Age = factor(Age - 1,
-                      levels = c(0, 10, 11, 12),
-                      labels = c("0", "10", "11", "12+")),
-         line = ifelse(Age == "0" & covariate == "Population density", "dashed", "solid")) %>%
+  mutate(Age = factor(Age, levels = c("PY", "0", "10", "11", "12+")),
+         line = ifelse(Age %in% c("PY", "0") & covariate == "Population density", "solid", "dotted")) %>%
   ggplot(aes(x = x, y = Mean, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(aes(linetype = line), linewidth = 0.8) +
   facet_wrap(~ covariate, scales = "free_x") +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
-  scale_y_continuous(limits = c(0, 1), breaks = c(0.2, 0.4, 0.6, 0.8, 1.0)) +
+  scale_linetype_identity() +
+  scale_y_continuous(breaks = pretty_breaks()) +
+  # scale_y_continuous(limits = c(0, 1), breaks = c(0.2, 0.4, 0.6, 0.8, 1.0)) +
   labs(x = "Scaled covariate value", y = "Survival",
        colour = "Age", fill = "Age") +
   guides(linetype = "none") +
@@ -483,39 +509,69 @@ df %>%
 D_idx  <- grep("^D_dens\\.true", colnames(out.mat))[1:17]
 V_idx  <- grep("^veg\\.true", colnames(out.mat))
 
-# build summary dataframe
-df <- expand.grid(Year = 1:17)
+# extract means and 95% credible intervals
+dens_mean <- apply(out.mat[, D_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+dens_lci  <- apply(out.mat[, D_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+dens_uci  <- apply(out.mat[, D_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-dens <- apply(out.mat[, D_idx, drop = FALSE], 2, mean, na.rm = TRUE)
-veg  <- apply(out.mat[, V_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+veg_mean  <- apply(out.mat[, V_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+veg_lci   <- apply(out.mat[, V_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+veg_uci   <- apply(out.mat[, V_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
-dens <- scale(dens)[,1]
+# scale the density mean, then apply the exact same center and scale to the CIs
+dens_scaled <- scale(dens_mean)
+center_val  <- attr(dens_scaled, "scaled:center")
+scale_val   <- attr(dens_scaled, "scaled:scale")
 
-dens <- cbind(df, dens) %>% rename(value = dens) %>% mutate(covariate = "Population density")
-veg  <- cbind(df, veg) %>% rename(value = veg) %>% mutate(covariate = "Forage availability")
+dens_lci_scaled <- (dens_lci - center_val) / scale_val
+dens_uci_scaled <- (dens_uci - center_val) / scale_val
 
-df <- rbind(dens, veg)
+# build summary dataframes
+df_dens <- data.frame(
+  Year = 1:17, 
+  value = dens_scaled[, 1], 
+  lci = dens_lci_scaled, 
+  uci = dens_uci_scaled, 
+  covariate = "Population density"
+)
+
+df_veg <- data.frame(
+  Year = 1:17, 
+  value = veg_mean, 
+  lci = veg_lci, 
+  uci = veg_uci, 
+  covariate = "Forage availability"
+)
+
+df <- rbind(df_dens, df_veg)
 
 # pick colours
-cols <- c(
-  "Population density" = "#335B5B",
-  "Forage availability"  = "#75A366"
+line_cols <- c(
+  "Population density"  = adjustcolor("#335B5B", alpha.f = 0.8),  # 0.8 alpha for density line
+  "Forage availability" = "#75A366"                                # 1.0 (opaque) for forage line
+)
+
+fill_cols <- c(
+  "Population density"  = adjustcolor("#335B5B", alpha.f = 0.15), # 0.15 alpha for density ribbon
+  "Forage availability" = adjustcolor("#75A366", alpha.f = 0.20)  # 0.20 alpha for forage ribbon
 )
 
 # plot
 covs <- df %>%
   filter(Year > 1) %>% 
   mutate(Year = Year + 2007) %>%
-  ggplot(aes(x = Year, y = value, colour = covariate)) +
-  geom_line(linewidth = 0.8) +
+  ggplot(aes(x = Year, y = value, colour = covariate, fill = covariate)) +
   geom_hline(yintercept = 0, colour = "grey40") +
-  scale_colour_manual(values = cols) +
+  geom_ribbon(aes(ymin = lci, ymax = uci), colour = NA) + 
+  geom_line(linewidth = 0.8) +
+  scale_colour_manual(values = line_cols) +
+  scale_fill_manual(values = fill_cols) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  labs(y = "Scaled covariate value", colour = "Covariate") +
+  labs(y = "Scaled covariate value", colour = "Covariate", fill = "Covariate") +
   theme_bw(); covs
 
-# ggsave("figures/resultsDave2Covs/covsVStime.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/covsVStime2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & reproductive output
 (surv / rs / covs) +
@@ -523,6 +579,50 @@ covs <- df %>%
   theme(legend.position = "right")
 
 # ggsave("figures/resultsDave2Covs/surv&rs&covs.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
+
+# plot observed vs true density
+myData$D_densE[1] <- NA
+
+D_idx_all <- grep("^D_dens\\.true", colnames(out.mat))[1:18]
+
+true_dens_mean <- apply(out.mat[, D_idx_all, drop = FALSE], 2, mean, na.rm = TRUE)
+true_dens_lci  <- apply(out.mat[, D_idx_all, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+true_dens_uci  <- apply(out.mat[, D_idx_all, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+
+# combine & calculate 95% CrIs for observed density 
+# (D_densE is standard error: Mean +/- 1.96 * SE)
+df_obs <- data.frame(
+  Year = (1:18) + 2007,
+  True_Mean = true_dens_mean,
+  True_LCI  = true_dens_lci,
+  True_UCI  = true_dens_uci,
+  Obs_Mean  = myData$D_dens,
+  Obs_SE    = myData$D_densE
+) %>%
+  mutate(
+    Obs_LCI = Obs_Mean - (1.96 * Obs_SE),
+    Obs_UCI = Obs_Mean + (1.96 * Obs_SE)
+  )
+
+# plot
+obs_vs_true <- df_obs %>%
+  filter(Year > 2008) %>%
+  ggplot(aes(x = Year)) +
+  
+  geom_ribbon(aes(ymin = Obs_LCI, ymax = Obs_UCI, fill = "Observed"), alpha = 0.15) +
+  geom_line(aes(y = Obs_Mean, colour = "Observed"), linewidth = 0.8, alpha = 0.8) +
+  # geom_errorbar(aes(ymin = Obs_LCI, ymax = Obs_UCI, colour = "Observed"), width = 0.3) +
+  # geom_point(aes(y = Obs_Mean, colour = "Observed"), size = 2) +
+  
+  geom_ribbon(aes(ymin = True_LCI, ymax = True_UCI, fill = "Estimated (IPM)"), alpha = 0.2) +
+  geom_line(aes(y = True_Mean, colour = "Estimated (IPM)"), linewidth = 0.8) +
+  scale_colour_manual(values = c("Estimated (IPM)" = "#335B5B", "Observed" = "#D55E00")) +
+  scale_fill_manual(values = c("Estimated (IPM)" = "#335B5B", "Observed" = "#D55E00")) +
+  scale_x_continuous(breaks = seq(2008, 2024, by = 2)) +
+  labs(x = "Year", y = "Population density", colour = "Source", fill = "Source") +
+  theme_bw(); obs_vs_true
+
+# ggsave("figures/resultsDave2Covs/obsVStrueDens.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Lambda ----------------------------------------------------------------------
@@ -1202,7 +1302,7 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
+(e.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
 ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
@@ -1210,7 +1310,7 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 # ggsave("figures/resultsDave2Covs/ELASage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
-elasSummary <- elasData %>%
+elasSummary <- plotData %>%
   group_by(Variable) %>%
   summarise(Mean  = mean(Elasticity, na.rm = TRUE),
             Lower = quantile(Elasticity, 0.025, na.rm = TRUE),
@@ -1435,7 +1535,7 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
+(c.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
   plot_layout(heights = c(0.4, 0.6))
 
 ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
@@ -1443,7 +1543,7 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
 # ggsave("figures/resultsDave2Covs/LTREage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
-LTREsummary <- contData %>%
+LTREsummary <- plotData %>%
   group_by(Variable) %>%
   summarise(Mean  = mean(Contribution, na.rm = TRUE),
             Lower = quantile(Contribution, 0.025, na.rm = TRUE),
