@@ -12,7 +12,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave2Covs_stochV_8chains.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -180,17 +180,6 @@ df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na
 
 # pick colours
 # cols <- c(
-#   "0"  = "#F8756C",
-#   "1"  = "#CC9400",
-#   "2"  = "#7CAE00",
-#   "4"  = "#00BD65",
-#   "6"  = "#00BEC3",
-#   "8"  = "#00A8FF",
-#   "10" = "#C980FF",
-#   "12+" = "#FF61CC"
-# )
-# 
-# cols <- c(
 #   "0"  = "#CC6673",
 #   "1"  = "#AB2136",
 #   "2"  = "#DE612B",
@@ -201,27 +190,38 @@ df$Upper <- apply(out.mat[, S_idx, drop = FALSE], 2, quantile, probs = 0.975, na
 #   "12+" = "#936271"
 # )
 
+# cols <- c(
+#   "0"  = "#8E5EA2",
+#   "1"  = "#277DA1",
+#   "2"  = "#00A896",
+#   "4"  = "#F9C74F",
+#   "6"  = "#F8A23A",
+#   "8"  = "#F3722C",
+#   "10" = "#D62828",
+#   "12+" = "#D96C9D"
+# )
+
 cols <- c(
-  "0"  = "#8E5EA2",
-  "1"  = "#277DA1",
-  "2"  = "#00A896",
-  "4"  = "#F9C74F",
-  "6"  = "#F8A23A",
-  "8"  = "#F3722C",
-  "10" = "#D62828",
-  "12+" = "#D96C9D"
+  "0"   = "#332288",
+  "1"   = "#0072B2",
+  "2"   = "#009E73",
+  "4"   = "#F0E442",
+  "6"   = "#E69F00",
+  "8"   = "#D55E00",
+  "10"  = "#CC3311",
+  "12+" = "#CC79A7"
 )
 
-# cols <- c(
-#   "0"  = "#283D3B",
-#   "1"  = "#197278",
-#   "2"  = "#83A8A6",
-#   "4"  = "#EDDDD4",
-#   "6"  = "#AE9D96",
-#   "8"  = "#D99185",
-#   "10" = "#C44536",
-#   "12+" = "#772E25"
-# )
+lts <- c(
+  "0"   = "solid",
+  "1"   = "dashed",
+  "2"   = "solid",
+  "4"   = "dashed",
+  "6"   = "solid",
+  "8"   = "dashed",
+  "10"  = "solid",
+  "12+" = "dashed"
+)
 
 # plot
 surv <- df %>%
@@ -230,11 +230,12 @@ surv <- df %>%
                        levels = c(0, 1, 2, 4, 6, 8, 10, 12),
                        labels = c("0", "1", "2", "4", "6", "8", "10", "12+"))) %>%
   filter(!is.na(Age)) %>% 
-  ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
+  ggplot(aes(x = Year, y = Mean, group = Age, colour = Age, linetype = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.8) +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
+  scale_linetype_manual(values = lts) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
@@ -302,15 +303,6 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # pick colours
 # cols <- c(
-#   "2"  = "#7CAE00",
-#   "4"  = "#00BD65",
-#   "6"  = "#00BEC3",
-#   "8"  = "#00A8FF",
-#   "10" = "#C980FF",
-#   "12+" = "#FF61CC"
-# )
-# 
-# cols <- c(
 #   "2"  = "#DE612B",
 #   "4"  = "#F4A261",
 #   "6"  = "#E9C46A",
@@ -319,13 +311,32 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 #   "12+" = "#936271"
 # )
 
+# cols <- c(
+#   "2"  = "#00A896",
+#   "4"  = "#F9C74F",
+#   "6"  = "#F8A23A",
+#   "8"  = "#F3722C",
+#   "10" = "#D62828",
+#   "12+" = "#D96C9D"
+# )
+
 cols <- c(
-  "2"  = "#00A896",
-  "4"  = "#F9C74F",
-  "6"  = "#F8A23A",
-  "8"  = "#F3722C",
-  "10" = "#D62828",
-  "12+" = "#D96C9D"
+  "2"   = "#009E73",
+  "4"   = "#F0E442",
+  "6"   = "#E69F00",
+  "8"   = "#D55E00",
+  "10"  = "#CC3311",
+  "12+" = "#CC79A7"
+)
+
+
+lts <- c(
+  "2"   = "solid",
+  "4"   = "dashed",
+  "6"   = "solid",
+  "8"   = "dashed",
+  "10"  = "solid",
+  "12+" = "dashed"
 )
 
 # plot
@@ -335,11 +346,12 @@ rs <- df %>%
                        levels = c(2, 4, 6, 8, 10, 12),
                        labels = c("2", "4", "6", "8", "10", "12+"))) %>%
   filter(!is.na(Age)) %>% 
-  ggplot(aes(x = Year, y = Mean, group = Age, colour = Age)) +
+  ggplot(aes(x = Year, y = Mean, group = Age, colour = Age, linetype = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
   geom_line(linewidth = 0.8, show.legend = F) +
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
+  scale_linetype_manual(values = lts) +
   scale_x_continuous(limits = c(2008, 2024),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   # scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
@@ -350,7 +362,6 @@ rs <- df %>%
   theme(
     axis.title.x = element_blank(),
     axis.text.x  = element_blank()
-    # axis.ticks.x = element_blank()
   ); rs
 
 # ggsave("figures/resultsDave2Covs/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
@@ -363,7 +374,7 @@ rs <- df %>%
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/resultsDave2Covs/birth&PYsurv.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/birth&PYsurv2.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # ...& population size
 (surv / rs / pop) +
@@ -474,17 +485,26 @@ df <- rbind(
 #   "12+" = "#D96D9E"
 # )
 
+# cols <- c(
+#   "PY"  = "#BFA4CB",
+#   "0"   = "#7C528E",
+#   "10"  = "#BE2323",
+#   "11"  = "#696969",
+#   "12+" = "#D96C9D"
+# )
+
 cols <- c(
-  "PY"  = "#BFA4CB",
-  "0"   = "#7C528E",
-  "10"  = "#BE2323",
+  "PY"  = "#A578BA",
+  "0"   = "#332288",
+  "10"  = "#CC3311",
   "11"  = "#696969",
-  "12+" = "#D96C9D"
+  "12+" = "#CC79A7"
 )
 
 # plot
 df %>%
   mutate(Age = factor(Age, levels = c("PY", "0", "10", "11", "12+")),
+         covariate = factor(covariate, levels = c("Population density", "Forage availability")),
          line = ifelse(Age %in% c("PY", "0") & covariate == "Population density", "solid", "dotted")) %>%
   ggplot(aes(x = x, y = Mean, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
@@ -500,7 +520,7 @@ df %>%
   guides(linetype = "none") +
   theme_bw()
 
-# ggsave("figures/resultsDave2Covs/coveffects.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/coveffects2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate values ------------------------------------------------------------
@@ -547,13 +567,13 @@ df <- rbind(df_dens, df_veg)
 
 # pick colours
 line_cols <- c(
-  "Population density"  = adjustcolor("#335B5B", alpha.f = 0.8),  # 0.8 alpha for density line
-  "Forage availability" = "#75A366"                                # 1.0 (opaque) for forage line
+  "Population density"  = "#47404F",
+  "Forage availability" = "#7D9570"
 )
 
 fill_cols <- c(
-  "Population density"  = adjustcolor("#335B5B", alpha.f = 0.15), # 0.15 alpha for density ribbon
-  "Forage availability" = adjustcolor("#75A366", alpha.f = 0.20)  # 0.20 alpha for forage ribbon
+  "Population density"  = adjustcolor("#47404F", alpha.f = 0.15),
+  "Forage availability" = adjustcolor("#7D9570", alpha.f = 0.20)
 )
 
 # plot
@@ -578,7 +598,7 @@ covs <- df %>%
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/resultsDave2Covs/surv&rs&covs.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/surv&rs&covs4.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
 
 # plot observed vs true density
 myData$D_densE[1] <- NA
@@ -955,6 +975,33 @@ p.sum <- ggplot(plotData, aes(x = type, y = Sensitivity, group = type)) +
 
 # ggsave("figures/resultsDave2Covs/SENSsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
+# survival panel
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
+names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
+
+p.S <- ggplot(subset(sensData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                  y = Sensitivity, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Sensitivity") +
+  xlab("") +
+  labs(title = "a) Survival") +
+  scale_x_discrete(labels = expression(
+    italic(S)[0], italic(S)[1],
+    italic(S)[2], italic(S)[3], italic(S)[4], italic(S)[5], italic(S)[6],
+    italic(S)[7], italic(S)[8], italic(S)[9], italic(S)[10], italic(S)[11],
+    italic(S)[12], italic(S)[13], italic(S)[14], italic(S)[15], italic(S)[16],
+    italic(S)[17], italic(S)[18], italic(S)[19]
+  )) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = S.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.S
+
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
 names(B.colours) <- c(paste0("BR_", 2:nAge))
@@ -965,8 +1012,13 @@ p.B <- ggplot(subset(sensData, Variable %in% c(paste0("BR_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Sensitivity") +
   xlab("") +
-  scale_x_discrete(labels = expression(B[2], B[3], B[4], B[5], B[6], B[7], B[8], B[9], B[10],
-                                       B[11], B[12], B[13], B[14], B[15], B[16], B[17], B[18])) +
+  labs(title = "b) Birth rate") +
+  scale_x_discrete(labels = expression(
+    italic(B)[2], italic(B)[3], italic(B)[4], italic(B)[5], italic(B)[6],
+    italic(B)[7], italic(B)[8], italic(B)[9], italic(B)[10], italic(B)[11],
+    italic(B)[12], italic(B)[13], italic(B)[14], italic(B)[15], italic(B)[16],
+    italic(B)[17], italic(B)[18], italic(B)[19]
+  )) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = B.colours) +
   theme_bw() +
@@ -986,8 +1038,13 @@ p.R <- ggplot(subset(sensData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Sensitivity") +
   xlab("") +
-  scale_x_discrete(labels = expression(SP[2], SP[3], SP[4], SP[5], SP[6], SP[7], SP[8], SP[9], SP[10],
-                                       SP[11], SP[12], SP[13], SP[14], SP[15], SP[16], SP[17], SP[18])) +
+  labs(title = "c) Survival of pouch young") +
+  scale_x_discrete(labels = expression(
+    italic(SP)[2], italic(SP)[3], italic(SP)[4], italic(SP)[5], italic(SP)[6],
+    italic(SP)[7], italic(SP)[8], italic(SP)[9], italic(SP)[10], italic(SP)[11],
+    italic(SP)[12], italic(SP)[13], italic(SP)[14], italic(SP)[15], italic(SP)[16],
+    italic(SP)[17], italic(SP)[18], italic(SP)[19]
+  )) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = R.colours) +
   theme_bw() +
@@ -996,29 +1053,6 @@ p.R <- ggplot(subset(sensData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10),
         plot.margin = margin(1, 3, 1, 3)); p.R
-
-# survival panel
-S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
-names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
-
-p.S <- ggplot(subset(sensData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
-  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
-                  y = Sensitivity, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
-  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
-  ylab("Sensitivity") +
-  xlab("") +
-  scale_x_discrete(labels = expression(S[0], S[1],
-                                       S[2], S[3], S[4], S[5], S[6], 
-                                       S[7], S[8], S[9], S[10], S[11], S[12],
-                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
-  scale_fill_manual(values = S.colours) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10),
-        plot.margin = margin(1, 3, 1, 3)); p.S
 
 # population structure panel
 P.colours <- c(rep(plot.colours[7], 20))
@@ -1030,11 +1064,15 @@ p.P <- ggplot(subset(sensData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Sensitivity") +
   xlab("") +
-  scale_x_discrete(labels = expression(P[0], P[1],
-                                       P[2], P[3], P[4], P[5], P[6], 
-                                       P[7], P[8], P[9], P[10], P[11], P[12],
-                                       P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "d) Population proportions") +
+  scale_x_discrete(labels = expression(
+    italic(P)[0], italic(P)[1],
+    italic(P)[2], italic(P)[3], italic(P)[4], italic(P)[5], italic(P)[6],
+    italic(P)[7], italic(P)[8], italic(P)[9], italic(P)[10], italic(P)[11],
+    italic(P)[12], italic(P)[13], italic(P)[14], italic(P)[15], italic(P)[16],
+    italic(P)[17], italic(P)[18], italic(P)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 1.5), expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = P.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1044,12 +1082,10 @@ p.P <- ggplot(subset(sensData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(p.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
-  plot_layout(heights = c(0.4, 0.6))
+# ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+p.S / p.B / p.R / p.P
 
-((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
-
-# ggsave("figures/resultsDave2Covs/SENSage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/SENSage2.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 sensSummary <- sensData %>%
@@ -1213,6 +1249,33 @@ e.sum <- ggplot(plotData, aes(x = type, y = Elasticity, group = type)) +
 
 # ggsave("figures/resultsDave2Covs/ELASsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
 
+# survival panel
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
+names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
+
+p.S <- ggplot(subset(elasData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                  y = Elasticity, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Elasticity") +
+  xlab("") +
+  labs(title = "a) Survival") +
+  scale_x_discrete(labels = expression(
+    italic(S)[0], italic(S)[1],
+    italic(S)[2], italic(S)[3], italic(S)[4], italic(S)[5], italic(S)[6],
+    italic(S)[7], italic(S)[8], italic(S)[9], italic(S)[10], italic(S)[11],
+    italic(S)[12], italic(S)[13], italic(S)[14], italic(S)[15], italic(S)[16],
+    italic(S)[17], italic(S)[18], italic(S)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 0.15), expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = S.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.S
+
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
 names(B.colours) <- c(paste0("BR_", 2:nAge))
@@ -1223,9 +1286,14 @@ p.B <- ggplot(subset(elasData, Variable %in% c(paste0("BR_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Elasticity") +
   xlab("") +
-  scale_x_discrete(labels = expression(B[2], B[3], B[4], B[5], B[6], B[7], B[8], B[9], B[10],
-                                       B[11], B[12], B[13], B[14], B[15], B[16], B[17], B[18])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "b) Birth rate") +
+  scale_x_discrete(labels = expression(
+    italic(B)[2], italic(B)[3], italic(B)[4], italic(B)[5], italic(B)[6],
+    italic(B)[7], italic(B)[8], italic(B)[9], italic(B)[10], italic(B)[11],
+    italic(B)[12], italic(B)[13], italic(B)[14], italic(B)[15], italic(B)[16],
+    italic(B)[17], italic(B)[18], italic(B)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 0.03), expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = B.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1244,9 +1312,14 @@ p.R <- ggplot(subset(elasData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Elasticity") +
   xlab("") +
-  scale_x_discrete(labels = expression(SP[2], SP[3], SP[4], SP[5], SP[6], SP[7], SP[8], SP[9], SP[10],
-                                       SP[11], SP[12], SP[13], SP[14], SP[15], SP[16], SP[17], SP[18])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "c) Survival of pouch young") +
+  scale_x_discrete(labels = expression(
+    italic(SP)[2], italic(SP)[3], italic(SP)[4], italic(SP)[5], italic(SP)[6],
+    italic(SP)[7], italic(SP)[8], italic(SP)[9], italic(SP)[10], italic(SP)[11],
+    italic(SP)[12], italic(SP)[13], italic(SP)[14], italic(SP)[15], italic(SP)[16],
+    italic(SP)[17], italic(SP)[18], italic(SP)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 0.03), expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = R.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1254,29 +1327,6 @@ p.R <- ggplot(subset(elasData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10),
         plot.margin = margin(1, 3, 1, 3)); p.R
-
-# survival panel
-S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
-names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
-
-p.S <- ggplot(subset(elasData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
-  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
-                  y = Elasticity, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
-  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
-  ylab("Elasticity") +
-  xlab("") +
-  scale_x_discrete(labels = expression(S[0], S[1],
-                                       S[2], S[3], S[4], S[5], S[6], 
-                                       S[7], S[8], S[9], S[10], S[11], S[12],
-                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
-  scale_fill_manual(values = S.colours) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10),
-        plot.margin = margin(1, 3, 1, 3)); p.S
 
 # population structure panel
 P.colours <- c(rep(plot.colours[7], 20))
@@ -1288,11 +1338,15 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Elasticity") +
   xlab("") +
-  scale_x_discrete(labels = expression(P[0], P[1],
-                                       P[2], P[3], P[4], P[5], P[6], 
-                                       P[7], P[8], P[9], P[10], P[11], P[12],
-                                       P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "d) Population proportions") +
+  scale_x_discrete(labels = expression(
+    italic(P)[0], italic(P)[1],
+    italic(P)[2], italic(P)[3], italic(P)[4], italic(P)[5], italic(P)[6],
+    italic(P)[7], italic(P)[8], italic(P)[9], italic(P)[10], italic(P)[11],
+    italic(P)[12], italic(P)[13], italic(P)[14], italic(P)[15], italic(P)[16],
+    italic(P)[17], italic(P)[18], italic(P)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 0.15),expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = P.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1302,12 +1356,10 @@ p.P <- ggplot(subset(elasData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(e.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
-  plot_layout(heights = c(0.4, 0.6))
+# ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+p.S / p.B / p.R / p.P
 
-((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
-
-# ggsave("figures/resultsDave2Covs/ELASage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/ELASage2.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 elasSummary <- plotData %>%
@@ -1446,6 +1498,33 @@ e.sum / c.sum
 
 # ggsave("figures/resultsDave2Covs/elas&ltre.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
+# survival panel
+S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
+names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
+
+p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
+  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
+                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
+  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+  ylab("Contribution") +
+  xlab("") +
+  labs(title = "a) Survival") +
+  scale_x_discrete(labels = expression(
+    italic(S)[0], italic(S)[1],
+    italic(S)[2], italic(S)[3], italic(S)[4], italic(S)[5], italic(S)[6],
+    italic(S)[7], italic(S)[8], italic(S)[9], italic(S)[10], italic(S)[11],
+    italic(S)[12], italic(S)[13], italic(S)[14], italic(S)[15], italic(S)[16],
+    italic(S)[17], italic(S)[18], italic(S)[19]
+  )) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  scale_fill_manual(values = S.colours) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.S
+
 # birth rate panel
 B.colours <- c(rep(plot.colours[1], 18))
 names(B.colours) <- c(paste0("BR_", 2:nAge))
@@ -1456,9 +1535,15 @@ p.B <- ggplot(subset(contData, Variable %in% c(paste0("BR_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Contribution") +
   xlab("") +
-  scale_x_discrete(labels = expression(B[2], B[3], B[4], B[5], B[6], B[7], B[8], B[9], B[10],
-                                       B[11], B[12], B[13], B[14], B[15], B[16], B[17], B[18])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "b) Birth rate") +
+  scale_x_discrete(labels = expression(
+    italic(B)[2], italic(B)[3], italic(B)[4], italic(B)[5], italic(B)[6],
+    italic(B)[7], italic(B)[8], italic(B)[9], italic(B)[10], italic(B)[11],
+    italic(B)[12], italic(B)[13], italic(B)[14], italic(B)[15], italic(B)[16],
+    italic(B)[17], italic(B)[18], italic(B)[19]
+  )) +
+  scale_y_continuous(labels = scales::label_number(),
+                     expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = B.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1477,9 +1562,14 @@ p.R <- ggplot(subset(contData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Contribution") +
   xlab("") +
-  scale_x_discrete(labels = expression(SP[2], SP[3], SP[4], SP[5], SP[6], SP[7], SP[8], SP[9], SP[10],
-                                       SP[11], SP[12], SP[13], SP[14], SP[15], SP[16], SP[17], SP[18])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "c) Survival of pouch young") +
+  scale_x_discrete(labels = expression(
+    italic(SP)[2], italic(SP)[3], italic(SP)[4], italic(SP)[5], italic(SP)[6],
+    italic(SP)[7], italic(SP)[8], italic(SP)[9], italic(SP)[10], italic(SP)[11],
+    italic(SP)[12], italic(SP)[13], italic(SP)[14], italic(SP)[15], italic(SP)[16],
+    italic(SP)[17], italic(SP)[18], italic(SP)[19]
+  )) +
+  scale_y_continuous(limits = c(0, 0.001), expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = R.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1487,29 +1577,6 @@ p.R <- ggplot(subset(contData, Variable %in% c(paste0("sPY_", 2:nAge)))) +
         axis.text.x = element_text(size = 10),
         axis.title = element_text(size = 10),
         plot.margin = margin(1, 3, 1, 3)); p.R
-
-# survival panel
-S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], 10))
-names(S.colours) <- c("sYF", "sSA", paste0("sAD_", 2:nAge))
-
-p.S <- ggplot(subset(contData, Variable %in% c("sYF", "sSA", paste0("sAD_", 2:nAge)))) +
-  geom_violin(aes(x = factor(Variable, levels = c("sYF", "sSA", paste0("sAD_", 2:nAge))),
-                  y = Contribution, fill = Variable), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
-  geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
-  ylab("Contribution") +
-  xlab("") +
-  scale_x_discrete(labels = expression(S[0], S[1],
-                                       S[2], S[3], S[4], S[5], S[6], 
-                                       S[7], S[8], S[9], S[10], S[11], S[12],
-                                       S[13], S[14], S[15], S[16], S[17], S[18], S[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
-  scale_fill_manual(values = S.colours) +
-  theme_bw() +
-  theme(legend.position = "none",
-        panel.grid = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.title = element_text(size = 10),
-        plot.margin = margin(1, 3, 1, 3)); p.S
 
 # population structure panel
 P.colours <- c(rep(plot.colours[7], 20))
@@ -1521,11 +1588,15 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
   geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
   ylab("Contribution") +
   xlab("") +
-  scale_x_discrete(labels = expression(P[0], P[1],
-                                       P[2], P[3], P[4], P[5], P[6], 
-                                       P[7], P[8], P[9], P[10], P[11], P[12],
-                                       P[13], P[14], P[15], P[16], P[17], P[18], P[19])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+  labs(title = "d) Population proportions") +
+  scale_x_discrete(labels = expression(
+    italic(P)[0], italic(P)[1],
+    italic(P)[2], italic(P)[3], italic(P)[4], italic(P)[5], italic(P)[6],
+    italic(P)[7], italic(P)[8], italic(P)[9], italic(P)[10], italic(P)[11],
+    italic(P)[12], italic(P)[13], italic(P)[14], italic(P)[15], italic(P)[16],
+    italic(P)[17], italic(P)[18], italic(P)[19]
+  )) +
+  scale_y_continuous(limits = c(-0.01, 0.01), expand = expansion(mult = c(0, 0.02))) +
   scale_fill_manual(values = P.colours) +
   theme_bw() +
   theme(legend.position = "none",
@@ -1535,12 +1606,10 @@ p.P <- ggplot(subset(contData, Variable %in% c("pYF", "pSA", paste0("pAD_", 2:nA
         plot.margin = margin(1, 3, 1, 3)); p.P
 
 # combine panels
-(c.sum + labs(tag = "a)")) / ((p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.S + labs(tag = "d)")) / (p.P + labs(tag = "e)"))) +
-  plot_layout(heights = c(0.4, 0.6))
+# ((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
+p.S / p.B / p.R / p.P
 
-((p.S + labs(tag = "a)")) / (p.B + labs(tag = "b)")) / (p.R + labs(tag = "c)")) / (p.P + labs(tag = "d)")))
-
-# ggsave("figures/resultsDave2Covs/LTREage.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+# ggsave("figures/resultsDave2Covs/LTREage2.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 LTREsummary <- plotData %>%
