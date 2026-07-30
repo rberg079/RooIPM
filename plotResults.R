@@ -1396,7 +1396,7 @@ if(oneProp){
     filter(Variable %in% c("pYF", "pSA", "pAD_all")) %>% 
     group_by(draw) %>% 
     summarise(Contribution = sum(Contribution), .groups = "drop") %>% 
-    mutate(Variable = "p_all", type = "Population structure")
+    mutate(Variable = "p_all", type = "Age structure")
   
   plotData <- contData %>% 
   filter(Variable %in% c("BR_all", "sPY_all",
@@ -1419,7 +1419,7 @@ if(oneProp){
              "Survival of subadults",
              "Survival of adults (2–9)", 
              "Survival of adults (10+)",
-             "Population structure")
+             "Age structure")
   
   names <- c("Birth\nrate",
              "Survival of\npouch young",
@@ -1427,7 +1427,7 @@ if(oneProp){
              "Survival of\nsubadults",
              "Survival of\nadults (2–9)", 
              "Survival of\nadults (10+)",
-             "Population\nstructure")
+             "Age\nstructure")
 }else{
   plotData <- contData %>% 
     filter(Variable %in% c("BR_all", "sPY_all",
