@@ -45,13 +45,14 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
     # subtract 1 to Year & Age so reproductive attempts are associated with the year
     # in which they began rather than with the cohort year the young is born into
     # so this is all aligned with survival & environmental data
-    mutate(Year = Year-1, Age = Age-1,
+    mutate(Year = Year-1,
+           Age = Age-1,
            # reformat PYLastObs
            PYLastObs = case_when(
              is.na(PYLastObs) ~ NA_Date_,
              TRUE ~ as.Date(paste0("01-", PYLastObs),
                             format = "%d-%m-%Y") %m+% months(1) - days(1)),
-           # deduce SurvSep
+           # deduce SurvSep (detailed in wrangleData_sv)
            SurvSep1 = ifelse(SurvNov1 == 1, 1, NA),
            SurvSep1 = case_when(
              SurvNov1 == 2 ~ NA,
@@ -78,7 +79,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   # age class & birthdate
   rs <- suppressWarnings(rs %>% 
     mutate(Age = as.numeric(Age),
-           AgeC = case_when(Age == 0 ~ 1,             # yaf
+           AgeC = case_when(Age == 0 ~ 1,             # YAF
                             between(Age, 1, 2) ~ 2,   # subadult
                             between(Age, 3, 6) ~ 3,   # prime-age
                             between(Age, 7, 9) ~ 4,   # pre-senescent
@@ -144,6 +145,7 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   }else if(ageClasses == 20){
     ageC.R = c(seq(from = 0, to = 18, by = 1), rep(18,21))
   }
+  
   nAgeC.R <- max(ageC.R)
   
   return(list(B = B,

@@ -1,6 +1,6 @@
 #' Assess prior and posterior estimate overlap
 #'
-#' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
+#' @param nYear integer. Number of years to consider in the analysis. nYear = 18 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
 #' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 6 by default.
 #' @param nAgeC.R integer. Number of age classes to consider in the reproductive success model. nAgeC.R = 6 by default.
@@ -15,21 +15,21 @@
 #'
 #' @examples
 
-plotOverlaps <- function(nYear = 17, minYear = 2008, nAgeC.S = 6, nAgeC.R = 6,
+plotOverlaps <- function(nYear = 18, minYear = 2008, nAgeC.S = 12, nAgeC.R = 12,
                          plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                          postPaths, modelNames, plotFolder){
   
-  # for testing purposes
-  nYear = 17
-  minYear = 2008
-  nAgeC.S = 6
-  nAgeC.R = 6
-  plotAges = c(2, 6, 10, 14)
-  plotYears = c(2, 6, 10, 14)
-  postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds")
-  modelNames = c("IPM_dCJS")
-  plotFolder = c("figures")
-  nModels = 1
+  # # for testing purposes
+  # nYear = 18
+  # minYear = 2008
+  # nAgeC.S = 12
+  # nAgeC.R = 12
+  # plotAges = c(2, 6, 10, 14)
+  # plotYears = c(2, 6, 10, 14)
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS.rds")
+  # modelNames = c("IPM_dCJS")
+  # plotFolder = c("figures")
+  # nModels = 1
   
   
   ## Set up --------------------------------------------------------------------
@@ -96,17 +96,17 @@ plotOverlaps <- function(nYear = 17, minYear = 2008, nAgeC.S = 6, nAgeC.R = 6,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA', Parameter) ~ Idx1,
-                               grepl('nAD|sPY|S|sAD', Parameter) ~ Idx2),
-           AgeIdx  = case_when(grepl('BetaD.R|BetaV.R|BetaW.R|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
-                               grepl('BetaD.S|BetaV.S|BetaW.S|Mu.S|Mu.R|nAD|S|sPY|sAD', Parameter) ~ Idx1),
+                               grepl('EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true', Parameter) ~ Idx1,
+                               grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
+           AgeIdx  = case_when(grepl('Beta|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
+                               grepl('Beta|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.R|nAD|sPY|sAD', Parameter) ~ AgeIdx,
+           Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
            ParamName = word(Parameter, 1, sep = "\\["),
-           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'sPY') & AgeIdx %in% plotAges,
+           ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'BR', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
   sum.dat <- sum.dat %>%
@@ -124,7 +124,6 @@ plotOverlaps <- function(nYear = 17, minYear = 2008, nAgeC.S = 6, nAgeC.R = 6,
   for(a in 1:nAgeC.S) prior_list[[paste0("Mu.S[", a, "]")]] <- runif(niter, 0, 1)
   prior_list[["BetaD.S"]] <- runif(niter, -5, 5)
   prior_list[["BetaV.S"]] <- runif(niter, -5, 5)
-  prior_list[["BetaW.S"]] <- runif(niter, -5, 5)
   prior_list[["SigmaT.S"]] <- runif(niter, 0, 10)
   
   prior_list[["Mu.O"]] <- runif(niter, 0.01, 0.99)
@@ -160,11 +159,10 @@ plotOverlaps <- function(nYear = 17, minYear = 2008, nAgeC.S = 6, nAgeC.R = 6,
   plot.params <- list(
     
     CJS = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
-            'BetaD.S', 'BetaV.S', 'BetaW.S',
-            'SigmaT.S', 'Mu.O', 'SigmaT.O'),
+            'BetaD.S', 'BetaV.S', 'SigmaT.S',
+            'Mu.O', 'SigmaT.O'),
     
-    RS  = c('BetaD.R', 'BetaV.R', 'BetaW.R',
-            'SigmaT.R', 'SigmaT.B'))
+    RS  = c('BetaD.R', 'SigmaT.R', 'SigmaT.B'))
   
   # set plotting colors
   plot.cols <- paletteer_c("grDevices::Temps", nModels)

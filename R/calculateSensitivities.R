@@ -30,7 +30,7 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   }else{
     for(i in 1:length(paramSamples$t.mean)){
       paramName <- names(paramSamples$t)[i]
-      t.offset <- ifelse(paramName %in% c("Bt", "BR", "sPY", "sYF", "sSA", "sAD"), 1, 0)
+      t.offset <- ifelse(paramName %in% c("BR", "sPY", "sYF", "sSA", "sAD"), 1, 0)
       
       focalParam <- paramSamples$t[[i]]
       
@@ -48,7 +48,6 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   
   # set up list of arrays for storing transient sensitivities
   sensList <- list(
-    # sens.Bt = rep(NA, nSamples),
     sens.BR = matrix(NA, nrow = nSamples, ncol = nAge),
     sens.sPY = matrix(NA, nrow = nSamples, ncol = nAge),
     sens.sYF = rep(NA, nSamples),
@@ -62,8 +61,6 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   # calculate transient sensitivities 
   # for vital rates & population size/structure (at the temporal mean)
   for(i in 1:nSamples){
-    # sensList$sens.Bt[i] <- sum(pAD[i, 2:nAge] * sAD[i, 2:nAge] * 0.5 * sPY[i, 2:nAge])
-    
     sensList$sens.sYF[i] <- pYF[i]
     sensList$sens.sSA[i] <- pSA[i]
     sensList$sens.pYF[i] <- sYF[i]
@@ -121,7 +118,6 @@ calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
   # calculate transient elasticities for vital rates & population size/structure
   # (evaluated at the temporal mean)
   elasList <- list(
-    # elas.Bt = sensList$sens.Bt * (Bt/lambda),
     elas.BR = sensList$sens.BR * (BR/lambda),
     elas.sPY = sensList$sens.sPY * (sPY/lambda),
     elas.sYF = sensList$sens.sYF * (sYF/lambda),

@@ -40,7 +40,6 @@ extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
   
   # prepare arrays
   # time-varying vital rates
-  # Bt <- matrix(NA, nrow = nSamples, ncol = nYear-1)
   BR <- array(NA, dim = c(nSamples, nAge, nYear-1))
   sPY <- array(NA, dim = c(nSamples, nAge, nYear-1))
   sYF <- matrix(NA, nrow = nSamples, ncol = nYear-1)
@@ -65,7 +64,6 @@ extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
       if(t < nYear){
         
         # time-varying vital rates
-        # Bt[i, t] <- out.mat[i, paste0("Bt[", t, "]")]
         sYF[i, t] <- out.mat[i, paste0("sYF[", t, "]")]
         sSA[i, t] <- out.mat[i, paste0("sSA[", t, "]")]
         
@@ -106,7 +104,6 @@ extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
   ## Calculate time-averages ---------------------------------------------------
   
   # vital rates
-  # Bt.mean <- rowMeans(Bt[, 1:(nYear-1)], na.rm = T)
   BR.mean <- apply(BR[, , 1:(nYear-1)], c(1, 2), mean)
   sPY.mean <- apply(sPY[, , 1:(nYear-1)], c(1, 2), mean)
   sYF.mean <- rowMeans(sYF[, 1:(nYear-1)], na.rm = T)
@@ -128,8 +125,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
   
   paramSamples <- list(
     
-    t = list(# Bt = Bt,
-             BR = BR,
+    t = list(BR = BR,
              sPY = sPY,
              sYF = sYF,
              sSA = sSA,
@@ -143,8 +139,7 @@ extractParamSamples <- function(MCMCsamples, nYear = 18, nAge = 19,
              pAD = pAD,
              lambda = lambda),
     
-    t.mean = list(# Bt.mean = Bt.mean,
-                  BR.mean = BR.mean,
+    t.mean = list(BR.mean = BR.mean,
                   sPY.mean = sPY.mean,
                   sYF.mean = sYF.mean,
                   sSA.mean = sSA.mean,

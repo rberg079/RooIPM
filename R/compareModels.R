@@ -1,9 +1,9 @@
 #' Compare outputs of different models
 #'
-#' @param nYear integer. Number of years to consider in the analysis. nYear = 17 by default.
+#' @param nYear integer. Number of years to consider in the analysis. nYear = 18 by default.
 #' @param minYear integer. First year to consider in the analysis. minYear = 2008 by default.
 #' @param maxYear integer. Last year to consider in the analysis. maxYear = minYear + nYear - 1 by default.
-#' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 6 by default.
+#' @param nAgeC.S integer. Number of age classes to consider in the survival model. nAgeC.S = 12 by default.
 #' @param plotAges integer vector. Ages to plot in time series plots. plotAges = c(2, 6, 10, 14) by default.
 #' @param plotYears integer vector. Years to plot in density plots. plotYears = c(2, 6, 10, 14) by default.
 #' @param postPaths character vector. Paths to .rds files containing posterior samples from models to compare.
@@ -17,7 +17,7 @@
 #'
 #' @examples
 
-compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
+compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
                           plotAges = c(2, 6, 10, 14), plotYears = c(2, 6, 10, 14),
                           postPaths, modelNames, plotFolder, returnSumData = FALSE){
   
@@ -31,8 +31,8 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds",
   #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds"
   #               )
-  # modelNames = c("IPM_Dave2covs_stochV",
-  #                "IPM_Dave3covs3REs_stochV"
+  # modelNames = c("IPM_Dave2covs",
+  #                "IPM_Dave3covs3REs"
   #                )
   # plotFolder = c("figures/densityChecks/final2")
   # returnSumData = TRUE
@@ -108,11 +108,10 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('Bt|EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true|D_dens.true|H_dens.true', Parameter) ~ Idx1,
+                               grepl('EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true', Parameter) ~ Idx1,
                                grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
-           AgeIdx  = case_when(grepl('Beta|Bt|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
+           AgeIdx  = case_when(grepl('Beta|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
                                grepl('Beta|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
-                               # grepl('Gamma', Parameter) ~ Idx2), # bug with Gamma for some reason!
            Year = YearIdx + minYear - 1,
            Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
@@ -122,10 +121,6 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
            ParamName = ifelse(ParamName %in% c('nAD', 'sAD', 'BR', 'sPY') & AgeIdx %in% plotAges,
                               paste0(ParamName, '[', AgeIdx, ']'), ParamName))
   
-  # to replace D_dens.true or H_dens.true with dens.true
-  sum.dat <- sum.dat %>%
-    mutate(Parameter = sub("^(D|H)_dens\\.true", "dens.true", Parameter))
-  
   sum.dat <- sum.dat %>%
     left_join(idx.dat, by = "Parameter")
   
@@ -134,28 +129,14 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    # # for age-dependent fixed effects
-    # CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
-    #              paste0('BetaD.S[', 1:nAgeC.S, ']'),
-    #              paste0('BetaV.S[', 1:nAgeC.S, ']'),
-    #              paste0('BetaW.S[', 1:nAgeC.S, ']')),
+    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
+                 'BetaD.S', 'BetaV.S',
+                 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So',
+                 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So'),
     
-    # for age-independent fixed effects
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'), 'BetaD.S', 'BetaV.S',
-                 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So', 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'),
-    
-    # # for age-dependent random effects
-    # CJS_REs = c(paste0('EpsilonT.Sy[', plotYears, ']'),
-    #             paste0('EpsilonT.Sp[', plotYears, ']'),
-    #             paste0('EpsilonT.So[', plotYears, ']'),
-    #             'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'),
-    
-    # for age-independent random effects
     CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
     
     CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
-    
-    # RS_Bt = c(paste0('Bt[', 1:(nYear-1), ']')),
     
     RS_BR = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('BR[', a, ', ', t, ']')) %>%
@@ -181,8 +162,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   
   # set parameters for plotting time series of posterior summaries
   plotTS.VRs <- list(
-    ParamNames = c(# 'Bt',
-                   expand.grid(a = plotAges) %>% 
+    ParamNames = c(expand.grid(a = plotAges) %>% 
                      mutate(param = paste0('BR[', a, ']')) %>%
                      pull(param),
                    expand.grid(a = plotAges) %>% 
@@ -196,8 +176,7 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
                    'dens.true',
                    'veg.true'),
     
-    ParamLabels = c(# 'Annual breeding rate',
-                    expand.grid(a = plotAges) %>% 
+    ParamLabels = c(expand.grid(a = plotAges) %>% 
                       mutate(name = paste0('Breeding rate (age ', a, ')')) %>% 
                       pull(name),
                     expand.grid(a = plotAges) %>% 
@@ -228,8 +207,6 @@ compareModels <- function(nYear = 17, minYear = 2008, maxYear, nAgeC.S = 6,
   
   # set plotting colors
   plot.cols <- paletteer_c("grDevices::Temps", nModels)
-  # plot.cols <- paletteer_d("nationalparkcolors::BlueRidgePkwy", nModels)
-  # plot.cols <- paletteer_d("nationalparkcolors::MtRainier", nModels)
   
   
   ## Plot ----------------------------------------------------------------------

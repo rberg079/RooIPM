@@ -5,30 +5,32 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
+testRun <- TRUE
+use_dCJS <- TRUE
 parallelRun <- TRUE
 envEffectsS <- TRUE
 envEffectsR <- TRUE
 ageClasses <- 12
-use_dCJS <- TRUE
-# splitCovs <- TRUE
+splitCovs <- 2
+splitREs <- 1
 
 # load packages
 library(tidyverse)
 library(lubridate)
 library(beepr)
-library(here)
 library(boot)
 library(coda)
+library(here)
 library(nimble)
 library(nimbleEcology)
 library(parallel)
+library(corrplot)
+library(MCMCvis)
 
 # load data
 source('R/wrangleData_en.R')
 enData <- wrangleData_en(
-  H_dens.data = "data/abundanceData_Proteus.csv", # OR...
-  D_dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
+  dens.data = "data/WPNP_Methods_Results_January2026.xlsx",
   veg.data  = "data/biomass data April 2009 - July 2025_updated Feb2026.xlsx",
   wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
   wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
@@ -39,16 +41,12 @@ source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(
   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   yafs.data = "data/RSmainRB_May26.xlsx",
-  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE) # , splitCovs = TRUE
+  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, splitCovs = splitCovs)
 
 source('R/wrangleData_rs.R')
 rsData <- wrangleData_rs(
   rs.data = "data/RSmainRB_May26.xlsx",
   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
-
-# NAs in age.S before first capture were throwing an error at model defining step!
-# replacing NAs with dummy integer 1 seems to have solved it (to move to wrangling)
-svData$age.S[is.na(svData$age.S)] <- 1
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -60,25 +58,19 @@ myData  <- list(obs = svData$obs,
                 area = enData$area,
                 propF = enData$propF,
                 
-                H_dens = enData$H_dens,
-                D_dens = enData$D_dens,
-                H_densE = enData$H_densE,
-                D_densE = enData$D_densE,
-                
-                # dens = enData$dens,
-                # densE = enData$densE,
+                dens = enData$dens,
+                densE = enData$densE,
                 veg = enData$veg,
-                vegE = enData$vegE,
-                win = enData$win)
+                vegE = enData$vegE)
 
 myConst <- list(nYear = svData$nYear,
                 nAge = rsData$nAge+1,
                 
                 nID.S = svData$nID,
-                nID.S.switch = min(which(svData$first == svData$nYear - 1)),
                 nAgeC.S = svData$nAgeC.S,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
+                idx.sv = svData$idx.sv,
                 
                 nB = rsData$nB,
                 nR = rsData$nR,
@@ -94,29 +86,31 @@ myConst <- list(nYear = svData$nYear,
                 first = svData$first,
                 last = svData$last,
                 
-                H_densM = enData$H_densM,
-                D_densM = enData$D_densM,
-                
+                densM = enData$densM,
                 noVeg = enData$noVeg,
                 noProp = enData$noProp,
                 nNoVeg = enData$nNoVeg,
                 nNoProp = enData$nNoProp,
                 
+                use_dCJS = use_dCJS,
                 envEffectsS = envEffectsS,
                 envEffectsR = envEffectsR,
                 ageClasses = ageClasses,
-                use_dCJS = use_dCJS)
+                splitCovs = splitCovs,
+                splitREs = splitREs)
 
-# if(splitCovs){
+# conditionally add dummy variables
+if(splitCovs == 3){
   myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
-# }else{
-#   myConst <- c(myConst, list(dummy = svData$dummy))
-# }
-
+}else if(splitCovs == 2){
+  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO))
+}else if(splitCovs == 1){
+  myConst <- c(myConst, list(dummy = svData$dummy))
+}
 
 ## Assemble --------------------------------------------------------------------
 
-source('writeCode.R')
+source('R/writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 8
@@ -124,13 +118,12 @@ seedMod   <- c(30, 31, 32, 33, 34, 35, 36, 37)
 seedInits <- 38
 
 # assign initial values
-source('simulateInits.R')
+source('R/simulateInits.R')
 set.seed(seedInits)
 myInits <- list()
 for(c in 1:nchains){
   myInits[[c]] <- simulateInits(
-    H_dens = myData$H_dens,
-    D_dens = myData$D_dens,
+    dens = myData$dens,
     veg = myData$veg,
     propF = myData$propF,
     knownStates = svData$state,
@@ -147,8 +140,10 @@ for(c in 1:nchains){
     age.R = myConst$age.R,
     ageC.R = myConst$ageC.R,
     ageC.S = myConst$ageC.S,
-    envEffectsR = TRUE,
-    envEffectsS = TRUE
+    envEffectsS = envEffectsS,
+    envEffectsR = envEffectsR,
+    splitCovs = splitCovs,
+    splitREs = splitREs
     )
 }
 
@@ -159,10 +154,7 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
-  'Mu.S', 
-  'EpsilonT.S', 'SigmaT.S',
-  # 'EpsilonT.Sy','EpsilonT.Sp','EpsilonT.So',
-  # 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So',
+  'Mu.S',
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
@@ -170,19 +162,32 @@ params <- c(
   'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', 
   'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
   
-  # Abundance model
-  'propF' #, 'propF.true'
+  # Density model
+  'propF'
 )
 
 # conditionally add covariate effects
-if(envEffectsS){params <- c(params, # 'BetaD.S', 'BetaV.S'
-                            'BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 
-                            'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'
-                            # 'BetaDV.Sy', 'BetaDV.Sp', 'BetaDV.So'
-                            )} 
+if(envEffectsS){
+  if(splitCovs == 3){
+    params <- c(params, 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So')
+  }else if(splitCovs == 2){
+    params <- c(params, 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So')
+  }else if(splitCovs == 1){
+    params <- c(params, 'BetaD.S', 'BetaV.S')
+  }
+} 
 
 if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'D_dens.true', 'veg.true')}
+if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true')}
+
+# conditionally add random effects
+if(splitREs == 3){
+    params <- c(params, 'EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So')
+  }else if(splitREs == 2){
+    params <- c(params, 'EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So')
+  }else if(splitREs == 1){
+    params <- c(params, 'EpsilonT.S', 'SigmaT.S')
+  }
 
 # select MCMC settings
 if(testRun){
@@ -267,16 +272,10 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25BR_Dave3Covs_stochV_8chains_2.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
-
-library(coda)
-library(MCMCvis)
-library(corrplot)
-library(ggplot2)
-library(scales)
 
 # # load results
 # out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII.rds')
@@ -290,33 +289,91 @@ library(scales)
 #   }
 # }
 
-# # summaries
+# ## summaries
+# # population model
 # MCMCsummary(out.mcmc, params = c('S'), n.eff = TRUE, round = 2)
-# MCMCsummary(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2)
-# if(envEffectsS){MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), n.eff = TRUE, round = 2, pg0 = T)}
-# MCMCsummary(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
-# 
-# MCMCsummary(out.mcmc, params = c('BR'), n.eff = TRUE, round = 2)
-# MCMCsummary(out.mcmc, params = c('sPY'), n.eff = TRUE, round = 2)
-# MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
-# if(envEffectsR){MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2, pg0 = T)}
-# MCMCsummary(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), n.eff = TRUE, round = 2)
-# 
+# MCMCsummary(out.mcmc, params = c('BR', 'sPY', 'sYF', 'sSA', 'sAD'), n.eff = TRUE, round = 2)
 # MCMCsummary(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), n.eff = TRUE, round = 2)
 # 
-# # chainplots
+# # survival model
+# MCMCsummary(out.mcmc, params = c('Mu.S', 'Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
+# 
+# if(envEffectsS){
+#   if(splitCovs == 3){
+#     MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'), n.eff = TRUE, round = 2, pg0 = TRUE)
+#   } else if(splitCovs == 2){
+#     MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
+#   } else if(splitCovs == 1){
+#     MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2, pg0 = TRUE)
+#   }
+# }
+# 
+# if(splitREs == 3){
+#   MCMCsummary(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
+# }else if(splitREs == 2){
+#   MCMCsummary(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
+# }else if(splitREs == 1){
+#   MCMCsummary(out.mcmc, params = c('EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2, pg0 = TRUE)
+# }
+# 
+# # reproductive success model
+# MCMCsummary(out.mcmc, params = c('Mu.B', 'Mu.R'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R'), n.eff = TRUE, round = 2)
+# MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), n.eff = TRUE, round = 2)
+# 
+# if(envEffectsR){
+#   MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2, pg0 = TRUE)
+# }
+# 
+# # latent true environment
+# if(envEffectsS || envEffectsR){
+#   MCMCsummary(out.mcmc, params = c('dens.true', 'veg.true'), n.eff = TRUE, round = 2)
+# }
+# 
+# ## chainplots
+# # population model
 # MCMCtrace(out.mcmc, params = c('S'), pdf = FALSE)
-# MCMCtrace(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), n.eff = TRUE)
-# if(envEffectsS){MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)}
-# MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
-# 
-# MCMCtrace(out.mcmc, params = c('Bt', 'sPY'), pdf = FALSE)
-# if(envEffectsR){MCMCtrace(out.mcmc, params = c('BetaD.R'), pdf = FALSE)}
-# MCMCtrace(out.mcmc, params = c('SigmaI.R', 'SigmaT.R', 'SigmaT.B'), pdf = FALSE)
-# 
+# MCMCtrace(out.mcmc, params = c('BR', 'sPY', 'sYF', 'sSA', 'sAD'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('nYF', 'nSA', 'nAD', 'nTOT', 'propF'), pdf = FALSE)
 # 
-# MCMCtrace(out.mcmc, Rhat = T, pdf = T, filename = 'results/MCMCtrace.pdf')
+# # survival model
+# MCMCtrace(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
+# 
+# if(envEffectsS){
+#   if(splitCovs == 3){
+#     MCMCtrace(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'), pdf = FALSE)
+#   }else if(splitCovs == 2){
+#     MCMCtrace(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), pdf = FALSE)
+#   }else if(splitCovs == 1){
+#     MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)
+#   }
+# }
+# 
+# if(splitREs == 3){
+#   MCMCtrace(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'), pdf = FALSE)
+# }else if(splitREs == 2){
+#   MCMCtrace(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So'), pdf = FALSE)
+# }else if(splitREs == 1){
+#   MCMCtrace(out.mcmc, params = c('EpsilonT.S', 'SigmaT.S'), pdf = FALSE)
+# }
+# 
+# # reproductive success model
+# MCMCtrace(out.mcmc, params = c('Mu.B', 'Mu.R'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R'), pdf = FALSE)
+# MCMCtrace(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), pdf = FALSE)
+# 
+# if(envEffectsR){
+#   MCMCtrace(out.mcmc, params = c('BetaD.R'), pdf = FALSE)
+# }
+# 
+# # latent true environment
+# if(envEffectsS || envEffectsR){
+#   MCMCtrace(out.mcmc, params = c('dens.true', 'veg.true'), pdf = FALSE)
+# }
+# 
+# ## export
+# MCMCtrace(out.mcmc, Rhat = TRUE, pdf = TRUE, filename = 'figures/MCMCtrace.pdf')
 
 
 ## Compare model outputs -------------------------------------------------------
@@ -324,25 +381,36 @@ library(scales)
 # nYear   <- myConst$nYear
 # nAgeC.S <- myConst$nAgeC.S
 # 
-# source('compareModels.R')
+# source('R/compareModels.R')
 # compareModels(nYear = nYear,
 #               nAgeC.S = nAgeC.S,
 #               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR.rds"
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds"
 #               ),
 #               modelNames = c(
-#                 "IPM_Dave",
-#                 "IPM_BR"
+#                 "IPM_Dave2Covs",
+#                 "IPM_Dave3Covs3REs"
 #               ),
-#               plotFolder = c("figures/DavesData"),
+#               plotFolder = c("figures/densityChecks/final2"),
 #               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
 
-# source('extractParamSamples.R')
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_long_BR_Dave.rds')
+# source('R/extractParamSamples.R')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds')
 # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
-# # paramSamples <- readRDS('results/paramSamples.rds')
+
+
+## Calculate sensitivities & elasticities --------------------------------------
+
+# source('R/calculateSensitivities.R')
+# sensitivities <- calculateSensitivities(paramSamples = paramSamples)
+
+
+## Run random design transient LTRE --------------------------------------------
+
+# source('R/runLTRE_random.R')
+# LTREresults <- runLTRE_random(paramSamples = paramSamples, sensitivities = sensitivities)
 

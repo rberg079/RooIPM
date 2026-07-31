@@ -6,6 +6,7 @@
 #' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #' @param from2012 logical. If TRUE, model is run from 2012 onwards. from 2012 = FALSE by default.
+#' @param splitCovs integer. Number of separate covariate effects of density and vegetation on survival. splitCovs = 2 by default.
 #'
 #' @returns a list containing the obs, state, & age matrices & other parameters needed for the CJS survival model.
 #' @export
@@ -13,7 +14,7 @@
 #' @examples
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
-                           ageClasses = 20, known.age = TRUE, from2012 = FALSE){ # , splitCovs
+                           ageClasses = 20, known.age = TRUE, from2012 = FALSE, splitCovs = 2){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalNov25_RB.xlsx"
@@ -22,6 +23,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # ageClasses = 12
   # known.age = TRUE
   # from2012 = FALSE
+  # splitCovs = 2
   
   
   ## Set up --------------------------------------------------------------------
@@ -48,11 +50,13 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     filter(Sex == 2, ID != 1180, ID != 1183) %>%  # females!
     mutate(in2025 = as.numeric(in2025))
   
+  # limit to females of known age or not
   if(known.age){
     surv <- surv %>% mutate(across(starts_with("Age"), ~ na_if(., "A")))
     surv <- surv %>% filter(!if_all(starts_with("Age"), is.na))
   }
   
+  # limite to 2012 onwards or not
   if(from2012){
     surv <- surv %>% select(-in2008, -in2009, -in2010, -in2011)
   }
@@ -72,7 +76,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
              is.na(PYLastObs) ~ NA_Date_,
              TRUE ~ as.Date(paste0("01-", PYLastObs),
                             format = "%d-%m-%Y") %m+% months(1) - days(1)),
-           SurvSep1 = ifelse(SurvNov1 == 1, 1, NA),
+           SurvSep1 = ifelse(SurvNov1 == 1, 1, NA), 
            SurvSep1 = case_when(
              SurvNov1 == 2 ~ NA,
              is.na(SurvSep1) & PYLastObs > as.Date(paste0(Year, "-09-01")) ~ 1,
@@ -87,9 +91,18 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
              is.na(SurvSep2) & is.na(PYLastObs) & SurvWN == 0 ~ 0,
              TRUE ~ SurvSep2))
   
+  # # Process of figuring it out:
+  # if a PY made it to Nov 1, it made it to Sep 1
+  # if still NA but it was observed past Sep 1, it made it to Sep 1
+  # if still NA & evidence of its death or disappearance were observed, it did not make it
+  # if still NA & it/its mother were not observed past Sep 1 & it did not make it to LPY, it did not make it to Sep 1
+  # process is repeated for the second Sep 1 when the same PY would have been a YAF
+  
+  # identify YAFs that are not already in the survival data
   newbies <- yafs %>% anti_join(surv %>% distinct(ID), by = "ID")
   newbies <- newbies$ID
   
+  # sort into full matrix of nNewbies x nYears
   yafs <- yafs %>% 
     filter(SurvSep1 == 1, !is.na(SurvSep2)) %>% 
     select(Year, ID, SurvSep1, SurvSep2) %>% 
@@ -101,9 +114,11 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
                 values_from = yafs_val,
                 names_prefix = "in")
   
+  # split into YAFs already in the survival data vs not
   yafs_new <- yafs %>% filter(ID %in% newbies) %>% select(ID, in2008:in2025)
   yafs_old <- yafs %>% filter(!(ID %in% newbies)) %>% select(ID, in2008:in2025)
   
+  # remove years <2012 if applicable
   if(from2012){
     yafs_new <- yafs_new %>% select(-in2008, -in2009, -in2010, -in2011)
     yafs_old <- yafs_old %>% select(-in2008, -in2009, -in2010, -in2011)
@@ -140,9 +155,6 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       select(in2012:in2025) %>% 
       mutate(across(everything(), ~ replace_na(., 0)))
     
-    # roos observed outside of the study area,
-    # roadkilled or poached treated as unobserved
-    
   }else{
     
     obs <- surv %>%
@@ -171,10 +183,10 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       select(in2008:in2025) %>%
       mutate(across(everything(), ~ replace_na(., 0)))
     
-    # roos observed outside of the study area,
-    # roadkilled or poached treated as unobserved
-    
   }
+  
+  # roos observed outside of the study area,
+  # roadkilled or poached are treated as unobserved
   
   
   ## Create state matrix -------------------------------------------------------
@@ -222,7 +234,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
     }
     
-    # ...but remain NAs for vanished roos
+    # ...but remain NAs for roos that vanished
     state.vanished <- state %>% 
       left_join(id, by = "ID") %>% 
       mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>% 
@@ -234,7 +246,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
     id <- state %>% select(ID, Dead, HRDead)
     
-    # roos that were missed one year but seen the next were alive
+    # fill in 0s between two 1s
     state[, 4:17] <- t(apply(state[, 4:17], 1, function(row) {
       ones <- which(row == 1)
       if(length(ones) >= 2) {
@@ -311,7 +323,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       state.found[i,(max(which(state.found[i,] == 1)) +1):ncol(state.found)] <- 0
     }
     
-    # ...but remain NAs for vanished roos
+    # ...but remain NAs for roos that vanished
     state.vanished <- state %>%
       left_join(id, by = "ID") %>%
       mutate(Dead = ifelse(ID %in% newbies, 1, Dead)) %>%
@@ -323,7 +335,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     state <- bind_rows(state.found, state.vanished) %>% arrange(ID)
     id <- state %>% select(ID, Dead, HRDead)
     
-    # roos that were missed one year but seen the next were alive
+    # fill in 0s between two 1s
     state[, 4:21] <- t(apply(state[, 4:21], 1, function(row) {
       ones <- which(row == 1)
       if(length(ones) >= 2) {
@@ -369,8 +381,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     
     # fill in some NAs
     fill_ages <- function(row) {
-      if(all(is.na(row))) return(row) # if all NAs, return as is
-      first <- which(!is.na(row))[1]  # first non-NA value
+      if(all(is.na(row))) return(row)
+      first <- which(!is.na(row))[1]
       
       # fill forward from first known age
       row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
@@ -386,6 +398,9 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       mutate_all(~replace(., . < 0, NA))
     
     id$uka <- as.logical(is.na(age[,ncol(age)]))
+    
+    # replace pre-capture NAs with dummy 0
+    age[is.na(age)] <- 0
     
   }else{
     
@@ -406,8 +421,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     
     # fill in some NAs
     fill_ages <- function(row) {
-      if(all(is.na(row))) return(row) # if all NAs, return as is
-      first <- which(!is.na(row))[1]  # first non-NA value
+      if(all(is.na(row))) return(row)
+      first <- which(!is.na(row))[1]
       
       # fill forward from first known age
       row[first:length(row)] <- seq(from = row[first], by = 1, length.out = length(row) - first + 1)
@@ -423,6 +438,9 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       mutate_all(~replace(., . < 0, NA))
     
     id$uka <- as.logical(is.na(age[,ncol(age)]))
+    
+    # replace pre-capture NAs with dummy 0
+    age[is.na(age)] <- 0
     
   }
   
@@ -445,7 +463,6 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   
   # remove inds who were only in the dataset 1 year
   noInfo <- id$first == id$last | id$first == Inf
-  # length(which(noInfo))
   
   obs   <- unname(as.matrix(obs[!noInfo,]))
   state <- unname(as.matrix(state[!noInfo,]))
@@ -460,9 +477,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     ageC.S = c(seq(from = 1, to = 19, by = 1), rep(20,21))
   }
   
-  # create dummy variable
-  # for targets of covariate effects
-  # if(splitCovs){
+  # create dummy variable for covariate effects
+  if(splitCovs > 1){
     
     if(ageClasses == 6){
       dummyY = c(1, rep(0, 5))
@@ -478,17 +494,17 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       dummyO = c(rep(0, 10), rep(1, 10))
     }
     
-  # }else{
-  #   
-  #   if(ageClasses == 6){
-  #     dummy = c(1, rep(0,4), 1)
-  #   }else if(ageClasses == 12){
-  #     dummy = c(1, rep(0,9), rep(1,3))
-  #   }else if(ageClasses == 20){
-  #     dummy = c(1, rep(0,9), rep(1,10))
-  #   }
-  #   
-  # }
+  }else if(splitCovs == 1){
+
+    if(ageClasses == 6){
+      dummy = c(1, rep(0,4), 1)
+    }else if(ageClasses == 12){
+      dummy = c(1, rep(0,9), rep(1,3))
+    }else if(ageClasses == 20){
+      dummy = c(1, rep(0,9), rep(1,10))
+    }
+
+  }
   
   nYear <- ncol(state)
   nID.S <- nrow(state)
@@ -500,29 +516,35 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   first <- as.numeric(id$first[!noInfo])
   last <- as.numeric(id$last[!noInfo])
   id <- as.numeric(id$ID[!noInfo])
+  idx.sv <- min(which(first == nYear - 1))
   
-  return(list(first = first,
-              last = last,
-              
-              nID.S = nID.S,
-              nAgeC.S = nAgeC.S,
-              nYear = nYear,
-              
-              obs = obs,
-              state = state,
-              age.S = age.S,
-              ageC.S = ageC.S,
-              # dummy = dummy,
-              dummyY = dummyY,
-              dummyP = dummyP,
-              dummyO = dummyO,
-              
-              noAge = noAge,
-              nNoAge = nNoAge))
+  return(c(
+    list(
+      first = first,
+      last = last,
+      
+      nYear = nYear,
+      nID.S = nID.S,
+      nAgeC.S = nAgeC.S,
+      
+      obs = obs,
+      state = state,
+      age.S = age.S,
+      ageC.S = ageC.S,
+      
+      noAge = noAge,
+      nNoAge = nNoAge,
+      idx.sv = idx.sv
+    ),
+    
+    if(splitCovs == 3){
+      list(dummyY = dummyY, dummyP = dummyP, dummyO = dummyO)
+    }else if (splitCovs == 2){
+      list(dummyY = dummyY, dummyO = dummyO)
+    }else if (splitCovs == 1){
+      list(dummy = dummy)
+    }
+  ))
   
 }
-
-# test <- wrangleData_surv(surv.data = "data/PromSurvivalOct24.xlsx",
-#                          yafs.data = "data/RSmainRB_Mar25.xlsx")
-# test
 
