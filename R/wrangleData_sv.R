@@ -14,7 +14,8 @@
 #' @examples
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
-                           ageClasses = 20, known.age = TRUE, from2012 = FALSE, splitCovs = 2){
+                           ageClasses = 20, known.age = TRUE, from2012 = FALSE,
+                           splitCovs = 2, splitREs = 1){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalNov25_RB.xlsx"
@@ -24,6 +25,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # known.age = TRUE
   # from2012 = FALSE
   # splitCovs = 2
+  # splitREs = 1
   
   
   ## Set up --------------------------------------------------------------------
@@ -478,7 +480,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   }
   
   # create dummy variable for covariate effects
-  if(splitCovs > 1){
+  if(splitCovs > 1 || splitREs > 1){
     
     if(ageClasses == 6){
       dummyY = c(1, rep(0, 5))
@@ -494,7 +496,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       dummyO = c(rep(0, 10), rep(1, 10))
     }
     
-  }else if(splitCovs == 1){
+  }else if(splitCovs == 1 || splitREs == 1){
 
     if(ageClasses == 6){
       dummy = c(1, rep(0,4), 1)
@@ -537,11 +539,11 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       idx.sv = idx.sv
     ),
     
-    if(splitCovs == 3){
+    if(splitCovs == 3 || splitREs == 3){
       list(dummyY = dummyY, dummyP = dummyP, dummyO = dummyO)
-    }else if (splitCovs == 2){
+    }else if(splitCovs == 2 || splitREs == 2){
       list(dummyY = dummyY, dummyO = dummyO)
-    }else if (splitCovs == 1){
+    }else if(splitCovs == 1 || splitREs == 1){
       list(dummy = dummy)
     }
   ))

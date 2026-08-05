@@ -35,6 +35,11 @@ simulateInits <- function(dens, veg, propF, knownStates,
   # library(readxl)
   # library(tidyverse)
   # 
+  # envEffectsS <- FALSE
+  # envEffectsR <- TRUE
+  # splitCovs <- 0
+  # splitREs <- 3
+  # 
   # ageClasses <- 12
   # source('R/wrangleData_en.R')
   # enData <- wrangleData_en(
@@ -49,7 +54,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
   # svData <- wrangleData_sv(
   #   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   #   yafs.data = "data/RSmainRB_May26.xlsx",
-  #   ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, splitCovs = 2)
+  #   ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE,
+  #   splitCovs = splitCovs, splitREs = splitREs)
   # 
   # source('R/wrangleData_rs.R')
   # rsData <- wrangleData_rs(
@@ -74,11 +80,6 @@ simulateInits <- function(dens, veg, propF, knownStates,
   # age.R <- rsData$age.R
   # ageC.R <- rsData$ageC.R
   # ageC.S <- svData$ageC.S
-  # 
-  # envEffectsR <- TRUE
-  # envEffectsS <- TRUE
-  # splitCovs <- 2
-  # splitREs <- 1
   
   
   ## Simulate latent states for input data -------------------------------------
@@ -143,7 +144,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
   
   # dummy variable
   # to target covariate effects
-  if(splitCovs > 1){
+  if(splitCovs > 1 || splitREs > 1){
     if(ageClasses == 6){
       dummyY = c(1, rep(0, 5))
       dummyP = c(0, rep(1, 4), 0)
@@ -158,7 +159,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
       dummyO = c(rep(0, 10), rep(1, 10))
     }
     
-  }else if(splitCovs == 1){
+  }else if(splitCovs == 1 || splitREs == 1){
     if(ageClasses == 6){
       dummy = c(1, rep(0,4), 1)
     }else if(ageClasses == 12){

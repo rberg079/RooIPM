@@ -5,13 +5,13 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- TRUE
+testRun <- FALSE
 use_dCJS <- TRUE
 parallelRun <- TRUE
-envEffectsS <- TRUE
+envEffectsS <- FALSE
 envEffectsR <- TRUE
 ageClasses <- 12
-splitCovs <- 2
+splitCovs <- 0
 splitREs <- 1
 
 # load packages
@@ -41,7 +41,7 @@ source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(
   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   yafs.data = "data/RSmainRB_May26.xlsx",
-  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, splitCovs = splitCovs)
+  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, splitCovs = splitCovs, splitREs = splitREs)
 
 source('R/wrangleData_rs.R')
 rsData <- wrangleData_rs(
@@ -100,11 +100,11 @@ myConst <- list(nYear = svData$nYear,
                 splitREs = splitREs)
 
 # conditionally add dummy variables
-if(splitCovs == 3){
+if(splitCovs == 3 || splitREs == 3){
   myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
-}else if(splitCovs == 2){
+}else if(splitCovs == 2 || splitREs == 2){
   myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO))
-}else if(splitCovs == 1){
+}else if(splitCovs == 1 || splitREs == 1){
   myConst <- c(myConst, list(dummy = svData$dummy))
 }
 
@@ -272,7 +272,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_stochV_8chains.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -386,13 +386,21 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_
 #               nAgeC.S = nAgeC.S,
 #               postPaths = c(
 #                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds"
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs3REs_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs3REs_stochV_8chains.rds"
 #               ),
 #               modelNames = c(
-#                 "IPM_Dave2Covs",
-#                 "IPM_Dave3Covs3REs"
+#                 "IPM_2Covs1RE",
+#                 "IPM_3Covs1RE",
+#                 "IPM_0Covs1RE",
+#                 "IPM_2Covs3REs",
+#                 "IPM_3Covs3REs",
+#                 "IPM_0Covs3REs"
 #               ),
-#               plotFolder = c("figures/densityChecks/final2"),
+#               plotFolder = c("figures/densityChecks/NcovsNREs"),
 #               returnSumData = TRUE)
 
 

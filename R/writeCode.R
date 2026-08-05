@@ -312,7 +312,17 @@ writeCode <- function(){
             
           }else if(splitCovs == 2){
             
-            if(splitREs == 2){
+            if(splitREs == 3){
+              logit(S[a, t]) <- logit(Mu.S[a]) +
+                BetaD.Sy * dens.cov[t] * dummyY[a] +
+                BetaD.So * dens.cov[t] * dummyO[a] +
+                BetaV.Sy * veg.true[t] * dummyY[a] +
+                BetaV.So * veg.true[t] * dummyO[a] +
+                EpsilonT.Sy[t] * dummyY[a] +
+                EpsilonT.Sp[t] * dummyP[a] +
+                EpsilonT.So[t] * dummyO[a]
+            
+            }else if(splitREs == 2){
               logit(S[a, t]) <- logit(Mu.S[a]) +
                 BetaD.Sy * dens.cov[t] * dummyY[a] +
                 BetaD.So * dens.cov[t] * dummyO[a] +
@@ -336,14 +346,29 @@ writeCode <- function(){
                 BetaD.S * dens.cov[t] * dummy[a] +
                 BetaV.S * veg.true[t] * dummy[a] +
                 EpsilonT.S[t]
+            
           }
           
           # without environmental covariates
           
-        } else {
+        }else{
           
-          logit(S[a, t]) <- logit(Mu.S[a]) +
+          if(splitREs == 3){
+            logit(S[a, t]) <- logit(Mu.S[a]) +
+              EpsilonT.Sy[t] * dummyY[a] +
+              EpsilonT.Sp[t] * dummyP[a] +
+              EpsilonT.So[t] * dummyO[a]
+            
+          }else if(splitREs == 2){
+            logit(S[a, t]) <- logit(Mu.S[a]) +
+              EpsilonT.Sy[t] * dummyY[a] +
+              EpsilonT.So[t] * dummyO[a]
+            
+          }else if(splitREs == 1){
+            logit(S[a, t]) <- logit(Mu.S[a]) +
               EpsilonT.S[t]
+            
+          }
         }
       }
     }
