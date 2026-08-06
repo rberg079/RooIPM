@@ -108,12 +108,12 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
            YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
-                               grepl('EpsilonT|nYF|nSA|nTOT|propF|sYF|sSA|dens.true|veg.true', Parameter) ~ Idx1,
-                               grepl('nAD|BR|sPY|S|sAD', Parameter) ~ Idx2),
-           AgeIdx  = case_when(grepl('Beta|EpsilonI|EpsilonT|Mu.B|Mu.O|nYF|nSA|nTOT|propF|SigmaT|sYF|sSA', Parameter) ~ NA_real_,
-                               grepl('Beta|Mu.S|Mu.R|nAD|S|BR|sPY|sAD', Parameter) ~ Idx1),
+                               grepl('EpsilonT|nYF|nSA|nTOT|sYF|sSA|propF|dens.true|veg.true', Parameter) ~ Idx1,
+                               grepl('nAD|BR|sPY|sAD|S', Parameter) ~ Idx2),
+           AgeIdx  = case_when(grepl('Beta|EpsilonI|EpsilonT|SigmaT|Mu.O|nYF|nSA|nTOT|sYF|sSA|propF', Parameter) ~ NA_real_,
+                               grepl('Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ Idx1),
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.R|nAD|BR|sPY|sAD', Parameter) ~ AgeIdx,
+           Age  = case_when(grepl('Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
@@ -129,18 +129,24 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJS_covs = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
-                 'BetaD.S', 'BetaV.S',
+    CJS_mus = c(paste0('Mu.S[', 1:nAgeC.S, ']')),
+    
+    CJS_covs = c('BetaD.S', 'BetaV.S',
                  'BetaD.Sy', 'BetaD.Sp', 'BetaD.So',
                  'BetaV.Sy', 'BetaV.Sp', 'BetaV.So'),
     
-    CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'), 'SigmaT.S'),
+    CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'),
+                'SigmaT.S', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'),
     
     CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
+    
+    RS_muB = c(paste0('Mu.B[', 1:nAgeC.S, ']')),
     
     RS_BR = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('BR[', a, ', ', t, ']')) %>%
                 pull(param)),
+    
+    RS_muR = c(paste0('Mu.R[', 1:nAgeC.S, ']')),
     
     RS_Ra = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
@@ -150,7 +156,7 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
     
     RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
                paste0('EpsilonT.B[', plotYears, ']'),
-               'SigmaT.R', 'SigmaT.B'),
+               'SigmaI.R', 'SigmaT.R', 'SigmaT.B'),
     
     POP_NAs = c(expand.grid(a = plotAges, t = plotYears) %>%
                   mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
