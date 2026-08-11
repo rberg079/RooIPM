@@ -6,20 +6,24 @@
 #' @param ageClasses integer. Number of age classes to be considered in the reproductive success model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #' @param cum.surv logical. If TRUE, survival is calculated as cumulative survival up to the current step. cum.surv = TRUE by default.
-#'
+#' @param splitCovs.R integer. Number of age-group-specific covariate effects to fit in the reproductive success model. splitCovs.S = 1 by default.
+#' @param splitREs.R integer. Number of age-group-specific random effects of year to fit in the reproductive success model. splitREs.R = 1 by default.
+#' 
 #' @returns a list containing a series of potential response variables, individual and population covariates related to reproductive success.
 #' @export
 #'
 #' @examples
 
 wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
-                           known.age = FALSE, cum.surv = TRUE){
+                           known.age = FALSE, cum.surv = TRUE, splitCovs.R = 1, splitREs.R = 1){
 
   # # for testing purposes
   # rs.data = "data/RSmainRB_May26.xlsx"
   # ageClasses = 12
   # known.age = TRUE
   # cum.surv = FALSE
+  # splitCovs.R = 1
+  # splitREs.R = 1
   
   
   ## Set up --------------------------------------------------------------------
@@ -148,22 +152,56 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   
   nAgeC.R <- max(ageC.R)
   
-  return(list(B = B,
-              nB = nB,
-              year.B = year.B,
-              age.B = age.B,
-              
-              R = R,
-              nR = nR,
-              id.R = id.R,
-              nID.R = nID.R,
-              year.R = year.R,
-              
-              age.R = age.R,
-              nAge = nAge,
-              ageC.R = ageC.R,
-              nAgeC.R = nAgeC.R
-              ))
+  # create dummy variable for covariate effects
+  if(splitCovs.R == 2 || splitREs.R == 2){
+    
+    if(ageClasses == 6){
+      dummy.Rp = c(rep(1, 5), 0)
+      dummy.Ro = c(rep(0, 5), 1)
+    }else if(ageClasses == 12){
+      dummy.Rp = c(rep(1, 9), rep(0, 2))
+      dummy.Ro = c(rep(0, 9), rep(1, 2))
+    }else if(ageClasses == 20){
+      dummy.Rp = c(rep(1, 9), rep(0, 9))
+      dummy.Ro = c(rep(0, 9), rep(1, 9))
+    }
+    
+  }else if(splitCovs.R == 1 || splitREs.R == 1){
+    
+    if(ageClasses == 6){
+      dummy.R = c(rep(0, 5), 1)
+    }else if(ageClasses == 12){
+      dummy.R = c(rep(0, 9), rep(1, 2))
+    }else if(ageClasses == 20){
+      dummy.R = c(rep(0, 9), rep(1, 9))
+    }
+    
+  }
+  
+  return(c(
+    list(B = B,
+         nB = nB,
+         year.B = year.B,
+         age.B = age.B,
+         
+         R = R,
+         nR = nR,
+         id.R = id.R,
+         nID.R = nID.R,
+         year.R = year.R,
+         
+         age.R = age.R,
+         nAge = nAge,
+         ageC.R = ageC.R,
+         nAgeC.R = nAgeC.R
+    ),
+    
+    if(splitCovs.R == 2 || splitREs.R == 2){
+      list(dummy.Rp = dummy.Rp, dummy.Ro = dummy.Ro)
+    }else if(splitCovs.R == 1 || splitREs.R == 1){
+      list(dummy.R = dummy.R)
+    }
+  ))
   
 }
 

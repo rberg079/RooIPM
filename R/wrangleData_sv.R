@@ -6,7 +6,8 @@
 #' @param ageClasses integer. Number of age classes to be considered in the survival model. ageClasses = 20 by default.
 #' @param known.age logical. If TRUE, females of unknown age are filtered out. known.age = FALSE by default.
 #' @param from2012 logical. If TRUE, model is run from 2012 onwards. from 2012 = FALSE by default.
-#' @param splitCovs integer. Number of separate covariate effects of density and vegetation on survival. splitCovs = 2 by default.
+#' @param splitCovs.S integer. Number of age-group-specific covariate effects to fit in the survival model. splitCovs.S = 1 by default.
+#' @param splitREs.S integer. Number of age-group-specific random effects of year to fit in the survival model. splitREs.R = 1 by default.
 #'
 #' @returns a list containing the obs, state, & age matrices & other parameters needed for the CJS survival model.
 #' @export
@@ -15,7 +16,7 @@
 
 wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
                            ageClasses = 20, known.age = TRUE, from2012 = FALSE,
-                           splitCovs = 2, splitREs = 1){
+                           splitCovs.S = 2, splitREs.S = 1){
   
   # # for testing purposes
   # surv.data = "data/PromSurvivalNov25_RB.xlsx"
@@ -24,8 +25,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # ageClasses = 12
   # known.age = TRUE
   # from2012 = FALSE
-  # splitCovs = 2
-  # splitREs = 1
+  # splitCovs.S = 2
+  # splitREs.S = 1
   
   
   ## Set up --------------------------------------------------------------------
@@ -480,30 +481,30 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   }
   
   # create dummy variable for covariate effects
-  if(splitCovs > 1 || splitREs > 1){
+  if(splitCovs.S > 1 || splitREs.S > 1){
     
     if(ageClasses == 6){
-      dummyY = c(1, rep(0, 5))
-      dummyP = c(0, rep(1, 4), 0)
-      dummyO = c(rep(0, 5), 1)
+      dummy.Sy = c(1, rep(0, 5))
+      dummy.Sp = c(0, rep(1, 4), 0)
+      dummy.So = c(rep(0, 5), 1)
     }else if(ageClasses == 12){
-      dummyY = c(1, rep(0, 12))
-      dummyP = c(0, rep(1, 9), rep(0, 3))
-      dummyO = c(rep(0, 10), rep(1, 3))
+      dummy.Sy = c(1, rep(0, 12))
+      dummy.Sp = c(0, rep(1, 9), rep(0, 3))
+      dummy.So = c(rep(0, 10), rep(1, 3))
     }else if(ageClasses == 20){
-      dummyY = c(1, rep(0, 19))
-      dummyP = c(0, rep(1, 9), rep(0, 10))
-      dummyO = c(rep(0, 10), rep(1, 10))
+      dummy.Sy = c(1, rep(0, 19))
+      dummy.Sp = c(0, rep(1, 9), rep(0, 10))
+      dummy.So = c(rep(0, 10), rep(1, 10))
     }
     
-  }else if(splitCovs == 1 || splitREs == 1){
+  }else if(splitCovs.S == 1 || splitREs.S == 1){
 
     if(ageClasses == 6){
-      dummy = c(1, rep(0,4), 1)
+      dummy.S = c(1, rep(0, 4), 1)
     }else if(ageClasses == 12){
-      dummy = c(1, rep(0,9), rep(1,3))
+      dummy.S = c(1, rep(0, 9), rep(1, 3))
     }else if(ageClasses == 20){
-      dummy = c(1, rep(0,9), rep(1,10))
+      dummy.S = c(1, rep(0, 9), rep(1, 10))
     }
 
   }
@@ -539,12 +540,12 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       idx.sv = idx.sv
     ),
     
-    if(splitCovs == 3 || splitREs == 3){
-      list(dummyY = dummyY, dummyP = dummyP, dummyO = dummyO)
-    }else if(splitCovs == 2 || splitREs == 2){
-      list(dummyY = dummyY, dummyO = dummyO)
-    }else if(splitCovs == 1 || splitREs == 1){
-      list(dummy = dummy)
+    if(splitCovs.S == 3 || splitREs.S == 3){
+      list(dummy.Sy = dummy.Sy, dummy.Sp = dummy.Sp, dummy.So = dummy.So)
+    }else if(splitCovs.S == 2 || splitREs.S == 2){
+      list(dummy.Sy = dummy.Sy, dummy.So = dummy.So)
+    }else if(splitCovs.S == 1 || splitREs.S == 1){
+      list(dummy.S = dummy.S)
     }
   ))
   

@@ -117,7 +117,7 @@ writeCode <- function(){
     
     # data imputation for missing vegetation data
     # assuming observation error with known SD
-    if(envEffectsS || envEffectsR){
+    if(envEffects.S || envEffects.R){
       for(t in 1:(nYear-1)){
         veg[t] ~ dnorm(veg.true[t], sd = vegE[t])
         veg.true[t] ~ dnorm(0, sd = 1)
@@ -283,69 +283,69 @@ writeCode <- function(){
         
         # with environmental covariates
         
-        if(envEffectsS){
+        if(envEffects.S){
           
-          if(splitCovs == 3){
+          if(splitCovs.S == 3){
             
-            if(splitREs == 3){
+            if(splitREs.S == 3){
               logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.Sy * dens.cov[t] * dummyY[a] +
-                BetaD.Sp * dens.cov[t] * dummyP[a] +
-                BetaD.So * dens.cov[t] * dummyO[a] +
-                BetaV.Sy * veg.true[t] * dummyY[a] +
-                BetaV.Sp * veg.true[t] * dummyP[a] +
-                BetaV.So * veg.true[t] * dummyO[a] +
-                EpsilonT.Sy[t] * dummyY[a] +
-                EpsilonT.Sp[t] * dummyP[a] +
-                EpsilonT.So[t] * dummyO[a]
+                BetaD.Sy * dens.cov[t] * dummy.Sy[a] +
+                BetaD.Sp * dens.cov[t] * dummy.Sp[a] +
+                BetaD.So * dens.cov[t] * dummy.So[a] +
+                BetaV.Sy * veg.true[t] * dummy.Sy[a] +
+                BetaV.Sp * veg.true[t] * dummy.Sp[a] +
+                BetaV.So * veg.true[t] * dummy.So[a] +
+                EpsilonT.Sy[t] * dummy.Sy[a] +
+                EpsilonT.Sp[t] * dummy.Sp[a] +
+                EpsilonT.So[t] * dummy.So[a]
               
-            }else if(splitREs == 1){
+            }else if(splitREs.S == 1){
               logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.Sy * dens.cov[t] * dummyY[a] +
-                BetaD.Sp * dens.cov[t] * dummyP[a] +
-                BetaD.So * dens.cov[t] * dummyO[a] +
-                BetaV.Sy * veg.true[t] * dummyY[a] +
-                BetaV.Sp * veg.true[t] * dummyP[a] +
-                BetaV.So * veg.true[t] * dummyO[a] +
+                BetaD.Sy * dens.cov[t] * dummy.Sy[a] +
+                BetaD.Sp * dens.cov[t] * dummy.Sp[a] +
+                BetaD.So * dens.cov[t] * dummy.So[a] +
+                BetaV.Sy * veg.true[t] * dummy.Sy[a] +
+                BetaV.Sp * veg.true[t] * dummy.Sp[a] +
+                BetaV.So * veg.true[t] * dummy.So[a] +
                 EpsilonT.S[t]
             }
             
-          }else if(splitCovs == 2){
+          }else if(splitCovs.S == 2){
             
-            if(splitREs == 3){
+            if(splitREs.S == 3){
               logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.Sy * dens.cov[t] * dummyY[a] +
-                BetaD.So * dens.cov[t] * dummyO[a] +
-                BetaV.Sy * veg.true[t] * dummyY[a] +
-                BetaV.So * veg.true[t] * dummyO[a] +
-                EpsilonT.Sy[t] * dummyY[a] +
-                EpsilonT.Sp[t] * dummyP[a] +
-                EpsilonT.So[t] * dummyO[a]
+                BetaD.Sy * dens.cov[t] * dummy.Sy[a] +
+                BetaD.So * dens.cov[t] * dummy.So[a] +
+                BetaV.Sy * veg.true[t] * dummy.Sy[a] +
+                BetaV.So * veg.true[t] * dummy.So[a] +
+                EpsilonT.Sy[t] * dummy.Sy[a] +
+                EpsilonT.Sp[t] * dummy.Sp[a] +
+                EpsilonT.So[t] * dummy.So[a]
             
-            }else if(splitREs == 2){
+            }else if(splitREs.S == 2){
               logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.Sy * dens.cov[t] * dummyY[a] +
-                BetaD.So * dens.cov[t] * dummyO[a] +
-                BetaV.Sy * veg.true[t] * dummyY[a] +
-                BetaV.So * veg.true[t] * dummyO[a] +
-                EpsilonT.Sy[t] * dummyY[a] +
-                EpsilonT.So[t] * dummyO[a]
+                BetaD.Sy * dens.cov[t] * dummy.Sy[a] +
+                BetaD.So * dens.cov[t] * dummy.So[a] +
+                BetaV.Sy * veg.true[t] * dummy.Sy[a] +
+                BetaV.So * veg.true[t] * dummy.So[a] +
+                EpsilonT.Sy[t] * dummy.Sy[a] +
+                EpsilonT.So[t] * dummy.So[a]
               
-            }else if(splitREs == 1){
+            }else if(splitREs.S == 1){
               logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.Sy * dens.cov[t] * dummyY[a] +
-                BetaD.So * dens.cov[t] * dummyO[a] +
-                BetaV.Sy * veg.true[t] * dummyY[a] +
-                BetaV.So * veg.true[t] * dummyO[a] +
+                BetaD.Sy * dens.cov[t] * dummy.Sy[a] +
+                BetaD.So * dens.cov[t] * dummy.So[a] +
+                BetaV.Sy * veg.true[t] * dummy.Sy[a] +
+                BetaV.So * veg.true[t] * dummy.So[a] +
                 EpsilonT.S[t]
             }
             
-          }else if(splitCovs == 1){
+          }else if(splitCovs.S == 1){
             
             logit(S[a, t]) <- logit(Mu.S[a]) +
-                BetaD.S * dens.cov[t] * dummy[a] +
-                BetaV.S * veg.true[t] * dummy[a] +
-                EpsilonT.S[t]
+              BetaD.S * dens.cov[t] * dummy.S[a] +
+              BetaV.S * veg.true[t] * dummy.S[a] +
+              EpsilonT.S[t]
             
           }
           
@@ -353,18 +353,18 @@ writeCode <- function(){
           
         }else{
           
-          if(splitREs == 3){
+          if(splitREs.S == 3){
             logit(S[a, t]) <- logit(Mu.S[a]) +
-              EpsilonT.Sy[t] * dummyY[a] +
-              EpsilonT.Sp[t] * dummyP[a] +
-              EpsilonT.So[t] * dummyO[a]
+              EpsilonT.Sy[t] * dummy.Sy[a] +
+              EpsilonT.Sp[t] * dummy.Sp[a] +
+              EpsilonT.So[t] * dummy.So[a]
             
-          }else if(splitREs == 2){
+          }else if(splitREs.S == 2){
             logit(S[a, t]) <- logit(Mu.S[a]) +
-              EpsilonT.Sy[t] * dummyY[a] +
-              EpsilonT.So[t] * dummyO[a]
+              EpsilonT.Sy[t] * dummy.Sy[a] +
+              EpsilonT.So[t] * dummy.So[a]
             
-          }else if(splitREs == 1){
+          }else if(splitREs.S == 1){
             logit(S[a, t]) <- logit(Mu.S[a]) +
               EpsilonT.S[t]
             
@@ -385,31 +385,28 @@ writeCode <- function(){
       Mu.S[a] ~ dunif(0, 1)
     }
     
-    if(envEffectsS){
-      
-      if(splitCovs == 3){
+    if(envEffects.S){
+      if(splitCovs.S == 3){
         BetaD.Sy ~ dunif(-5, 5)
         BetaD.Sp ~ dunif(-5, 5)
         BetaD.So ~ dunif(-5, 5)
-        
         BetaV.Sy ~ dunif(-5, 5)
         BetaV.Sp ~ dunif(-5, 5)
         BetaV.So ~ dunif(-5, 5)
         
-      }else if(splitCovs == 2){
+      }else if(splitCovs.S == 2){
         BetaD.Sy ~ dunif(-5, 5)
         BetaD.So ~ dunif(-5, 5)
-        
         BetaV.Sy ~ dunif(-5, 5)
         BetaV.So ~ dunif(-5, 5)
         
-      }else if(splitCovs == 1){
+      }else if(splitCovs.S == 1){
         BetaD.S ~ dunif(-5, 5)
         BetaV.S ~ dunif(-5, 5)
       }
     }
     
-    if(splitREs == 3){
+    if(splitREs.S == 3){
       for(t in 1:(nYear-1)){
         XiT.Sy[t] ~ dnorm(0, sd = 1) 
         XiT.Sp[t] ~ dnorm(0, sd = 1) 
@@ -422,7 +419,7 @@ writeCode <- function(){
       SigmaT.Sp ~ dunif(0, 10) 
       SigmaT.So ~ dunif(0, 10) 
       
-    }else if(splitREs == 2){
+    }else if(splitREs.S == 2){
       for(t in 1:(nYear-1)){
         XiT.Sy[t] ~ dnorm(0, sd = 1) 
         XiT.So[t] ~ dnorm(0, sd = 1)
@@ -432,7 +429,7 @@ writeCode <- function(){
       SigmaT.Sy ~ dunif(0, 10) 
       SigmaT.So ~ dunif(0, 10) 
       
-    }else if(splitREs == 1){
+    }else if(splitREs.S == 1){
       for(t in 1:(nYear-1)){
         XiT.S[t] ~ dnorm(0, sd = 1)
         EpsilonT.S[t] <- SigmaT.S * XiT.S[t] 
@@ -466,17 +463,62 @@ writeCode <- function(){
     
     # individual reproductive success
     for(x in 1:nR){
-      if(envEffectsR){
-        R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.cov[year.R[x]] +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]]
+      R[x] ~ dbern(Ri[x])
+      
+      # with environmental covariates
+      
+      if(envEffects.R){
+        
+        if(splitCovs.R == 2){
+          
+          if(splitREs.R == 2){
+            logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+              BetaD.Rp * dens.cov[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+              BetaD.Ro * dens.cov[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]] +
+              EpsilonI.R[id.R[x]] +
+              EpsilonT.Rp[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+              EpsilonT.Ro[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]]
+            
+          }else if(splitREs.R == 1){
+            logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+              BetaD.Rp * dens.cov[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+              BetaD.Ro * dens.cov[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]] +
+              EpsilonI.R[id.R[x]] +
+              EpsilonT.R[year.R[x]]
+          }
+          
+        }else if(splitCovs.R == 1){
+          
+          if(splitREs.R == 2){
+            logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+              BetaD.R * dens.cov[year.R[x]] * dummy.R[ageC.R[age.R[x]]] +
+              EpsilonI.R[id.R[x]] +
+              EpsilonT.Rp[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+              EpsilonT.Ro[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]]
+            
+          }else if(splitREs.R == 1){
+            logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+              BetaD.R * dens.cov[year.R[x]] * dummy.R[ageC.R[age.R[x]]] +
+              EpsilonI.R[id.R[x]] +
+              EpsilonT.R[year.R[x]]
+          }
+        }
+        
+        # without environmental covariates
+        
       }else{
-        R[x] ~ dbern(Ri[x])
-        logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]]
+        
+        if(splitREs.R == 2){
+          logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+            EpsilonI.R[id.R[x]] +
+            EpsilonT.Rp[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+            EpsilonT.Ro[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]]
+          
+        }else if(splitREs.R == 1){
+          logit(Ri[x]) <- logit(Mu.R[ageC.R[age.R[x]]]) +
+            EpsilonI.R[id.R[x]] +
+            EpsilonT.R[year.R[x]]
+        }
       }
     }
     
@@ -485,13 +527,55 @@ writeCode <- function(){
     # to predict age-specific reproductive success (Ra) here
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
-        if(envEffectsR){
-          logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            BetaD.R * dens.cov[t] +
-            EpsilonT.R[t]
+        
+        # with environmental covariates
+        
+        if(envEffects.R){
+          
+          if(splitCovs.R == 2){
+            
+            if(splitREs.R == 2){
+              logit(Ra[a, t]) <- logit(Mu.R[a]) +
+                BetaD.Rp * dens.cov[t] * dummy.Rp[a] +
+                BetaD.Ro * dens.cov[t] * dummy.Ro[a] +
+                EpsilonT.Rp[t] * dummy.Rp[a] +
+                EpsilonT.Ro[t] * dummy.Ro[a]
+              
+            }else if(splitREs.R == 1){
+              logit(Ra[a, t]) <- logit(Mu.R[a]) +
+                BetaD.Rp * dens.cov[t] * dummy.Rp[a] +
+                BetaD.Ro * dens.cov[t] * dummy.Ro[a] +
+                EpsilonT.R[t]
+            }
+            
+          }else if(splitCovs.R == 1){
+            
+            if(splitREs.R == 2){
+              logit(Ra[a, t]) <- logit(Mu.R[a]) +
+                BetaD.R * dens.cov[t] * dummy.R[a] +
+                EpsilonT.Rp[t] * dummy.Rp[a] +
+                EpsilonT.Ro[t] * dummy.Ro[a]
+              
+            }else if(splitREs.R == 1){
+              logit(Ra[a, t]) <- logit(Mu.R[a]) +
+                BetaD.R * dens.cov[t] * dummy.R[a] +
+                EpsilonT.R[t]
+            }
+          }
+          
+          # without environmental covariates
+          
         }else{
-          logit(Ra[a, t]) <- logit(Mu.R[a]) +
-            EpsilonT.R[t]
+          
+          if(splitREs.R == 2){
+            logit(Ra[a, t]) <- logit(Mu.R[a]) +
+              EpsilonT.Rp[t] * dummy.Rp[a] +
+              EpsilonT.Ro[t] * dummy.Ro[a]
+            
+          }else if(splitREs.R == 1){
+            logit(Ra[a, t]) <- logit(Mu.R[a]) +
+              EpsilonT.R[t]
+          }
         }
       }
     }
@@ -503,27 +587,46 @@ writeCode <- function(){
       Mu.B[a] ~ dunif(0, 1)
     }
     
-    if(envEffectsR){
-      BetaD.R ~ dunif(-5, 5)
+    if(envEffects.R){
+      if(splitCovs.R == 2){
+        BetaD.Rp ~ dunif(-5, 5)
+        BetaD.Ro ~ dunif(-5, 5)
+        
+      }else if(splitCovs.R == 1){
+        BetaD.R ~ dunif(-5, 5)
+      }
     }
     
     # random effects
     for(i in 1:nID.R){
-      XiI.R[i] ~ dnorm(0, sd = 1) # latent standard normal
+      XiI.R[i] ~ dnorm(0, sd = 1)
     }
+    EpsilonI.R[1:nID.R] <- SigmaI.R * XiI.R[1:nID.R]
+    SigmaI.R ~ dunif(0, 10)
     
     for(t in 1:(nYear-1)){
-      XiT.R[t] ~ dnorm(0, sd = 1) # latent standard normal
-      XiT.B[t] ~ dnorm(0, sd = 1) # latent standard normal
+      XiT.B[t] ~ dnorm(0, sd = 1)
     }
+    EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)]
+    SigmaT.B ~ dunif(0, 10)
     
-    EpsilonI.R[1:nID.R]     <- SigmaI.R * XiI.R[1:nID.R]     # random effect
-    EpsilonT.R[1:(nYear-1)] <- SigmaT.R * XiT.R[1:(nYear-1)] # random effect
-    EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)] # random effect
-    
-    SigmaI.R ~ dunif(0, 10) # scale of the random effect
-    SigmaT.R ~ dunif(0, 10) # scale of the random effect
-    SigmaT.B ~ dunif(0, 10) # scale of the random effect
+    if(splitREs.R == 2){
+      for(t in 1:(nYear-1)){
+        XiT.Rp[t] ~ dnorm(0, sd = 1)
+        XiT.Ro[t] ~ dnorm(0, sd = 1)
+        EpsilonT.Rp[t] <- SigmaT.Rp * XiT.Rp[t]
+        EpsilonT.Ro[t] <- SigmaT.Ro * XiT.Ro[t]
+      }
+      SigmaT.Rp ~ dunif(0, 10)
+      SigmaT.Ro ~ dunif(0, 10)
+      
+    }else if(splitREs.R == 1){
+      for(t in 1:(nYear-1)){
+        XiT.R[t] ~ dnorm(0, sd = 1)
+        EpsilonT.R[t] <- SigmaT.R * XiT.R[t]
+      }
+      SigmaT.R ~ dunif(0, 10)
+    }
     
   }) # nimbleCode
   

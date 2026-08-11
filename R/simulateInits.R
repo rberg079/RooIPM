@@ -16,10 +16,12 @@
 #' @param age.B integer vector. Maternal age of each reproductive event in the birth rate analysis.
 #' @param age.R integer vector. Maternal age of each reproductive event in the reproductive success analysis.
 #' @param ageC.R integer vector. Vector mapping age classes to actual ages in the reproductive success model.
-#' @param envEffectsS logical. If TRUE, environmental covariates are included in CJS model.
-#' @param envEffectsR logical. If TRUE, environmental covariates are included in RS model.
-#' @param splitCovs integer. Number of age-group-specific covariate effects to fit in the survival model. splitCovs = 1 by default.
-#' @param splitREs integer. Number of age-group-specific random effects of year to fit in the survival model. splitREs = 1 by default.
+#' @param envEffects.S logical. If TRUE, environmental covariates are included in CJS model.
+#' @param envEffects.R logical. If TRUE, environmental covariates are included in RS model.
+#' @param splitCovs.S integer. Number of age-group-specific covariate effects to fit in the survival model. splitCovs.S = 1 by default.
+#' @param splitCovs.R integer. Number of age-group-specific covariate effects to fit in the reproductive success model. splitCovs.S = 1 by default.
+#' @param splitREs.S integer. Number of age-group-specific random effects of year to fit in the survival model. splitREs.R = 1 by default.
+#' @param splitREs.R integer. Number of age-group-specific random effects of year to fit in the reproductive success model. splitREs.R = 1 by default.
 #'
 #' @returns a list containing all initial values needed for the IPM.
 #' @export
@@ -29,16 +31,20 @@
 simulateInits <- function(dens, veg, propF, knownStates, 
                           nYear = 18, nAge = 19, nB, nR, nID.R, ageClasses = 20,
                           year.B, year.R, id.R, age.B, age.R, ageC.R, ageC.S,
-                          envEffectsS = TRUE, envEffectsR = TRUE, splitCovs = 1, splitREs = 1){
+                          envEffects.S = TRUE, envEffects.R = TRUE,
+                          splitCovs.S = 1, splitCovs.R = 1, 
+                          splitREs.S = 1, splitREs.R = 1){
   
   # # for testing purposes
   # library(readxl)
   # library(tidyverse)
   # 
-  # envEffectsS <- FALSE
-  # envEffectsR <- TRUE
-  # splitCovs <- 0
-  # splitREs <- 3
+  # envEffects.S <- TRUE
+  # envEffects.R <- TRUE
+  # splitCovs.S = 0
+  # splitCovs.R = 2
+  # splitREs.S = 3
+  # splitREs.R = 1
   # 
   # ageClasses <- 12
   # source('R/wrangleData_en.R')
@@ -55,12 +61,13 @@ simulateInits <- function(dens, veg, propF, knownStates,
   #   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   #   yafs.data = "data/RSmainRB_May26.xlsx",
   #   ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE,
-  #   splitCovs = splitCovs, splitREs = splitREs)
+  #   splitCovs.S = splitCovs.S, splitREs.S = splitREs.S)
   # 
   # source('R/wrangleData_rs.R')
   # rsData <- wrangleData_rs(
   #   rs.data = "data/RSmainRB_May26.xlsx",
-  #   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
+  #   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE,
+  #   splitCovs.R = splitCovs.R, splitREs.R = splitREs.R)
   # 
   # dens <- enData$dens
   # veg <- enData$veg
@@ -118,54 +125,67 @@ simulateInits <- function(dens, veg, propF, knownStates,
   nAgeC.R <- max(ageC.R)
   
   ## Survival model
-  if(envEffectsS){
-    if(splitCovs == 3){
+  # dummy variables
+  if(ageClasses == 6){
+    dummy.Sy <- c(1, rep(0, 5))
+    dummy.Sp <- c(0, rep(1, 4), 0)
+    dummy.So <- c(rep(0, 5), 1)
+    dummy.S  <- c(1, rep(0, 4), 1)
+  }else if(ageClasses == 12){
+    dummy.Sy <- c(1, rep(0, 12))
+    dummy.Sp <- c(0, rep(1, 9), rep(0, 3))
+    dummy.So <- c(rep(0, 10), rep(1, 3))
+    dummy.S  <- c(1, rep(0, 9), rep(1, 3))
+  }else if(ageClasses == 20){
+    dummy.Sy <- c(1, rep(0, 19))
+    dummy.Sp <- c(0, rep(1, 9), rep(0, 10))
+    dummy.So <- c(rep(0, 10), rep(1, 10))
+    dummy.S  <- c(1, rep(0, 9), rep(1, 10))
+  }
+  
+  # covariate effects
+  if(envEffects.S){
+    if(splitCovs.S == 3){
       BetaD.Sy <- runif(1, -1, 1)
       BetaD.Sp <- runif(1, -1, 1)
       BetaD.So <- runif(1, -1, 1)
       BetaV.Sy <- runif(1, -1, 1)
       BetaV.Sp <- runif(1, -1, 1)
       BetaV.So <- runif(1, -1, 1)
-    }else if(splitCovs == 2){
+    }else if(splitCovs.S == 2){
       BetaD.Sy <- runif(1, -1, 1)
       BetaD.So <- runif(1, -1, 1)
       BetaV.Sy <- runif(1, -1, 1)
       BetaV.So <- runif(1, -1, 1)
-    }else if(splitCovs == 1){
+    }else if(splitCovs.S == 1){
       BetaD.S <- runif(1, -1, 1)
       BetaV.S <- runif(1, -1, 1)
     }
   }
   
   ## Reproductive success model
-  if(envEffectsR){
-    BetaD.R <- runif(1, -1, 1)
+  # dummy variables
+  if(ageClasses == 6){
+    dummy.Rp = c(rep(1, 5), 0)
+    dummy.Ro = c(rep(0, 5), 1)
+    dummy.R  = c(rep(1, 6))
+  }else if(ageClasses == 12){
+    dummy.Rp = c(rep(1, 9), rep(0, 2))
+    dummy.Ro = c(rep(0, 9), rep(1, 2))
+    dummy.R  = c(rep(1, 11))
+  }else if(ageClasses == 20){
+    dummy.Rp = c(rep(1, 9), rep(0, 9))
+    dummy.Ro = c(rep(0, 9), rep(1, 9))
+    dummy.R  = c(rep(1, 18))
   }
   
-  # dummy variable
-  # to target covariate effects
-  if(splitCovs > 1 || splitREs > 1){
-    if(ageClasses == 6){
-      dummyY = c(1, rep(0, 5))
-      dummyP = c(0, rep(1, 4), 0)
-      dummyO = c(rep(0, 5), 1)
-    }else if(ageClasses == 12){
-      dummyY = c(1, rep(0, 12))
-      dummyP = c(0, rep(1, 9), rep(0, 3))
-      dummyO = c(rep(0, 10), rep(1, 3))
-    }else if(ageClasses == 20){
-      dummyY = c(1, rep(0, 19))
-      dummyP = c(0, rep(1, 9), rep(0, 10))
-      dummyO = c(rep(0, 10), rep(1, 10))
-    }
-    
-  }else if(splitCovs == 1 || splitREs == 1){
-    if(ageClasses == 6){
-      dummy = c(1, rep(0,4), 1)
-    }else if(ageClasses == 12){
-      dummy = c(1, rep(0,8), rep(1,4))
-    }else if(ageClasses == 20){
-      dummy = c(1, rep(0,8), rep(1,11))
+  # covariate effects
+  if(envEffects.R){
+    if(splitCovs.R == 2){
+      BetaD.Rp <- runif(1, -1, 1)
+      BetaD.Ro <- runif(1, -1, 1)
+    }else if(splitCovs.R == 1){
+      BetaD.R  <- runif(1, -1, 1)
     }
   }
   
@@ -173,7 +193,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
   ## Simulate vital rate random effects ----------------------------------------
   
   ## Survival model
-  if(splitREs == 3){
+  if(splitREs.S == 3){
     XiT.Sy <- rnorm(nYear-1, 0, 1)
     SigmaT.Sy <- runif(1, .5, 2)
     EpsilonT.Sy <- XiT.Sy * SigmaT.Sy
@@ -186,7 +206,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
     SigmaT.So <- runif(1, .5, 2)
     EpsilonT.So <- XiT.So * SigmaT.So
     
-  }else if(splitREs == 2){
+  }else if(splitREs.S == 2){
     XiT.Sy <- rnorm(nYear-1, 0, 1)
     SigmaT.Sy <- runif(1, .5, 2)
     EpsilonT.Sy <- XiT.Sy * SigmaT.Sy
@@ -195,7 +215,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
     SigmaT.So <- runif(1, .5, 2)
     EpsilonT.So <- XiT.So * SigmaT.So
     
-  }else if(splitREs == 1){
+  }else if(splitREs.S == 1){
     XiT.S <- rnorm(nYear-1, 0, 1)
     SigmaT.S <- runif(1, .5, 2)
     EpsilonT.S <- XiT.S * SigmaT.S
@@ -203,16 +223,26 @@ simulateInits <- function(dens, veg, propF, knownStates,
   
   ## Reproductive success model
   XiI.R <- rnorm(nID.R, 0, 1)
-  XiT.R <- rnorm(nYear-1, 0, 1)
-  XiT.B <- rnorm(nYear-1, 0, 1)
-
   SigmaI.R <- runif(1, .5, 2)
-  SigmaT.R <- runif(1, .5, 2)
-  SigmaT.B <- runif(1, .5, 2)
-  
   EpsilonI.R <- XiI.R * SigmaI.R
-  EpsilonT.R <- XiT.R * SigmaT.R
+  
+  XiT.B <- rnorm(nYear-1, 0, 1)
+  SigmaT.B <- runif(1, .5, 2)
   EpsilonT.B <- XiT.B * SigmaT.B
+  
+  if(splitREs.R == 2){
+    XiT.Rp <- rnorm(nYear-1, 0, 1)
+    XiT.Ro <- rnorm(nYear-1, 0, 1)
+    SigmaT.Rp <- runif(1, .5, 2)
+    SigmaT.Ro <- runif(1, .5, 2)
+    EpsilonT.Rp <- XiT.Rp * SigmaT.Rp
+    EpsilonT.Ro <- XiT.Ro * SigmaT.Ro
+    
+  }else if(splitREs.R == 1){
+    XiT.R <- rnorm(nYear-1, 0, 1)
+    SigmaT.R <- runif(1, .5, 2)
+    EpsilonT.R <- XiT.R * SigmaT.R
+  }
 
   
   ## Simulate yearly vital rates -----------------------------------------------
@@ -228,41 +258,40 @@ simulateInits <- function(dens, veg, propF, knownStates,
       logit.S <- qlogis(Mu.S[a])
       
       # covariate effects
-      if(envEffectsS){
-        if(splitCovs == 3){
+      if(envEffects.S){
+        if(splitCovs.S == 3){
           logit.S <- logit.S + 
-            BetaD.Sy * dens.cov[t] * dummyY[a] + 
-            BetaD.Sp * dens.cov[t] * dummyP[a] + 
-            BetaD.So * dens.cov[t] * dummyO[a] +
-            BetaV.Sy * veg.true[t] * dummyY[a] + 
-            BetaV.Sp * veg.true[t] * dummyP[a] + 
-            BetaV.So * veg.true[t] * dummyO[a]
-        }else if(splitCovs == 2){
+            BetaD.Sy * dens.cov[t] * dummy.Sy[a] + 
+            BetaD.Sp * dens.cov[t] * dummy.Sp[a] + 
+            BetaD.So * dens.cov[t] * dummy.So[a] +
+            BetaV.Sy * veg.true[t] * dummy.Sy[a] + 
+            BetaV.Sp * veg.true[t] * dummy.Sp[a] + 
+            BetaV.So * veg.true[t] * dummy.So[a]
+        }else if(splitCovs.S == 2){
           logit.S <- logit.S + 
-            BetaD.Sy * dens.cov[t] * dummyY[a] + 
-            BetaD.So * dens.cov[t] * dummyO[a] +
-            BetaV.Sy * veg.true[t] * dummyY[a] + 
-            BetaV.So * veg.true[t] * dummyO[a]
-        }else if(splitCovs == 1){
+            BetaD.Sy * dens.cov[t] * dummy.Sy[a] + 
+            BetaD.So * dens.cov[t] * dummy.So[a] +
+            BetaV.Sy * veg.true[t] * dummy.Sy[a] + 
+            BetaV.So * veg.true[t] * dummy.So[a]
+        }else if(splitCovs.S == 1){
           logit.S <- logit.S + 
-            BetaD.S * dens.cov[t] * dummy[a] + 
-            BetaV.S * veg.true[t] * dummy[a]
+            BetaD.S * dens.cov[t] * dummy.S[a] + 
+            BetaV.S * veg.true[t] * dummy.S[a]
         }
       }
       
       # random effects
-      if(splitREs == 3){
+      if(splitREs.S == 3){
         logit.S <- logit.S + 
-          EpsilonT.Sy[t] * dummyY[a] + 
-          EpsilonT.Sp[t] * dummyP[a] + 
-          EpsilonT.So[t] * dummyO[a]
-      }else if(splitREs == 2){
+          EpsilonT.Sy[t] * dummy.Sy[a] + 
+          EpsilonT.Sp[t] * dummy.Sp[a] + 
+          EpsilonT.So[t] * dummy.So[a]
+      }else if(splitREs.S == 2){
         logit.S <- logit.S + 
-          EpsilonT.Sy[t] * dummyY[a] + 
-          EpsilonT.So[t] * dummyO[a]
-      }else if(splitREs == 1){
-        logit.S <- logit.S +
-          EpsilonT.S[t]
+          EpsilonT.Sy[t] * dummy.Sy[a] + 
+          EpsilonT.So[t] * dummy.So[a]
+      }else if(splitREs.S == 1){
+        logit.S <- logit.S + EpsilonT.S[t]
       }
       
       S[a, t] <- plogis(logit.S)
@@ -288,38 +317,74 @@ simulateInits <- function(dens, veg, propF, knownStates,
     }
   }
   
-  # age-specific baseline reproductive success
+  # individual reproductive success
   Mu.R <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
   
   Ri <- numeric(nR)
-  for(x in 1:nR){
-    if(envEffectsR){
-      Ri[x] <- plogis(
-        qlogis(Mu.R[ageC.R[age.R[x]]]) +
-          BetaD.R * dens.cov[year.R[x]] +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]])
-    }else{
-      Ri[x] <- plogis(
-        qlogis(Mu.R[ageC.R[age.R[x]]]) +
-          EpsilonI.R[id.R[x]] +
-          EpsilonT.R[year.R[x]])
-    }
-  }
   
-  Ra <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
-  for(a in 1:nAgeC.R) {
-    for(t in 1:(nYear-1)) {
-      if(envEffectsR){
-        Ra[a, t] <- plogis(
-          qlogis(Mu.R[a]) +
-            BetaD.R * dens.cov[t] +
-            EpsilonT.R[t])
-      }else{
-        Ra[a, t] <- plogis(
-          qlogis(Mu.R[a]) +
-            EpsilonT.R[t])
+  for(x in 1:nR){
+    
+    # intercepts
+    logit.Ri <- qlogis(Mu.R[ageC.R[age.R[x]]])
+    
+    # covariate effects
+    if(envEffects.R){
+      if(splitCovs.R == 2){
+        logit.Ri <- logit.Ri +
+          BetaD.Rp * dens.cov[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] + 
+          BetaD.Ro * dens.cov[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]]
+      }else if(splitCovs.R == 1){
+        logit.Ri <- logit.Ri +
+          BetaD.R * dens.cov[year.R[x]] * dummy.R[ageC.R[age.R[x]]]
       }
+    }
+    
+    # random effects
+    if(splitREs.R == 2){
+      logit.Ri <- logit.Ri +
+        EpsilonI.R[id.R[x]] +
+        EpsilonT.Rp[year.R[x]] * dummy.Rp[ageC.R[age.R[x]]] +
+        EpsilonT.Ro[year.R[x]] * dummy.Ro[ageC.R[age.R[x]]]
+    }else if(splitREs.R == 1){
+      logit.Ri <- logit.Ri +
+        EpsilonI.R[id.R[x]] +
+        EpsilonT.R[year.R[x]]
+    }
+    
+    Ri[x] <- plogis(logit.Ri)
+  }
+    
+  # age-specific reproductive success
+  Ra <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
+  
+  for(a in 1:nAgeC.R){
+    for(t in 1:(nYear-1)){
+      
+      # intercepts
+      logit.Ra <- qlogis(Mu.R[a])
+      
+      # covariate effects
+      if(envEffects.R){
+        if(splitCovs.R){
+          logit.Ra <- logit.Ra +
+            BetaD.Rp * dens.cov[t] * dummy.Rp[a] +
+            BetaD.Ro * dens.cov[t] * dummy.Ro[a]
+        }else if(splitCovs.R == 1){
+          logit.Ra <- logit.Ra +
+            BetaD.R * dens.cov[t] * dummy.R[a]
+        }
+      }
+      
+      if(splitREs.R == 2){
+        logit.Ra <- logit.Ra + 
+          EpsilonT.Rp[t] * dummy.Rp[a] + 
+          EpsilonT.Ro[t] * dummy.Ro[a]
+      }else if(splitREs.R == 1){
+        logit.Ra <- logit.Ra +
+          EpsilonT.R[t]
+      }
+      
+      Ra[a, t] <- plogis(logit.Ra)
     }
   }
   
@@ -447,13 +512,10 @@ simulateInits <- function(dens, veg, propF, knownStates,
     veg.true = veg.true,
     
     XiI.R = XiI.R,
-    XiT.R = XiT.R,
     XiT.B = XiT.B,
     SigmaI.R = SigmaI.R,
-    SigmaT.R = SigmaT.R,
     SigmaT.B = SigmaT.B,
     EpsilonI.R = EpsilonI.R,
-    EpsilonT.R = EpsilonT.R,
     EpsilonT.B = EpsilonT.B,
     
     Mu.B = Mu.B,
@@ -492,8 +554,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
   )
   
   # append covariates
-  if(envEffectsS){
-    if(splitCovs == 3){
+  if(envEffects.S){
+    if(splitCovs.S == 3){
       initList <- c(initList, list(
         BetaD.Sy = BetaD.Sy,
         BetaD.Sp = BetaD.Sp,
@@ -501,26 +563,32 @@ simulateInits <- function(dens, veg, propF, knownStates,
         BetaV.Sy = BetaV.Sy,
         BetaV.Sp = BetaV.Sp,
         BetaV.So = BetaV.So))
-    }else if(splitCovs == 2){
+    }else if(splitCovs.S == 2){
       initList <- c(initList, list(
         BetaD.Sy = BetaD.Sy,
         BetaD.So = BetaD.So,
         BetaV.Sy = BetaV.Sy,
         BetaV.So = BetaV.So))
-    }else if(splitCovs == 1){
+    }else if(splitCovs.S == 1){
       initList <- c(initList, list(
         BetaD.S = BetaD.S,
         BetaV.S = BetaV.S))
     }
   }
   
-  if(envEffectsR){
-    initList <- c(initList, list(
-      BetaD.R = BetaD.R))
+  if(envEffects.R){
+    if(splitCovs.R == 2){
+      initList <- c(initList, list(
+        BetaD.Rp = BetaD.Rp,
+        BetaD.Ro = BetaD.Ro))
+    }else if(splitCovs.R == 1){
+      initList <- c(initList, list(
+        BetaD.R = BetaD.R))
+    }
   }
   
   # append random effects
-  if(splitREs == 3){
+  if(splitREs.S == 3){
     initList <- c(initList, list(
       XiT.Sy = XiT.Sy,
       XiT.Sp = XiT.Sp,
@@ -531,7 +599,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
       EpsilonT.Sy = EpsilonT.Sy,
       EpsilonT.Sp = EpsilonT.Sp,
       EpsilonT.So = EpsilonT.So))
-  }else if(splitREs == 2){
+  }else if(splitREs.S == 2){
     initList <- c(initList, list(
       XiT.Sy = XiT.Sy,
       XiT.So = XiT.So,
@@ -539,11 +607,26 @@ simulateInits <- function(dens, veg, propF, knownStates,
       SigmaT.So = SigmaT.So,
       EpsilonT.Sy = EpsilonT.Sy,
       EpsilonT.So = EpsilonT.So))
-  }else if(splitREs == 1){
+  }else if(splitREs.S == 1){
     initList <- c(initList, list(
       XiT.S = XiT.S,
       SigmaT.S = SigmaT.S,
       EpsilonT.S = EpsilonT.S))
+  }
+  
+  if(splitREs.R == 2){
+    initList <- c(initList, list(
+      XiT.Rp = XiT.Rp,
+      XiT.Ro = XiT.Ro,
+      SigmaT.Rp = SigmaT.Rp,
+      SigmaT.Ro = SigmaT.Ro,
+      EpsilonT.Rp = EpsilonT.Rp,
+      EpsilonT.Ro = EpsilonT.Ro))
+  }else if(splitREs.R == 1){
+    initList <- c(initList, list(
+      XiT.R = XiT.R,
+      SigmaT.R = SigmaT.R,
+      EpsilonT.R = EpsilonT.R))
   }
   
   return(initList)
