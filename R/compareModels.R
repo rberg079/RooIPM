@@ -152,11 +152,12 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
                 mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%
                 pull(param)),
     
-    RS_covs = c('BetaD.R'),
+    RS_covs = c('BetaD.R', 'BetaD.Rp', 'BetaD.Ro'),
     
     RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
                paste0('EpsilonT.B[', plotYears, ']'),
-               'SigmaI.R', 'SigmaT.R', 'SigmaT.B'),
+               'SigmaI.R', 'SigmaT.B', 'SigmaT.R',
+               'SigmaT.Rp', 'SigmaT.Ro'),
     
     POP_NAs = c(expand.grid(a = plotAges, t = plotYears) %>%
                   mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
