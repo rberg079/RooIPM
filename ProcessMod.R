@@ -5,14 +5,16 @@
 ## Set up ----------------------------------------------------------------------
 
 # set toggles
-testRun <- FALSE
-use_dCJS <- TRUE
-parallelRun <- TRUE
-envEffectsS <- FALSE
-envEffectsR <- TRUE
-ageClasses <- 12
-splitCovs <- 0
-splitREs <- 1
+testRun      <- FALSE
+use_dCJS     <- TRUE
+parallelRun  <- TRUE
+envEffects.S <- TRUE
+envEffects.R <- TRUE
+ageClasses   <- 12
+splitCovs.S  <- 2
+splitCovs.R  <- 2
+splitREs.S   <- 1
+splitREs.R   <- 1
 
 # load packages
 library(tidyverse)
@@ -41,12 +43,14 @@ source('R/wrangleData_sv.R')
 svData <- wrangleData_sv(
   surv.data = "data/PromSurvivalNov25_RB.xlsx",
   yafs.data = "data/RSmainRB_May26.xlsx",
-  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, splitCovs = splitCovs, splitREs = splitREs)
+  ageClasses = ageClasses, known.age = TRUE, from2012 = FALSE, 
+  splitCovs.S = splitCovs.S, splitREs.S = splitREs.S)
 
 source('R/wrangleData_rs.R')
 rsData <- wrangleData_rs(
   rs.data = "data/RSmainRB_May26.xlsx",
-  ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE)
+  ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE, 
+  splitCovs.R = splitCovs.R, splitREs.R = splitREs.R)
 
 # create Nimble lists
 myData  <- list(obs = svData$obs,
@@ -93,20 +97,29 @@ myConst <- list(nYear = svData$nYear,
                 nNoProp = enData$nNoProp,
                 
                 use_dCJS = use_dCJS,
-                envEffectsS = envEffectsS,
-                envEffectsR = envEffectsR,
+                envEffects.S = envEffects.S,
+                envEffects.R = envEffects.R,
                 ageClasses = ageClasses,
-                splitCovs = splitCovs,
-                splitREs = splitREs)
+                splitCovs.S = splitCovs.S,
+                splitCovs.R = splitCovs.R,
+                splitREs.S = splitREs.S,
+                splitREs.R = splitREs.R)
 
 # conditionally add dummy variables
-if(splitCovs == 3 || splitREs == 3){
-  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyP = svData$dummyP, dummyO = svData$dummyO))
-}else if(splitCovs == 2 || splitREs == 2){
-  myConst <- c(myConst, list(dummyY = svData$dummyY, dummyO = svData$dummyO))
-}else if(splitCovs == 1 || splitREs == 1){
-  myConst <- c(myConst, list(dummy = svData$dummy))
+if(splitCovs.S == 3 || splitREs.S == 3){
+  myConst <- c(myConst, list(dummy.Sy = svData$dummy.Sy, dummy.Sp = svData$dummy.Sp, dummy.So = svData$dummy.So))
+}else if(splitCovs.S == 2 || splitREs.S == 2){
+  myConst <- c(myConst, list(dummy.Sy = svData$dummy.Sy, dummy.So = svData$dummy.So))
+}else if(splitCovs.S == 1 || splitREs.S == 1){
+  myConst <- c(myConst, list(dummy.S = svData$dummy.S))
 }
+
+if(splitCovs.R == 2 || splitREs.R == 2){
+  myConst <- c(myConst, list(dummy.Rp = rsData$dummy.Rp, dummy.Ro = rsData$dummy.Ro))
+}else if(splitCovs.R == 1 || splitREs.R == 1){
+  myConst <- c(myConst, list(dummy.R = rsData$dummy.R))
+}
+
 
 ## Assemble --------------------------------------------------------------------
 
@@ -114,8 +127,8 @@ source('R/writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 8
-seedMod   <- c(30, 31, 32, 33, 34, 35, 36, 37)
-seedInits <- 38
+seedMod   <- c(230, 231, 232, 233, 234, 235, 236, 237)
+seedInits <- 238
 
 # assign initial values
 source('R/simulateInits.R')
@@ -140,10 +153,12 @@ for(c in 1:nchains){
     age.R = myConst$age.R,
     ageC.R = myConst$ageC.R,
     ageC.S = myConst$ageC.S,
-    envEffectsS = envEffectsS,
-    envEffectsR = envEffectsR,
-    splitCovs = splitCovs,
-    splitREs = splitREs
+    envEffects.S = envEffects.S,
+    envEffects.R = envEffects.R,
+    splitCovs.S = splitCovs.S,
+    splitCovs.R = splitCovs.R,
+    splitREs.S = splitREs.S,
+    splitREs.R = splitREs.R
     )
 }
 
@@ -159,35 +174,48 @@ params <- c(
   
   # Reproductive success model
   'Mu.B', 'Mu.R', 
-  'EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R', 
-  'SigmaT.B', 'SigmaI.R', 'SigmaT.R', 
+  'EpsilonT.B', 'EpsilonI.R',
+  'SigmaT.B', 'SigmaI.R',
   
   # Density model
   'propF'
 )
 
 # conditionally add covariate effects
-if(envEffectsS){
-  if(splitCovs == 3){
+if(envEffects.S){
+  if(splitCovs.S == 3){
     params <- c(params, 'BetaD.Sy', 'BetaD.Sp', 'BetaD.So', 'BetaV.Sy', 'BetaV.Sp', 'BetaV.So')
-  }else if(splitCovs == 2){
+  }else if(splitCovs.S == 2){
     params <- c(params, 'BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So')
-  }else if(splitCovs == 1){
+  }else if(splitCovs.S == 1){
     params <- c(params, 'BetaD.S', 'BetaV.S')
   }
 } 
 
-if(envEffectsR){params <- c(params, 'BetaD.R')}
-if(envEffectsS || envEffectsR){params <- c(params, 'dens.true', 'veg.true')}
+if(envEffects.R){
+  if(splitCovs.R == 2){
+    params <- c(params, 'BetaD.Rp', 'BetaD.Ro')
+  }else if(splitCovs.R == 1){
+    params <- c(params, 'BetaD.R')
+  }
+}
+
+if(envEffects.S || envEffects.R){params <- c(params, 'dens.true', 'veg.true')}
 
 # conditionally add random effects
-if(splitREs == 3){
-    params <- c(params, 'EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So')
-  }else if(splitREs == 2){
-    params <- c(params, 'EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So')
-  }else if(splitREs == 1){
-    params <- c(params, 'EpsilonT.S', 'SigmaT.S')
-  }
+if(splitREs.S == 3){
+  params <- c(params, 'EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So')
+}else if(splitREs.S == 2){
+  params <- c(params, 'EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So')
+}else if(splitREs.S == 1){
+  params <- c(params, 'EpsilonT.S', 'SigmaT.S')
+}
+
+if(splitREs.R == 2){
+  params <- c(params, 'EpsilonT.Rp', 'EpsilonT.Ro', 'SigmaT.Rp', 'SigmaT.Ro')
+}else if(splitREs.R == 1){
+  params <- c(params, 'EpsilonT.R', 'SigmaT.R')
+}
 
 # select MCMC settings
 if(testRun){
@@ -272,13 +300,13 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_stochV_8chains.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_stochV_25&BR_Dave3CovsII.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -298,21 +326,21 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_
 # # survival model
 # MCMCsummary(out.mcmc, params = c('Mu.S', 'Mu.O', 'EpsilonT.O', 'SigmaT.O'), n.eff = TRUE, round = 2)
 # 
-# if(envEffectsS){
-#   if(splitCovs == 3){
+# if(envEffects.S){
+#   if(splitCovs.S == 3){
 #     MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'), n.eff = TRUE, round = 2, pg0 = TRUE)
-#   } else if(splitCovs == 2){
+#   }else if(splitCovs.S == 2){
 #     MCMCsummary(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
-#   } else if(splitCovs == 1){
+#   }else if(splitCovs.S == 1){
 #     MCMCsummary(out.mcmc, params = c('BetaD.S', 'BetaV.S'), n.eff = TRUE, round = 2, pg0 = TRUE)
 #   }
 # }
 # 
-# if(splitREs == 3){
+# if(splitREs.S == 3){
 #   MCMCsummary(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
-# }else if(splitREs == 2){
+# }else if(splitREs.S == 2){
 #   MCMCsummary(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So'), n.eff = TRUE, round = 2, pg0 = TRUE)
-# }else if(splitREs == 1){
+# }else if(splitREs.S == 1){
 #   MCMCsummary(out.mcmc, params = c('EpsilonT.S', 'SigmaT.S'), n.eff = TRUE, round = 2, pg0 = TRUE)
 # }
 # 
@@ -321,12 +349,12 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_
 # MCMCsummary(out.mcmc, params = c('EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R'), n.eff = TRUE, round = 2)
 # MCMCsummary(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), n.eff = TRUE, round = 2)
 # 
-# if(envEffectsR){
+# if(envEffects.R){
 #   MCMCsummary(out.mcmc, params = c('BetaD.R'), n.eff = TRUE, round = 2, pg0 = TRUE)
 # }
 # 
 # # latent true environment
-# if(envEffectsS || envEffectsR){
+# if(envEffects.S || envEffects.R){
 #   MCMCsummary(out.mcmc, params = c('dens.true', 'veg.true'), n.eff = TRUE, round = 2)
 # }
 # 
@@ -340,21 +368,21 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_
 # MCMCtrace(out.mcmc, params = c('Mu.S', 'EpsilonT.S', 'SigmaT.S'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('Mu.O', 'EpsilonT.O', 'SigmaT.O'), pdf = FALSE)
 # 
-# if(envEffectsS){
-#   if(splitCovs == 3){
+# if(envEffects.S){
+#   if(splitCovs.S == 3){
 #     MCMCtrace(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaD.Sp', 'BetaV.Sy', 'BetaV.So', 'BetaV.Sp'), pdf = FALSE)
-#   }else if(splitCovs == 2){
+#   }else if(splitCovs.S == 2){
 #     MCMCtrace(out.mcmc, params = c('BetaD.Sy', 'BetaD.So', 'BetaV.Sy', 'BetaV.So'), pdf = FALSE)
-#   }else if(splitCovs == 1){
+#   }else if(splitCovs.S == 1){
 #     MCMCtrace(out.mcmc, params = c('BetaD.S', 'BetaV.S'), pdf = FALSE)
 #   }
 # }
 # 
-# if(splitREs == 3){
+# if(splitREs.S == 3){
 #   MCMCtrace(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.Sp', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'), pdf = FALSE)
-# }else if(splitREs == 2){
+# }else if(splitREs.S == 2){
 #   MCMCtrace(out.mcmc, params = c('EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So'), pdf = FALSE)
-# }else if(splitREs == 1){
+# }else if(splitREs.S == 1){
 #   MCMCtrace(out.mcmc, params = c('EpsilonT.S', 'SigmaT.S'), pdf = FALSE)
 # }
 # 
@@ -363,15 +391,15 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_
 # MCMCtrace(out.mcmc, params = c('EpsilonT.B', 'EpsilonI.R', 'EpsilonT.R'), pdf = FALSE)
 # MCMCtrace(out.mcmc, params = c('SigmaT.B', 'SigmaI.R', 'SigmaT.R'), pdf = FALSE)
 # 
-# if(envEffectsR){
+# if(envEffects.R){
 #   MCMCtrace(out.mcmc, params = c('BetaD.R'), pdf = FALSE)
 # }
 # 
 # # latent true environment
-# if(envEffectsS || envEffectsR){
+# if(envEffects.S || envEffects.R){
 #   MCMCtrace(out.mcmc, params = c('dens.true', 'veg.true'), pdf = FALSE)
 # }
-# 
+
 # ## export
 # MCMCtrace(out.mcmc, Rhat = TRUE, pdf = TRUE, filename = 'figures/MCMCtrace.pdf')
 
@@ -385,22 +413,28 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_
 # compareModels(nYear = nYear,
 #               nAgeC.S = nAgeC.S,
 #               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs3REs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave0Covs3REs_stochV_8chains.rds"
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds"
 #               ),
 #               modelNames = c(
-#                 "IPM_2Covs1RE",
-#                 "IPM_3Covs1RE",
-#                 "IPM_0Covs1RE",
-#                 "IPM_2Covs3REs",
-#                 "IPM_3Covs3REs",
-#                 "IPM_0Covs3REs"
+#                 "IPM_S03R02",
+#                 "IPM_S03R21",
+#                 "IPM_S03R22",
+#                 "IPM_S21R02",
+#                 "IPM_S21R21",
+#                 "IPM_S21R22",
+#                 "IPM_S33R02",
+#                 "IPM_S33R21",
+#                 "IPM_S33R22"
 #               ),
-#               plotFolder = c("figures/densityChecks/NcovsNREs"),
+#               plotFolder = c("figures/densityChecks/varyNvarsSR/all"),
 #               returnSumData = TRUE)
 
 
