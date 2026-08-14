@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=IPM_S21R21             # Nom de la tâche
-#SBATCH --output=job_output_S21R21.txt    # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_S21R21.txt      # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=IPM_muFun             # Nom de la tâche
+#SBATCH --output=job_output_muFun.txt    # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_muFun.txt      # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 

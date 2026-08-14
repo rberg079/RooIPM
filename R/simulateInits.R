@@ -124,6 +124,11 @@ simulateInits <- function(dens, veg, propF, knownStates,
   nAgeC.S <- max(ageC.S)
   nAgeC.R <- max(ageC.R)
   
+  # generate scaled age vectors
+  ageG.S <- as.vector(scale(1:nAgeC.S))
+  ageG.R <- as.vector(scale(1:nAgeC.R))
+  ageG.B <- as.vector(scale(1:nAgeC.R))
+  
   ## Survival model
   # dummy variables
   if(ageClasses == 6){
@@ -248,14 +253,19 @@ simulateInits <- function(dens, veg, propF, knownStates,
   ## Simulate yearly vital rates -----------------------------------------------
   
   ## Survival model
-  Mu.S <- c(rep(runif(nAgeC.S, 0.1, 0.9)))
+  Beta0.S <- runif(1, 0, 2)
+  Beta1.S <- runif(1, -0.5, 0.5)
+  Beta2.S <- runif(1, -0.5, 0) # to simulate senescence
+  
   S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
   
   for(a in 1:nAgeC.S){
     for(t in 1:(nYear - 1)){
       
       # intercepts
-      logit.S <- qlogis(Mu.S[a])
+      logit.S <- Beta0.S +
+        Beta1.S * ageG.S[a] +
+        Beta2.S * (ageG.S[a]^2)
       
       # covariate effects
       if(envEffects.S){
@@ -299,12 +309,16 @@ simulateInits <- function(dens, veg, propF, knownStates,
   }
   
   ## Reproductive success model
-  Mu.B <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
+  Beta0.B <- runif(1, 0, 1)
+  Beta1.B <- runif(1, -0.5, 0.5)
+  Beta2.B <- runif(1, -0.5, 0) # to simulate senescence
 
   Bi <- numeric(nB)
   for(x in 1:nB){
     Bi[x] <- plogis(
-      qlogis(Mu.B[ageC.R[age.B[x]]]) + 
+      Beta0.B +
+        Beta1.B * ageG.B[ageC.R[age.B[x]]] +
+        Beta2.B * (ageG.B[ageC.R[age.B[x]]]^2) + 
         EpsilonT.B[year.B[x]])
   }
   
@@ -312,20 +326,26 @@ simulateInits <- function(dens, veg, propF, knownStates,
   for(a in 1:nAgeC.R){
     for(t in 1:(nYear-1)){
       Ba[a, t] <- plogis(
-        qlogis(Mu.B[a]) + 
+        Beta0.B +
+          Beta1.B * ageG.B[a] +
+          Beta2.B * (ageG.B[a]^2) + 
           EpsilonT.B[t])
     }
   }
   
   # individual reproductive success
-  Mu.R <- c(rep(runif(nAgeC.R, 0.1, 0.9)))
+  Beta0.R <- runif(1, 0, 1)
+  Beta1.R <- runif(1, -0.5, 0.5)
+  Beta2.R <- runif(1, -0.5, 0) # to simulate senescence
   
   Ri <- numeric(nR)
   
   for(x in 1:nR){
     
     # intercepts
-    logit.Ri <- qlogis(Mu.R[ageC.R[age.R[x]]])
+    logit.Ri <- Beta0.R +
+      Beta1.R * ageG.R[ageC.R[age.R[x]]] +
+      Beta2.R * (ageG.R[ageC.R[age.R[x]]]^2)
     
     # covariate effects
     if(envEffects.R){
@@ -361,7 +381,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
     for(t in 1:(nYear-1)){
       
       # intercepts
-      logit.Ra <- qlogis(Mu.R[a])
+      logit.Ra <- Beta0.R +
+        Beta1.R * ageG.R[a] +
+        Beta2.R * (ageG.R[a]^2)
       
       # covariate effects
       if(envEffects.R){
@@ -518,14 +540,22 @@ simulateInits <- function(dens, veg, propF, knownStates,
     EpsilonI.R = EpsilonI.R,
     EpsilonT.B = EpsilonT.B,
     
-    Mu.B = Mu.B,
-    Mu.R = Mu.R,
+    Beta0.B = Beta0.B,
+    Beta1.B = Beta1.B,
+    Beta2.B = Beta2.B,
+    Beta0.R = Beta0.R,
+    Beta1.R = Beta1.R,
+    Beta2.R = Beta2.R,
+    
     Bi = Bi,
     Ba = Ba,
     Ri = Ri,
     Ra = Ra,
     
-    Mu.S = Mu.S,
+    Beta0.S = Beta0.S,
+    Beta1.S = Beta1.S,
+    Beta2.S = Beta2.S,
+    
     S = S,
     BR = BR,
     sPY = sPY,

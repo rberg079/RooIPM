@@ -382,8 +382,12 @@ writeCode <- function(){
     #### Priors ####
     # survival
     for(a in 1:nAgeC.S){
-      Mu.S[a] ~ dunif(0, 1)
+      logit(Mu.S[a]) <- Beta0.S + BetaA.S * ageG.S[a] + BetaA2.S * pow(ageG.S[a], 2)
     }
+    
+    Beta0.S  ~ dnorm(0, sd = 1.5)
+    BetaA.S  ~ dunif(-5, 5)
+    BetaA2.S ~ dunif(-5, 5)
     
     if(envEffects.S){
       if(splitCovs.S == 3){
@@ -583,9 +587,17 @@ writeCode <- function(){
     ##### Priors ####
     # fixed effects
     for(a in 1:nAgeC.R){
-      Mu.R[a] ~ dunif(0, 1)
-      Mu.B[a] ~ dunif(0, 1)
+      logit(Mu.R[a]) <- Beta0.R + BetaA.R * ageG.R[a] + BetaA2.R * pow(ageG.R[a], 2)
+      logit(Mu.B[a]) <- Beta0.B + BetaA.B * ageG.R[a] + BetaA2.B * pow(ageG.R[a], 2)
     }
+    
+    Beta0.R  ~ dnorm(0, sd = 1.5)
+    BetaA.R  ~ dunif(-5, 5)
+    BetaA2.R ~ dunif(-5, 5)
+    
+    Beta0.B  ~ dnorm(0, sd = 1.5)
+    BetaA.B  ~ dunif(-5, 5)
+    BetaA2.B ~ dunif(-5, 5)
     
     if(envEffects.R){
       if(splitCovs.R == 2){

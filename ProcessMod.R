@@ -11,10 +11,10 @@ parallelRun  <- TRUE
 envEffects.S <- TRUE
 envEffects.R <- TRUE
 ageClasses   <- 12
-splitCovs.S  <- 2
+splitCovs.S  <- 3
 splitCovs.R  <- 2
-splitREs.S   <- 1
-splitREs.R   <- 1
+splitREs.S   <- 3
+splitREs.R   <- 2
 
 # load packages
 library(tidyverse)
@@ -127,8 +127,8 @@ source('R/writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 8
-seedMod   <- c(230, 231, 232, 233, 234, 235, 236, 237)
-seedInits <- 238
+seedMod   <- c(30, 31, 32, 33, 34, 35, 36, 37)
+seedInits <- 38
 
 # assign initial values
 source('R/simulateInits.R')
@@ -300,7 +300,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------

@@ -151,6 +151,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
   }
   
   nAgeC.R <- max(ageC.R)
+  ageG.R <- 1:nAgeC.R
+  ageG.B <- 1:nAgeC.R
   
   # create dummy variable for covariate effects
   if(splitCovs.R == 2 || splitREs.R == 2){
@@ -193,6 +195,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
          age.R = age.R,
          nAge = nAge,
          ageC.R = ageC.R,
+         ageG.B = ageG.B,
+         ageG.R = ageG.R,
          nAgeC.R = nAgeC.R
     ),
     

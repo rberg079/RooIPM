@@ -25,8 +25,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   # ageClasses = 12
   # known.age = TRUE
   # from2012 = FALSE
-  # splitCovs.S = 2
-  # splitREs.S = 1
+  # splitCovs.S = 3
+  # splitREs.S = 3
   
   
   ## Set up --------------------------------------------------------------------
@@ -512,6 +512,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
   nYear <- ncol(state)
   nID.S <- nrow(state)
   nAgeC.S <- max(ageC.S)
+  ageG.S <- 1:nAgeC.S
   
   noAge <- which(is.na(age.S[,ncol(age)]))
   nNoAge <- length(noAge)
@@ -534,6 +535,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       state = state,
       age.S = age.S,
       ageC.S = ageC.S,
+      ageG.S = ageG.S,
       
       noAge = noAge,
       nNoAge = nNoAge,

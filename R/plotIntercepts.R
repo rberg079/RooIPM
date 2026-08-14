@@ -12,11 +12,11 @@
 
 plotIPM_VitalRateIntercepts <- function(MCMCsamples, nAge = 19, plotFolder, returnSummary = TRUE){
   
-  # for testing purposes
-  MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds')
-  plotFolder = "figures/densityChecks/varyNvarsSR"
-  nAge = 19
-  returnSummary <- TRUE
+  # # for testing purposes
+  # MCMCsamples <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds')
+  # plotFolder = "figures/densityChecks/varyNvarsSR"
+  # nAge = 19
+  # returnSummary <- TRUE
   
   
   ## Set up --------------------------------------------------------------------
