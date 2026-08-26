@@ -125,9 +125,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
   nAgeC.R <- max(ageC.R)
   
   # generate scaled age vectors
-  ageG.S <- as.vector(scale(1:nAgeC.S))
-  ageG.R <- as.vector(scale(1:nAgeC.R))
-  ageG.B <- as.vector(scale(1:nAgeC.R))
+  ageG.S <- as.vector(1:nAgeC.S)
+  ageG.R <- as.vector(1:nAgeC.R)
+  ageG.B <- as.vector(1:nAgeC.R)
   
   ## Survival model
   # dummy variables
@@ -198,6 +198,10 @@ simulateInits <- function(dens, veg, propF, knownStates,
   ## Simulate vital rate random effects ----------------------------------------
   
   ## Survival model
+  # XiA.S <- rnorm(nAgeC.S, 0, 1)
+  # SigmaA.S <- runif(1, 0.1, 1)
+  # EpsilonA.S <- XiA.S * SigmaA.S
+  
   if(splitREs.S == 3){
     XiT.Sy <- rnorm(nYear-1, 0, 1)
     SigmaT.Sy <- runif(1, .5, 2)
@@ -227,6 +231,14 @@ simulateInits <- function(dens, veg, propF, knownStates,
   }
   
   ## Reproductive success model
+  # XiA.R <- rnorm(nAgeC.R, 0, 1)
+  # SigmaA.R <- runif(1, 0.1, 1)
+  # EpsilonA.R <- XiA.R * SigmaA.R
+  # 
+  # XiA.B <- rnorm(nAgeC.R, 0, 1)
+  # SigmaA.B <- runif(1, 0.1, 1)
+  # EpsilonA.B <- XiA.B * SigmaA.B
+  
   XiI.R <- rnorm(nID.R, 0, 1)
   SigmaI.R <- runif(1, .5, 2)
   EpsilonI.R <- XiI.R * SigmaI.R
@@ -254,8 +266,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
   
   ## Survival model
   Beta0.S <- runif(1, 0, 2)
-  Beta1.S <- runif(1, -0.5, 0.5)
-  Beta2.S <- runif(1, -0.5, 0) # to simulate senescence
+  BetaA.S <- runif(1, -0.5, 0.5)
+  BetaA2.S <- runif(1, -0.5, 0) # to simulate senescence
   
   S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
   
@@ -264,8 +276,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
       
       # intercepts
       logit.S <- Beta0.S +
-        Beta1.S * ageG.S[a] +
-        Beta2.S * (ageG.S[a]^2)
+        BetaA.S * ageG.S[a] +
+        BetaA2.S * (ageG.S[a]^2) # +
+        # EpsilonA.S[a]
       
       # covariate effects
       if(envEffects.S){
@@ -310,15 +323,15 @@ simulateInits <- function(dens, veg, propF, knownStates,
   
   ## Reproductive success model
   Beta0.B <- runif(1, 0, 1)
-  Beta1.B <- runif(1, -0.5, 0.5)
-  Beta2.B <- runif(1, -0.5, 0) # to simulate senescence
-
+  BetaA.B <- runif(1, -0.5, 0.5)
+  BetaA2.B <- runif(1, -0.5, 0) # to simulate senescence
+  
   Bi <- numeric(nB)
   for(x in 1:nB){
     Bi[x] <- plogis(
       Beta0.B +
-        Beta1.B * ageG.B[ageC.R[age.B[x]]] +
-        Beta2.B * (ageG.B[ageC.R[age.B[x]]]^2) + 
+        BetaA.B * ageG.B[ageC.R[age.B[x]]] +
+        BetaA2.B * (ageG.B[ageC.R[age.B[x]]]^2) + 
         EpsilonT.B[year.B[x]])
   }
   
@@ -327,16 +340,16 @@ simulateInits <- function(dens, veg, propF, knownStates,
     for(t in 1:(nYear-1)){
       Ba[a, t] <- plogis(
         Beta0.B +
-          Beta1.B * ageG.B[a] +
-          Beta2.B * (ageG.B[a]^2) + 
+          BetaA.B * ageG.B[a] +
+          BetaA2.B * (ageG.B[a]^2) + 
           EpsilonT.B[t])
     }
   }
   
   # individual reproductive success
   Beta0.R <- runif(1, 0, 1)
-  Beta1.R <- runif(1, -0.5, 0.5)
-  Beta2.R <- runif(1, -0.5, 0) # to simulate senescence
+  BetaA.R <- runif(1, -0.5, 0.5)
+  BetaA2.R <- runif(1, -0.5, 0) # to simulate senescence
   
   Ri <- numeric(nR)
   
@@ -344,8 +357,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
     
     # intercepts
     logit.Ri <- Beta0.R +
-      Beta1.R * ageG.R[ageC.R[age.R[x]]] +
-      Beta2.R * (ageG.R[ageC.R[age.R[x]]]^2)
+      BetaA.R * ageG.R[ageC.R[age.R[x]]] +
+      BetaA2.R * (ageG.R[ageC.R[age.R[x]]]^2) # +
+      # EpsilonA.R[ageC.R[age.R[x]]]
     
     # covariate effects
     if(envEffects.R){
@@ -373,7 +387,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
     
     Ri[x] <- plogis(logit.Ri)
   }
-    
+  
   # age-specific reproductive success
   Ra <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
   
@@ -382,12 +396,13 @@ simulateInits <- function(dens, veg, propF, knownStates,
       
       # intercepts
       logit.Ra <- Beta0.R +
-        Beta1.R * ageG.R[a] +
-        Beta2.R * (ageG.R[a]^2)
+        BetaA.R * ageG.R[a] +
+        BetaA2.R * (ageG.R[a]^2) # +
+        # EpsilonA.R[a]
       
       # covariate effects
       if(envEffects.R){
-        if(splitCovs.R){
+        if(splitCovs.R == 2){
           logit.Ra <- logit.Ra +
             BetaD.Rp * dens.cov[t] * dummy.Rp[a] +
             BetaD.Ro * dens.cov[t] * dummy.Ro[a]
@@ -533,6 +548,18 @@ simulateInits <- function(dens, veg, propF, knownStates,
     dens.cov = dens.cov,
     veg.true = veg.true,
     
+    # XiA.S = XiA.S,
+    # SigmaA.S = SigmaA.S,
+    # EpsilonA.S = EpsilonA.S,
+    # 
+    # XiA.B = XiA.B,
+    # SigmaA.B = SigmaA.B,
+    # EpsilonA.B = EpsilonA.B,
+    # 
+    # XiA.R = XiA.R,
+    # SigmaA.R = SigmaA.R,
+    # EpsilonA.R = EpsilonA.R,
+    
     XiI.R = XiI.R,
     XiT.B = XiT.B,
     SigmaI.R = SigmaI.R,
@@ -541,11 +568,11 @@ simulateInits <- function(dens, veg, propF, knownStates,
     EpsilonT.B = EpsilonT.B,
     
     Beta0.B = Beta0.B,
-    Beta1.B = Beta1.B,
-    Beta2.B = Beta2.B,
+    BetaA.B = BetaA.B,
+    BetaA2.B = BetaA2.B,
     Beta0.R = Beta0.R,
-    Beta1.R = Beta1.R,
-    Beta2.R = Beta2.R,
+    BetaA.R = BetaA.R,
+    BetaA2.R = BetaA2.R,
     
     Bi = Bi,
     Ba = Ba,
@@ -553,8 +580,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
     Ra = Ra,
     
     Beta0.S = Beta0.S,
-    Beta1.S = Beta1.S,
-    Beta2.S = Beta2.S,
+    BetaA.S = BetaA.S,
+    BetaA2.S = BetaA2.S,
     
     S = S,
     BR = BR,

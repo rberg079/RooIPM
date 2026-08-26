@@ -74,6 +74,7 @@ myConst <- list(nYear = svData$nYear,
                 nAgeC.S = svData$nAgeC.S,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
+                ageG.S = svData$ageG.S,
                 idx.sv = svData$idx.sv,
                 
                 nB = rsData$nB,
@@ -85,6 +86,8 @@ myConst <- list(nYear = svData$nYear,
                 age.B = rsData$age.B,
                 age.R = rsData$age.R,
                 ageC.R = rsData$ageC.R,
+                ageG.B = rsData$ageG.B,
+                ageG.R = rsData$ageG.R,
                 nAgeC.R = rsData$nAgeC.R,
                 
                 first = svData$first,
@@ -169,13 +172,12 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
-  'Mu.S',
+  'Mu.S', # 'EpsilonA.S', 'SigmaA.S',
   'Mu.O', 'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
-  'Mu.B', 'Mu.R', 
-  'EpsilonT.B', 'EpsilonI.R',
-  'SigmaT.B', 'SigmaI.R',
+  'Mu.B', 'EpsilonT.B', 'SigmaT.B', # 'EpsilonA.B', 'SigmaA.B',
+  'Mu.R', 'EpsilonI.R', 'SigmaI.R', # 'EpsilonA.R', 'SigmaA.R',
   
   # Density model
   'propF'
@@ -306,7 +308,7 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_st
 ## Results ---------------------------------------------------------------------
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -413,28 +415,32 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_st
 # compareModels(nYear = nYear,
 #               nAgeC.S = nAgeC.S,
 #               postPaths = c(
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds"
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFunE.rds"
 #               ),
 #               modelNames = c(
-#                 "IPM_S03R02",
-#                 "IPM_S03R21",
-#                 "IPM_S03R22",
-#                 "IPM_S21R02",
-#                 "IPM_S21R21",
-#                 "IPM_S21R22",
-#                 "IPM_S33R02",
-#                 "IPM_S33R21",
-#                 "IPM_S33R22"
+#                 # "IPM_S03R02",
+#                 # "IPM_S03R21",
+#                 # "IPM_S03R22",
+#                 # "IPM_S21R02",
+#                 # "IPM_S21R21",
+#                 # "IPM_S21R22",
+#                 # "IPM_S33R02",
+#                 # "IPM_S33R21",
+#                 "IPM_S33R22",
+#                 "IPM_muFun",
+#                 "IPM_muFunE"
 #               ),
-#               plotFolder = c("figures/densityChecks/varyNvarsSR/all"),
+#               plotFolder = c("figures/densityChecks/muFun"),
 #               returnSumData = TRUE)
 
 

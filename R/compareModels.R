@@ -28,13 +28,15 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
   # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave3Covs3REs_stochV_8chains.rds"
+  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFunE.rds"
   #               )
-  # modelNames = c("IPM_Dave2covs",
-  #                "IPM_Dave3covs3REs"
+  # modelNames = c("IPM_S33R22",
+  #                "IPM_muFun",
+  #                "IPM_muFunE"
   #                )
-  # plotFolder = c("figures/densityChecks/final2")
+  # plotFolder = c("figures/densityChecks/muFun")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
@@ -107,13 +109,13 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
     rename("Parameter" = "X1", "Idx1" = "X2", "Idx2" = "X3") %>%
     mutate(Idx1 = as.numeric(ifelse(Idx1 %in% c("", 0), NA, Idx1)),
            Idx2 = as.numeric(ifelse(Idx2 %in% c("", 0), NA, Idx2)),
-           YearIdx = case_when(grepl('Beta|EpsilonI|Mu|Sigma', Parameter) ~ NA_real_,
+           YearIdx = case_when(grepl('Beta|EpsilonI|EpsilonA|Mu|Sigma', Parameter) ~ NA_real_,
                                grepl('EpsilonT|nYF|nSA|nTOT|sYF|sSA|propF|dens.true|veg.true', Parameter) ~ Idx1,
                                grepl('nAD|BR|sPY|sAD|S', Parameter) ~ Idx2),
            AgeIdx  = case_when(grepl('Beta|EpsilonI|EpsilonT|SigmaT|Mu.O|nYF|nSA|nTOT|sYF|sSA|propF', Parameter) ~ NA_real_,
-                               grepl('Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ Idx1),
+                               grepl('EpsilonA|Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ Idx1),
            Year = YearIdx + minYear - 1,
-           Age  = case_when(grepl('Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ AgeIdx,
+           Age  = case_when(grepl('EpsilonA|Mu.S|Mu.B|Mu.R|nAD|BR|sPY|sAD|S', Parameter) ~ AgeIdx,
                             grepl('nYF|sYF', Parameter) ~ 0,
                             grepl('nSA|sSA', Parameter) ~ 1,
                             TRUE ~ NA_real_),
@@ -136,7 +138,8 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
                  'BetaV.Sy', 'BetaV.Sp', 'BetaV.So'),
     
     CJS_REs = c(paste0('EpsilonT.S[', plotYears, ']'),
-                'SigmaT.S', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So'),
+                'SigmaT.S', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So',
+                paste0('EpsilonA.S[', plotAges, ']'), 'SigmaA.S'),
     
     CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
     
@@ -157,7 +160,10 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
     RS_REs = c(paste0('EpsilonT.R[', plotYears, ']'),
                paste0('EpsilonT.B[', plotYears, ']'),
                'SigmaI.R', 'SigmaT.B', 'SigmaT.R',
-               'SigmaT.Rp', 'SigmaT.Ro'),
+               'SigmaT.Rp', 'SigmaT.Ro',
+               paste0('EpsilonA.B[', plotAges, ']'),
+               paste0('EpsilonA.R[', plotAges, ']'),
+               'SigmaA.B', 'SigmaA.R'),
     
     POP_NAs = c(expand.grid(a = plotAges, t = plotYears) %>%
                   mutate(param = paste0('nAD[', a, ', ', t, ']')) %>%
