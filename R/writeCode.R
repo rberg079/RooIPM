@@ -382,17 +382,17 @@ writeCode <- function(){
     #### Priors ####
     # survival
     for(a in 1:nAgeC.S){
-      # XiA.S[a] ~ dnorm(0, sd = 1)
-      # EpsilonA.S[a] <- SigmaA.S * XiA.S[a]
+      XiA.S[a] ~ dnorm(0, sd = 1)
+      EpsilonA.S[a] <- SigmaA.S * XiA.S[a]
       
-      link.Mu.S[a] <- Beta0.S + BetaA.S * ageG.S[a] + BetaA2.S * pow(ageG.S[a], 2) # + EpsilonA.S[a]
+      link.Mu.S[a] <- Beta0.S + BetaA.S * ageG.S[a] + BetaA2.S * pow(ageG.S[a], 2) + EpsilonA.S[a]
       Mu.S[a] <- ilogit(link.Mu.S[a])
     }
     
     Beta0.S  ~ dnorm(0, sd = 1.5)
     BetaA.S  ~ dunif(-5, 5)
     BetaA2.S ~ dunif(-5, 5)
-    # SigmaA.S ~ dunif(0, 10)
+    SigmaA.S ~ dunif(0, 10)
     
     if(envEffects.S){
       if(splitCovs.S == 3){
@@ -458,15 +458,31 @@ writeCode <- function(){
     # individual birth rate
     for(x in 1:nB){
       B[x] ~ dbern(Bi[x])
-      logit(Bi[x]) <- link.Mu.B[ageC.R[age.B[x]]] +
-        EpsilonT.B[year.B[x]]
+      
+      if(splitREs.B == 2){
+        logit(Bi[x]) <- link.Mu.B[ageC.R[age.B[x]]] +
+          EpsilonT.Bp[year.B[x]] * dummy.Rp[ageC.R[age.B[x]]] +
+          EpsilonT.Bo[year.B[x]] * dummy.Ro[ageC.R[age.B[x]]]
+        
+      }else if(splitREs.B == 1){
+        logit(Bi[x]) <- link.Mu.B[ageC.R[age.B[x]]] +
+          EpsilonT.B[year.B[x]]
+      }
     }
     
     # age-specific birth rate
     for(a in 1:nAgeC.R){
       for(t in 1:(nYear-1)){
-        logit(Ba[a, t]) <- link.Mu.B[a] +
-          EpsilonT.B[t]
+        
+        if(splitREs.B == 2){
+          logit(Ba[a, t]) <- link.Mu.B[a] +
+            EpsilonT.Bp[t] * dummy.Rp[a] +
+            EpsilonT.Bo[t] * dummy.Ro[a]
+          
+        }else if(splitREs.B == 1){
+          logit(Ba[a, t]) <- link.Mu.B[a] +
+            EpsilonT.B[t]
+        }
       }
     }
     
@@ -590,13 +606,13 @@ writeCode <- function(){
     ##### Priors ####
     # fixed effects
     for(a in 1:nAgeC.R){
-      # XiA.R[a] ~ dnorm(0, sd = 1)
-      # XiA.B[a] ~ dnorm(0, sd = 1)
-      # EpsilonA.R[a] <- SigmaA.R * XiA.R[a]
-      # EpsilonA.B[a] <- SigmaA.B * XiA.B[a]
+      XiA.R[a] ~ dnorm(0, sd = 1)
+      XiA.B[a] ~ dnorm(0, sd = 1)
+      EpsilonA.R[a] <- SigmaA.R * XiA.R[a]
+      EpsilonA.B[a] <- SigmaA.B * XiA.B[a]
       
-      link.Mu.R[a] <- Beta0.R + BetaA.R * ageG.R[a] + BetaA2.R * pow(ageG.R[a], 2) # + EpsilonA.R[a]
-      link.Mu.B[a] <- Beta0.B + BetaA.B * ageG.R[a] + BetaA2.B * pow(ageG.R[a], 2) # + EpsilonA.B[a]
+      link.Mu.R[a] <- Beta0.R + BetaA.R * ageG.R[a] + BetaA2.R * pow(ageG.R[a], 2) + EpsilonA.R[a]
+      link.Mu.B[a] <- Beta0.B + BetaA.B * ageG.R[a] + BetaA2.B * pow(ageG.R[a], 2) + EpsilonA.B[a]
       
       Mu.R[a] <- ilogit(link.Mu.R[a])
       Mu.B[a] <- ilogit(link.Mu.B[a])
@@ -605,12 +621,12 @@ writeCode <- function(){
     Beta0.R  ~ dnorm(0, sd = 1.5)
     BetaA.R  ~ dunif(-5, 5)
     BetaA2.R ~ dunif(-5, 5)
-    # SigmaA.R ~ dunif(0, 10)
+    SigmaA.R ~ dunif(0, 10)
     
     Beta0.B  ~ dnorm(0, sd = 1.5)
     BetaA.B  ~ dunif(-5, 5)
     BetaA2.B ~ dunif(-5, 5)
-    # SigmaA.B ~ dunif(0, 10)
+    SigmaA.B ~ dunif(0, 10)
     
     if(envEffects.R){
       if(splitCovs.R == 2){
@@ -629,11 +645,23 @@ writeCode <- function(){
     EpsilonI.R[1:nID.R] <- SigmaI.R * XiI.R[1:nID.R]
     SigmaI.R ~ dunif(0, 10)
     
-    for(t in 1:(nYear-1)){
-      XiT.B[t] ~ dnorm(0, sd = 1)
+    if(splitREs.B == 2){
+      for(t in 1:(nYear-1)){
+        XiT.Bp[t] ~ dnorm(0, sd = 1)
+        XiT.Bo[t] ~ dnorm(0, sd = 1)
+        EpsilonT.Bp[t] <- SigmaT.Bp * XiT.Bp[t]
+        EpsilonT.Bo[t] <- SigmaT.Bo * XiT.Bo[t]
+      }
+      SigmaT.Bp ~ dunif(0, 10)
+      SigmaT.Bo ~ dunif(0, 10)
+      
+    }else if(splitREs.B == 1){
+      for(t in 1:(nYear-1)){
+        XiT.B[t] ~ dnorm(0, sd = 1)
+        EpsilonT.B[t] <- SigmaT.B * XiT.B[t]
+      }
+      SigmaT.B ~ dunif(0, 10)
     }
-    EpsilonT.B[1:(nYear-1)] <- SigmaT.B * XiT.B[1:(nYear-1)]
-    SigmaT.B ~ dunif(0, 10)
     
     if(splitREs.R == 2){
       for(t in 1:(nYear-1)){

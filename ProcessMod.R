@@ -14,6 +14,7 @@ ageClasses   <- 12
 splitCovs.S  <- 3
 splitCovs.R  <- 2
 splitREs.S   <- 3
+splitREs.B   <- 1
 splitREs.R   <- 2
 
 # load packages
@@ -106,6 +107,7 @@ myConst <- list(nYear = svData$nYear,
                 splitCovs.S = splitCovs.S,
                 splitCovs.R = splitCovs.R,
                 splitREs.S = splitREs.S,
+                splitREs.B = splitREs.B,
                 splitREs.R = splitREs.R)
 
 # conditionally add dummy variables
@@ -117,9 +119,9 @@ if(splitCovs.S == 3 || splitREs.S == 3){
   myConst <- c(myConst, list(dummy.S = svData$dummy.S))
 }
 
-if(splitCovs.R == 2 || splitREs.R == 2){
+if(splitCovs.R == 2 || splitREs.B == 2 || splitREs.R == 2){
   myConst <- c(myConst, list(dummy.Rp = rsData$dummy.Rp, dummy.Ro = rsData$dummy.Ro))
-}else if(splitCovs.R == 1 || splitREs.R == 1){
+}else if(splitCovs.R == 1 || splitREs.B == 1 || splitREs.R == 1){
   myConst <- c(myConst, list(dummy.R = rsData$dummy.R))
 }
 
@@ -161,6 +163,7 @@ for(c in 1:nchains){
     splitCovs.S = splitCovs.S,
     splitCovs.R = splitCovs.R,
     splitREs.S = splitREs.S,
+    splitREs.B = splitREs.B,
     splitREs.R = splitREs.R
     )
 }
@@ -172,12 +175,18 @@ params <- c(
   'nYF', 'nSA', 'nAD', 'nTOT',
   
   # Survival model
-  'Mu.S', # 'EpsilonA.S', 'SigmaA.S',
-  'Mu.O', 'EpsilonT.O', 'SigmaT.O',
+  'Mu.S', 'Mu.O',
+  'Beta0.S', 'BetaA.S', 'BetaA2.S',
+  'EpsilonA.S', 'SigmaA.S',
+  'EpsilonT.O', 'SigmaT.O',
   
   # Reproductive success model
-  'Mu.B', 'EpsilonT.B', 'SigmaT.B', # 'EpsilonA.B', 'SigmaA.B',
-  'Mu.R', 'EpsilonI.R', 'SigmaI.R', # 'EpsilonA.R', 'SigmaA.R',
+  'Mu.B', 'Mu.R',
+  'Beta0.B', 'BetaA.B', 'BetaA2.B',
+  'Beta0.R', 'BetaA.R', 'BetaA2.R',
+  'EpsilonA.B', 'SigmaA.B',
+  'EpsilonA.R', 'SigmaA.R',
+  'EpsilonI.R', 'SigmaI.R', 
   
   # Density model
   'propF'
@@ -211,6 +220,12 @@ if(splitREs.S == 3){
   params <- c(params, 'EpsilonT.Sy', 'EpsilonT.So', 'SigmaT.Sy', 'SigmaT.So')
 }else if(splitREs.S == 1){
   params <- c(params, 'EpsilonT.S', 'SigmaT.S')
+}
+
+if(splitREs.B == 2){
+  params <- c(params, 'EpsilonT.Bp', 'EpsilonT.Bo', 'SigmaT.Bp', 'SigmaT.Bo')
+}else if(splitREs.B == 1){
+  params <- c(params, 'EpsilonT.B', 'SigmaT.B')
 }
 
 if(splitREs.R == 2){
@@ -302,7 +317,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -424,8 +439,9 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_st
 #                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
 #                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
 #                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFunE.rds"
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds"
 #               ),
 #               modelNames = c(
 #                 # "IPM_S03R02",
@@ -438,7 +454,8 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_st
 #                 # "IPM_S33R21",
 #                 "IPM_S33R22",
 #                 "IPM_muFun",
-#                 "IPM_muFunE"
+#                 "IPM_muFunE",
+#                 "IPM_muFunE_B22"
 #               ),
 #               plotFolder = c("figures/densityChecks/muFun"),
 #               returnSumData = TRUE)

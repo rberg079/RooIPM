@@ -21,6 +21,7 @@
 #' @param splitCovs.S integer. Number of age-group-specific covariate effects to fit in the survival model. splitCovs.S = 1 by default.
 #' @param splitCovs.R integer. Number of age-group-specific covariate effects to fit in the reproductive success model. splitCovs.S = 1 by default.
 #' @param splitREs.S integer. Number of age-group-specific random effects of year to fit in the survival model. splitREs.R = 1 by default.
+#' @param splitREs.B integer. Number of age-group-specific random effects of year to fit in the birth rate model. splitREs.B = 1 by default.
 #' @param splitREs.R integer. Number of age-group-specific random effects of year to fit in the reproductive success model. splitREs.R = 1 by default.
 #'
 #' @returns a list containing all initial values needed for the IPM.
@@ -33,7 +34,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
                           year.B, year.R, id.R, age.B, age.R, ageC.R, ageC.S,
                           envEffects.S = TRUE, envEffects.R = TRUE,
                           splitCovs.S = 1, splitCovs.R = 1, 
-                          splitREs.S = 1, splitREs.R = 1){
+                          splitREs.S = 1, splitREs.B = 1, splitREs.R = 1){
   
   # # for testing purposes
   # library(readxl)
@@ -44,6 +45,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
   # splitCovs.S = 0
   # splitCovs.R = 2
   # splitREs.S = 3
+  # splitREs.B = 2
   # splitREs.R = 1
   # 
   # ageClasses <- 12
@@ -198,9 +200,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
   ## Simulate vital rate random effects ----------------------------------------
   
   ## Survival model
-  # XiA.S <- rnorm(nAgeC.S, 0, 1)
-  # SigmaA.S <- runif(1, 0.1, 1)
-  # EpsilonA.S <- XiA.S * SigmaA.S
+  XiA.S <- rnorm(nAgeC.S, 0, 1)
+  SigmaA.S <- runif(1, 0.1, 1)
+  EpsilonA.S <- XiA.S * SigmaA.S
   
   if(splitREs.S == 3){
     XiT.Sy <- rnorm(nYear-1, 0, 1)
@@ -231,21 +233,31 @@ simulateInits <- function(dens, veg, propF, knownStates,
   }
   
   ## Reproductive success model
-  # XiA.R <- rnorm(nAgeC.R, 0, 1)
-  # SigmaA.R <- runif(1, 0.1, 1)
-  # EpsilonA.R <- XiA.R * SigmaA.R
-  # 
-  # XiA.B <- rnorm(nAgeC.R, 0, 1)
-  # SigmaA.B <- runif(1, 0.1, 1)
-  # EpsilonA.B <- XiA.B * SigmaA.B
+  XiA.R <- rnorm(nAgeC.R, 0, 1)
+  SigmaA.R <- runif(1, 0.1, 1)
+  EpsilonA.R <- XiA.R * SigmaA.R
+
+  XiA.B <- rnorm(nAgeC.R, 0, 1)
+  SigmaA.B <- runif(1, 0.1, 1)
+  EpsilonA.B <- XiA.B * SigmaA.B
   
   XiI.R <- rnorm(nID.R, 0, 1)
   SigmaI.R <- runif(1, .5, 2)
   EpsilonI.R <- XiI.R * SigmaI.R
   
-  XiT.B <- rnorm(nYear-1, 0, 1)
-  SigmaT.B <- runif(1, .5, 2)
-  EpsilonT.B <- XiT.B * SigmaT.B
+  if(splitREs.B == 2){
+    XiT.Bp <- rnorm(nYear-1, 0, 1)
+    XiT.Bo <- rnorm(nYear-1, 0, 1)
+    SigmaT.Bp <- runif(1, .5, 2)
+    SigmaT.Bo <- runif(1, .5, 2)
+    EpsilonT.Bp <- XiT.Bp * SigmaT.Bp
+    EpsilonT.Bo <- XiT.Bo * SigmaT.Bo
+    
+  }else if(splitREs.B == 1){
+    XiT.B <- rnorm(nYear-1, 0, 1)
+    SigmaT.B <- runif(1, .5, 2)
+    EpsilonT.B <- XiT.B * SigmaT.B
+  }
   
   if(splitREs.R == 2){
     XiT.Rp <- rnorm(nYear-1, 0, 1)
@@ -277,8 +289,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
       # intercepts
       logit.S <- Beta0.S +
         BetaA.S * ageG.S[a] +
-        BetaA2.S * (ageG.S[a]^2) # +
-        # EpsilonA.S[a]
+        BetaA2.S * (ageG.S[a]^2) +
+        EpsilonA.S[a]
       
       # covariate effects
       if(envEffects.S){
@@ -322,27 +334,56 @@ simulateInits <- function(dens, veg, propF, knownStates,
   }
   
   ## Reproductive success model
+  # individual birth rate
   Beta0.B <- runif(1, 0, 1)
   BetaA.B <- runif(1, -0.5, 0.5)
   BetaA2.B <- runif(1, -0.5, 0) # to simulate senescence
   
   Bi <- numeric(nB)
+  
   for(x in 1:nB){
-    Bi[x] <- plogis(
-      Beta0.B +
-        BetaA.B * ageG.B[ageC.R[age.B[x]]] +
-        BetaA2.B * (ageG.B[ageC.R[age.B[x]]]^2) + 
-        EpsilonT.B[year.B[x]])
+    
+    # intercepts
+    logit.Bi <- Beta0.B +
+      BetaA.B * ageG.B[ageC.R[age.B[x]]] +
+      BetaA2.B * (ageG.B[ageC.R[age.B[x]]]^2) + 
+      EpsilonA.B[ageC.R[age.R[x]]]
+    
+    # random effects
+    if(splitREs.B == 2){
+      logit.Bi <- logit.Bi +
+        EpsilonT.Bp[year.B[x]] * dummy.Rp[ageC.R[age.B[x]]] +
+        EpsilonT.Bo[year.B[x]] * dummy.Ro[ageC.R[age.B[x]]]
+    }else if(splitREs.B == 1){
+      logit.Bi <- logit.Bi +
+        EpsilonT.B[year.B[x]]
+    }
+    
+    Bi[x] <- plogis(logit.Bi)
   }
   
+  # age-specific birth rate
   Ba <- matrix(0, nrow = nAgeC.R, ncol = nYear-1)
+  
   for(a in 1:nAgeC.R){
     for(t in 1:(nYear-1)){
-      Ba[a, t] <- plogis(
-        Beta0.B +
-          BetaA.B * ageG.B[a] +
-          BetaA2.B * (ageG.B[a]^2) + 
-          EpsilonT.B[t])
+      
+      # intercepts
+      logit.Ba <- Beta0.B +
+        BetaA.B * ageG.B[a] +
+        BetaA2.B * (ageG.B[a]^2) +
+        EpsilonA.B[a]
+      
+      # random effects
+      if(splitREs.B == 2){
+        logit.Ba <- logit.Ba +
+          EpsilonT.Bp[t] * dummy.Rp[a] +
+          EpsilonT.Bo[t] * dummy.Ro[a]
+      }else if(splitREs.B == 1){
+        logit.Ba <- logit.Ba + EpsilonT.B[t]
+      }
+      
+      Ba[a, t] <- plogis(logit.Ba)
     }
   }
   
@@ -358,8 +399,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
     # intercepts
     logit.Ri <- Beta0.R +
       BetaA.R * ageG.R[ageC.R[age.R[x]]] +
-      BetaA2.R * (ageG.R[ageC.R[age.R[x]]]^2) # +
-      # EpsilonA.R[ageC.R[age.R[x]]]
+      BetaA2.R * (ageG.R[ageC.R[age.R[x]]]^2) +
+      EpsilonA.R[ageC.R[age.R[x]]]
     
     # covariate effects
     if(envEffects.R){
@@ -397,8 +438,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
       # intercepts
       logit.Ra <- Beta0.R +
         BetaA.R * ageG.R[a] +
-        BetaA2.R * (ageG.R[a]^2) # +
-        # EpsilonA.R[a]
+        BetaA2.R * (ageG.R[a]^2) +
+        EpsilonA.R[a]
       
       # covariate effects
       if(envEffects.R){
@@ -412,6 +453,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
         }
       }
       
+      # random effects
       if(splitREs.R == 2){
         logit.Ra <- logit.Ra + 
           EpsilonT.Rp[t] * dummy.Rp[a] + 
@@ -548,24 +590,21 @@ simulateInits <- function(dens, veg, propF, knownStates,
     dens.cov = dens.cov,
     veg.true = veg.true,
     
-    # XiA.S = XiA.S,
-    # SigmaA.S = SigmaA.S,
-    # EpsilonA.S = EpsilonA.S,
-    # 
-    # XiA.B = XiA.B,
-    # SigmaA.B = SigmaA.B,
-    # EpsilonA.B = EpsilonA.B,
-    # 
-    # XiA.R = XiA.R,
-    # SigmaA.R = SigmaA.R,
-    # EpsilonA.R = EpsilonA.R,
+    XiA.S = XiA.S,
+    SigmaA.S = SigmaA.S,
+    EpsilonA.S = EpsilonA.S,
+
+    XiA.B = XiA.B,
+    SigmaA.B = SigmaA.B,
+    EpsilonA.B = EpsilonA.B,
+
+    XiA.R = XiA.R,
+    SigmaA.R = SigmaA.R,
+    EpsilonA.R = EpsilonA.R,
     
     XiI.R = XiI.R,
-    XiT.B = XiT.B,
     SigmaI.R = SigmaI.R,
-    SigmaT.B = SigmaT.B,
     EpsilonI.R = EpsilonI.R,
-    EpsilonT.B = EpsilonT.B,
     
     Beta0.B = Beta0.B,
     BetaA.B = BetaA.B,
@@ -669,6 +708,21 @@ simulateInits <- function(dens, veg, propF, knownStates,
       XiT.S = XiT.S,
       SigmaT.S = SigmaT.S,
       EpsilonT.S = EpsilonT.S))
+  }
+  
+  if(splitREs.B == 2){
+    initList <- c(initList, list(
+      XiT.Bp = XiT.Bp,
+      XiT.Bo = XiT.Bo,
+      SigmaT.Bp = SigmaT.Bp,
+      SigmaT.Bo = SigmaT.Bo,
+      EpsilonT.Bp = EpsilonT.Bp,
+      EpsilonT.Bo = EpsilonT.Bo))
+  }else if(splitREs.B == 1){
+    initList <- c(initList, list(
+      XiT.B = XiT.B,
+      SigmaT.B = SigmaT.B,
+      EpsilonT.B = EpsilonT.B))
   }
   
   if(splitREs.R == 2){
