@@ -29,8 +29,8 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
   # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFun.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R33_stochV_8chains_muFunE.rds"
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
+  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds"
   #               )
   # modelNames = c("IPM_S33R22",
   #                "IPM_muFun",
@@ -131,7 +131,8 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
   
   # set parameter groups for plotting posterior density overlaps
   plot.params <- list(
-    CJS_mus = c(paste0('Mu.S[', 1:nAgeC.S, ']')),
+    CJS_mus = c(paste0('Mu.S[', 1:nAgeC.S, ']'),
+                'Beta0.S', 'BetaA.S', 'BetaA2.S'),
     
     CJS_covs = c('BetaD.S', 'BetaV.S',
                  'BetaD.Sy', 'BetaD.Sp', 'BetaD.So',
@@ -141,15 +142,17 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
                 'SigmaT.S', 'SigmaT.Sy', 'SigmaT.Sp', 'SigmaT.So',
                 paste0('EpsilonA.S[', plotAges, ']'), 'SigmaA.S'),
     
-    CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', 1:nYear, ']')),
+    CJS_obs = c('Mu.O', 'SigmaT.O', paste0('EpsilonT.O[', plotYears, ']')),
     
-    RS_muB = c(paste0('Mu.B[', 1:nAgeC.S, ']')),
+    RS_muB = c(paste0('Mu.B[', 1:nAgeC.S, ']'),
+               'Beta0.B', 'BetaA.B', 'BetaA2.B'),
     
     RS_BR = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('BR[', a, ', ', t, ']')) %>%
                 pull(param)),
     
-    RS_muR = c(paste0('Mu.R[', 1:nAgeC.S, ']')),
+    RS_muR = c(paste0('Mu.R[', 1:nAgeC.S, ']'),
+               'Beta0.R', 'BetaA.R', 'BetaA2.R'),
     
     RS_Ra = c(expand.grid(a = plotAges, t = plotYears) %>%
                 mutate(param = paste0('sPY[', a, ', ', t, ']')) %>%

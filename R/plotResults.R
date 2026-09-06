@@ -5,6 +5,7 @@
 
 library(tidyverse)
 library(data.table)
+library(paletteer)
 library(patchwork)
 library(scales)
 
@@ -764,4 +765,118 @@ ggscatter(tmp, x = "dave", y = "heloise",
           add = "reg.line", conf.int = TRUE,
           cor.coef = TRUE, cor.method = "pearson",
           alpha = 0.2, ggtheme = theme_bw())
+
+
+## Age-specific intercepts -----------------------------------------------------
+
+postPaths <- c(
+  "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
+  "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
+  "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds",
+  "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds"
+)
+
+modelNames <- c(
+  "IPM_S33R22",
+  "IPM_muFun",
+  "IPM_muFunE",
+  "IPM_muFunE_B22"
+)
+
+nModels <- length(modelNames)
+plotFolder <- c("figures/densityChecks/muFun")
+
+# reformat posterior samples
+post.dat <- data.frame()
+for(i in 1:nModels){
+  
+  # read in RDS as mcmc.list
+  post <- readRDS(postPaths[i])
+  
+  # convert to matrix then data.table
+  samples <- do.call(rbind, lapply(post, as.matrix))
+  rownames(samples) <- 1:nrow(samples)  # add row names
+  model.dat <- as.data.table(samples, keep.rownames = "Sample")
+  
+  # reshape to long format
+  model.dat <- melt(model.dat,
+                    id.vars = "Sample",
+                    variable.name = "Parameter",
+                    value.name = "Value")
+  
+  # add identifier & bind
+  model.dat[, Model := modelNames[i]]
+  post.dat <- rbindlist(list(post.dat, model.dat))
+}
+
+# set plotting colors
+plot.cols <- paletteer_c("grDevices::Temps", nModels)
+
+# filter posterior data for intercepts
+mu.dat <- post.dat %>%
+  filter(grepl("^Mu\\.[SBR]\\[\\d+\\]$", Parameter)) %>%
+  mutate(
+    ParamType = stringr::str_extract(Parameter, "^Mu\\.[SBR]"),
+    Age = as.numeric(stringr::str_extract(Parameter, "\\d+"))
+  )
+
+# a) Survival intercepts (Mu.S)
+p.Mu.S <- ggplot(subset(mu.dat, ParamType == "Mu.S")) +
+  geom_violin(aes(x = factor(Age), y = Value, fill = Model, colour = Model), 
+              alpha = 0.5, scale = "width", draw_quantiles = 0.5, 
+              position = position_dodge(width = 0.8)) +
+  ylab("Parameter value") +
+  xlab("") +
+  labs(title = "a) Survival intercepts") +
+  scale_x_discrete(labels = c("0", 1:11, "12+")) +
+  scale_fill_manual(values = plot.cols) +
+  scale_colour_manual(values = plot.cols) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.Mu.S
+
+# b) Birth rate intercepts (Mu.B)
+p.Mu.B <- ggplot(subset(mu.dat, ParamType == "Mu.B")) +
+  geom_violin(aes(x = factor(Age), y = Value, fill = Model, colour = Model), 
+              alpha = 0.5, scale = "width", draw_quantiles = 0.5, 
+              position = position_dodge(width = 0.8)) +
+  ylab("Parameter value") +
+  xlab("") +
+  labs(title = "b) Birth rate intercepts") +
+  scale_x_discrete(labels = c(2:12)) +
+  scale_fill_manual(values = plot.cols) +
+  scale_colour_manual(values = plot.cols) +
+  theme_bw() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.Mu.B
+
+# c) Reproductive success intercepts (Mu.R)
+p.Mu.R <- ggplot(subset(mu.dat, ParamType == "Mu.R")) +
+  geom_violin(aes(x = factor(Age), y = Value, fill = Model, colour = Model), 
+              alpha = 0.5, scale = "width", draw_quantiles = 0.5, 
+              position = position_dodge(width = 0.8)) +
+  ylab("Parameter value") +
+  xlab("Age") +
+  labs(title = "c) Survival of PYs intercepts") +
+  scale_x_discrete(labels = c(2:12)) +
+  scale_fill_manual(values = plot.cols) +
+  scale_colour_manual(values = plot.cols) +
+  theme_bw() +
+  theme(legend.position = "bottom", # Keep legend only on the final bottom plot
+        legend.title = element_blank(),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        plot.margin = margin(1, 3, 1, 3)); p.Mu.R
+
+# Combine with patchwork & save 
+pdf(paste0(plotFolder, "/PostSummaries_MuIntercepts.pdf"), width = 10, height = 10)
+print(p.Mu.S / p.Mu.B / p.Mu.R)
+dev.off()
 
