@@ -231,8 +231,12 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   densE <- as.numeric(ifelse(is.na(env$DensE), 1, env$DensE))
   vegE  <- as.numeric(ifelse(is.na(env$VegSE[1:17]), 1, env$VegSE[1:17]/sd(env$Veg[1:17], na.rm = T))) # scale uncertainty too
   
-  densM  <- mean(dens, na.rm = T)
-  densSD <- sd(dens, na.rm = T)
+  # densM  <- mean(dens, na.rm = T)
+  # densSD <- sd(dens, na.rm = T)
+  
+  # OR set specifically:
+  densM  <- 2.81
+  densSD <- 0.46
   
   noVeg  <- which(is.na(veg))
   noProp <- which(is.na(propF))
