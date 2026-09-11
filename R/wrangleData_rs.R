@@ -150,6 +150,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
     ageC.R = c(seq(from = 0, to = 18, by = 1), rep(18,21))
   }
   
+  meanAge.R <- 6
+  
   nAgeC.R <- max(ageC.R)
   ageG.R <- 1:nAgeC.R
   ageG.B <- 1:nAgeC.R
@@ -197,7 +199,8 @@ wrangleData_rs <- function(rs.data, obs.data, prime = c(5:11), ageClasses = 20,
          ageC.R = ageC.R,
          ageG.B = ageG.B,
          ageG.R = ageG.R,
-         nAgeC.R = nAgeC.R
+         nAgeC.R = nAgeC.R,
+         meanAge.R = meanAge.R
     ),
     
     if(splitCovs.R == 2 || splitREs.R == 2){

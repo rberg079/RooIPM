@@ -480,6 +480,8 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
     ageC.S = c(seq(from = 1, to = 19, by = 1), rep(20,21))
   }
   
+  meanAge.S <- 7
+  
   # create dummy variable for covariate effects
   if(splitCovs.S > 1 || splitREs.S > 1){
     
@@ -530,6 +532,7 @@ wrangleData_sv <- function(surv.data, yafs.data, surv.sheet = "YEARLY SURV",
       nYear = nYear,
       nID.S = nID.S,
       nAgeC.S = nAgeC.S,
+      meanAge.S = meanAge.S,
       
       obs = obs,
       state = state,

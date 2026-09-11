@@ -385,13 +385,17 @@ writeCode <- function(){
       XiA.S[a] ~ dnorm(0, sd = 1)
       EpsilonA.S[a] <- SigmaA.S * XiA.S[a]
       
-      link.Mu.S[a] <- Beta0.S + BetaA.S * ageG.S[a] + BetaA2.S * pow(ageG.S[a], 2) + EpsilonA.S[a]
+      # link.Mu.S[a] <- Beta0.S + BetaA.S * ageG.S[a] + BetaA2.S * pow(ageG.S[a], 2) + EpsilonA.S[a]
+      # Mu.S[a] <- ilogit(link.Mu.S[a])
+      
+      # with age centering
+      link.Mu.S[a] <- Beta0.S + BetaA.S * (ageG.S[a] - meanAge.S) + BetaA2.S * pow(ageG.S[a] - meanAge.S, 2) + EpsilonA.S[a]
       Mu.S[a] <- ilogit(link.Mu.S[a])
     }
     
     Beta0.S  ~ dnorm(0, sd = 1.5)
-    BetaA.S  ~ dunif(-5, 5)
-    BetaA2.S ~ dunif(-5, 5)
+    BetaA.S  ~ dnorm(0, sd = 1)
+    BetaA2.S ~ dnorm(0, sd = 0.2)
     SigmaA.S ~ dunif(0, 10)
     
     if(envEffects.S){
@@ -611,21 +615,25 @@ writeCode <- function(){
       EpsilonA.R[a] <- SigmaA.R * XiA.R[a]
       EpsilonA.B[a] <- SigmaA.B * XiA.B[a]
       
-      link.Mu.R[a] <- Beta0.R + BetaA.R * ageG.R[a] + BetaA2.R * pow(ageG.R[a], 2) + EpsilonA.R[a]
-      link.Mu.B[a] <- Beta0.B + BetaA.B * ageG.R[a] + BetaA2.B * pow(ageG.R[a], 2) + EpsilonA.B[a]
+      # link.Mu.R[a] <- Beta0.R + BetaA.R * ageG.R[a] + BetaA2.R * pow(ageG.R[a], 2) + EpsilonA.R[a]
+      # link.Mu.B[a] <- Beta0.B + BetaA.B * ageG.R[a] + BetaA2.B * pow(ageG.R[a], 2) + EpsilonA.B[a]
+      
+      # with age centering
+      link.Mu.R[a] <- Beta0.R + BetaA.R * (ageG.R[a] - meanAge.R) + BetaA2.R * pow(ageG.R[a] - meanAge.R, 2) + EpsilonA.R[a]
+      link.Mu.B[a] <- Beta0.B + BetaA.B * (ageG.R[a] - meanAge.R) + BetaA2.B * pow(ageG.R[a] - meanAge.R, 2) + EpsilonA.B[a]
       
       Mu.R[a] <- ilogit(link.Mu.R[a])
       Mu.B[a] <- ilogit(link.Mu.B[a])
     }
     
     Beta0.R  ~ dnorm(0, sd = 1.5)
-    BetaA.R  ~ dunif(-5, 5)
-    BetaA2.R ~ dunif(-5, 5)
+    BetaA.R  ~ dnorm(0, sd = 1)
+    BetaA2.R ~ dnorm(0, sd = 0.2)
     SigmaA.R ~ dunif(0, 10)
     
     Beta0.B  ~ dnorm(0, sd = 1.5)
-    BetaA.B  ~ dunif(-5, 5)
-    BetaA2.B ~ dunif(-5, 5)
+    BetaA.B  ~ dnorm(0, sd = 1)
+    BetaA2.B ~ dnorm(0, sd = 0.2)
     SigmaA.B ~ dunif(0, 10)
     
     if(envEffects.R){

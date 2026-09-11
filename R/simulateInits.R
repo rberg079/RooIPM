@@ -126,10 +126,15 @@ simulateInits <- function(dens, veg, propF, knownStates,
   nAgeC.S <- max(ageC.S)
   nAgeC.R <- max(ageC.R)
   
-  # generate scaled age vectors
-  ageG.S <- as.vector(1:nAgeC.S)
-  ageG.R <- as.vector(1:nAgeC.R)
-  ageG.B <- as.vector(1:nAgeC.R)
+  # generate centered age vectors
+  ageG.S <- (1:nAgeC.S) - 7
+  ageG.R <- (1:nAgeC.R) - 6
+  ageG.B <- (1:nAgeC.R) - 6
+  
+  # # generate age vectors
+  # ageG.S <- as.vector(1:nAgeC.S)
+  # ageG.R <- as.vector(1:nAgeC.R)
+  # ageG.B <- as.vector(1:nAgeC.R)
   
   ## Survival model
   # dummy variables
@@ -277,9 +282,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
   ## Simulate yearly vital rates -----------------------------------------------
   
   ## Survival model
-  Beta0.S <- runif(1, 0, 2)
-  BetaA.S <- runif(1, -0.5, 0.5)
-  BetaA2.S <- runif(1, -0.5, 0) # to simulate senescence
+  Beta0.S  <- runif(1,  0.5, 2.0)
+  BetaA.S  <- runif(1, -0.2, 0.2)
+  BetaA2.S <- runif(1, -0.1, 0) # to simulate senescence
   
   S <- matrix(NA, nrow = nAgeC.S, ncol = nYear-1)
   
@@ -335,9 +340,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
   
   ## Reproductive success model
   # individual birth rate
-  Beta0.B <- runif(1, 0, 1)
-  BetaA.B <- runif(1, -0.5, 0.5)
-  BetaA2.B <- runif(1, -0.5, 0) # to simulate senescence
+  Beta0.B  <- runif(1, -0.5, 1.5)
+  BetaA.B  <- runif(1, -0.2, 0.2)
+  BetaA2.B <- runif(1, -0.1, 0) # to simulate senescence
   
   Bi <- numeric(nB)
   
@@ -388,9 +393,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
   }
   
   # individual reproductive success
-  Beta0.R <- runif(1, 0, 1)
-  BetaA.R <- runif(1, -0.5, 0.5)
-  BetaA2.R <- runif(1, -0.5, 0) # to simulate senescence
+  Beta0.R  <- runif(1, -0.5, 1.5)
+  BetaA.R  <- runif(1, -0.2, 0.2)
+  BetaA2.R <- runif(1, -0.1, 0) # to simulate senescence
   
   Ri <- numeric(nR)
   

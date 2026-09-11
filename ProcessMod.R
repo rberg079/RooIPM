@@ -73,6 +73,7 @@ myConst <- list(nYear = svData$nYear,
                 
                 nID.S = svData$nID,
                 nAgeC.S = svData$nAgeC.S,
+                meanAge.S = svData$meanAge.S,
                 age.S = svData$age.S,
                 ageC.S = svData$ageC.S,
                 ageG.S = svData$ageG.S,
@@ -90,6 +91,7 @@ myConst <- list(nYear = svData$nYear,
                 ageG.B = rsData$ageG.B,
                 ageG.R = rsData$ageG.R,
                 nAgeC.R = rsData$nAgeC.R,
+                meanAge.R = rsData$meanAge.R,
                 
                 first = svData$first,
                 last = svData$last,
@@ -132,8 +134,8 @@ source('R/writeCode.R')
 myCode <- writeCode()
 
 nchains   <- 8
-seedMod   <- c(230, 231, 232, 233, 234, 235, 236, 237)
-seedInits <- 238
+seedMod   <- c(130, 131, 132, 133, 134, 135, 136, 137)
+seedInits <- 138
 
 # assign initial values
 source('R/simulateInits.R')
@@ -241,7 +243,7 @@ if(testRun){
   niter   <- 10
 }else{
   nthin   <- 20
-  nburnin <- 100000
+  nburnin <- 80000
   niter   <- nburnin + 1000*nthin
 }
 
@@ -317,7 +319,7 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE_centerAge.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
@@ -456,42 +458,44 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B2
 
 ## Compare model outputs -------------------------------------------------------
 
-# nYear   <- myConst$nYear
-# nAgeC.S <- myConst$nAgeC.S
-# 
-# source('R/compareModels.R')
-# compareModels(nYear = nYear,
-#               nAgeC.S = nAgeC.S,
-#               postPaths = c(
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds"
-#               ),
-#               modelNames = c(
-#                 # "IPM_S03R02",
-#                 # "IPM_S03R21",
-#                 # "IPM_S03R22",
-#                 # "IPM_S21R02",
-#                 # "IPM_S21R21",
-#                 # "IPM_S21R22",
-#                 # "IPM_S33R02",
-#                 # "IPM_S33R21",
-#                 "IPM_S33R22",
-#                 "IPM_muFun",
-#                 "IPM_muFunE",
-#                 "IPM_muFunE_B22"
-#               ),
-#               plotFolder = c("figures/densityChecks/muFun"),
-#               returnSumData = TRUE)
+nYear   <- myConst$nYear
+nAgeC.S <- myConst$nAgeC.S
+
+source('R/compareModels.R')
+compareModels(nYear = nYear,
+              nAgeC.S = nAgeC.S,
+              postPaths = c(
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
+                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds",
+                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE_centerAge.rds"
+              ),
+              modelNames = c(
+                # "IPM_S03R02",
+                # "IPM_S03R21",
+                # "IPM_S03R22",
+                # "IPM_S21R02",
+                # "IPM_S21R21",
+                # "IPM_S21R22",
+                # "IPM_S33R02",
+                # "IPM_S33R21",
+                "IPM_S33R22",
+                "IPM_muFun",
+                "IPM_muFunE",
+                "IPM_muFunE_B22",
+                "IPM_muFunE_B22_cAge"
+              ),
+              plotFolder = c("figures/densityChecks/centerAge"),
+              returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
