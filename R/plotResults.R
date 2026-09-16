@@ -13,7 +13,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -71,7 +71,7 @@ pop <- df %>%
         legend.position = "none"
         ); pop
 
-# ggsave("figures/resultsDave2Covs/nTOT.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/nTOT.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Population size (by group) --------------------------------------------------
@@ -153,7 +153,7 @@ popA <- df %>%
   labs(y = "Population size", colour = "Age group", fill = "Age group") +
   theme_bw(); popA
 
-# ggsave("figures/resultsDave2Covs/allNs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/allNs.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Survival --------------------------------------------------------------------
@@ -215,7 +215,7 @@ surv <- df %>%
     axis.ticks.x = element_blank()
     ); surv
 
-# ggsave("figures/resultsDave2Covs/survival.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/survival.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Reproductive success --------------------------------------------------------
@@ -242,7 +242,7 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 # df$Mean <- apply(out.mat[, BR_idx, drop = FALSE], 2, mean, na.rm = TRUE)
 # df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 # df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
-
+ 
 # # build summary dataframe for PY SURVIVAL
 # df <- expand.grid(Age = 1:19, Year = 1:17)
 # df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
@@ -278,30 +278,29 @@ rs <- df %>%
   filter(!is.na(Age)) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age, linetype = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
-  geom_line(linewidth = 0.8, show.legend = F) +
+  geom_line(linewidth = 0.8, show.legend = F) + # position = position_dodge(width = 0.2), 
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
   scale_linetype_manual(values = lts) +
-  scale_x_continuous(limits = c(2008, 2024),
-                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  # scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
-  scale_y_continuous(limits = c(0, 0.5),
-                     breaks = c(0.0, 0.1, 0.2, 0.3, 0.4, 0.5)) +
+  scale_x_continuous(breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_y_continuous(limits = c(0, 1), breaks = pretty_breaks()) +
   labs(x = "Year", y = "Reproductive success", colour = "Age", fill = "Age") +
+  # labs(x = "Year", y = "Birth rate", colour = "Age", fill = "Age") +
+  # labs(x = "Year", y = "Survival of pouch young", colour = "Age", fill = "Age") +
   theme_bw() +
   theme(
     axis.title.x = element_blank(),
     axis.text.x  = element_blank()
   ); rs
 
-# ggsave("figures/resultsDave2Covs/PYsurv.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/PYsurv.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
-# combine birth rate & PY survival
-(br / rs) +
-  plot_layout(guides = "collect") +
-  theme(legend.position = "right")
+# # combine birth rate & PY survival
+# (br / rs) +
+#   plot_layout(guides = "collect") +
+#   theme(legend.position = "right")
 
-# ggsave("figures/resultsDave2Covs/birth&PYsurv2.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/birth&PYsurv.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 # # summaries to report
 # R_array <- array(R, dim = c(nrow(R), 19, 17))
@@ -328,12 +327,14 @@ keep_ages <- c(1, 11, 12, 13)
 age_labels <- c("0", "10", "11", "12+")
 
 # extract betas
-bDy <- out.mat[, grep("^BetaD\\.Sy", colnames(out.mat))]
-bDo <- out.mat[, grep("^BetaD\\.So", colnames(out.mat))]
-bVy <- out.mat[, grep("^BetaV\\.Sy", colnames(out.mat))]
-bVo <- out.mat[, grep("^BetaV\\.So", colnames(out.mat))]
+bDSy <- out.mat[, grep("^BetaD\\.Sy", colnames(out.mat))]
+bDSp <- out.mat[, grep("^BetaD\\.Sp", colnames(out.mat))]
+bDSo <- out.mat[, grep("^BetaD\\.So", colnames(out.mat))]
+bVSy <- out.mat[, grep("^BetaV\\.Sy", colnames(out.mat))]
+bVSp <- out.mat[, grep("^BetaV\\.Sp", colnames(out.mat))]
+bVSo <- out.mat[, grep("^BetaV\\.So", colnames(out.mat))]
 
-bDr <- out.mat[, grep("^BetaD\\.R", colnames(out.mat))]
+bDR <- out.mat[, grep("^BetaD\\.R", colnames(out.mat))]
 
 # extract baseline intercepts
 muS  <- paste0("Mu.S[", keep_ages, "]")
@@ -346,22 +347,24 @@ baseR <- rowMeans(out.mat[, muR, drop = FALSE])
 x <- seq(-2, 2, length.out = 50)
 
 # build summary dfs
-make_df <- function(betas_young, betas_old, covariate) {
+make_df <- function(betas_young, betas_prime, betas_old, covariate){
   results <- list()
   
-  for (i in seq_along(keep_ages)) {
+  for(i in seq_along(keep_ages)){
     age <- keep_ages[i]
     label <- age_labels[i]
     intercepts <- base[, i]
     
     # assign the right beta
-    if (age == 1) {
+    if(age == 1){
       betas <- betas_young
-    } else {
+    }else if(between(age, 2, 9)){
+      betas <- betas_prime
+    }else{
       betas <- betas_old
     }
     
-    for (xx in x) {
+    for(xx in x){
       preds <- inv_logit(intercepts + betas * xx)
       results[[length(results) + 1]] <- data.frame(
         Age       = label,
@@ -377,9 +380,9 @@ make_df <- function(betas_young, betas_old, covariate) {
 }
 
 # build summary df for PY
-make_py_df <- function(betas, covariate) {
+make_py_df <- function(betas, covariate){
   results <- list()
-  for (xx in x) {
+  for(xx in x){
     preds <- inv_logit(baseR + betas * xx)
     results[[length(results) + 1]] <- data.frame(
       Age       = "PY",
@@ -394,9 +397,9 @@ make_py_df <- function(betas, covariate) {
 }
 
 df <- rbind(
-  make_df(bDy, bDo, "Population density"),
-  make_df(bVy, bVo, "Forage availability"),
-  make_py_df(bDr, "Population density")
+  make_df(bDSy, bDSp, bDSo, "Population density"),
+  make_df(bVSy, bVSp, bVSo, "Forage availability"),
+  make_py_df(bDR, "Population density")
 )
 
 # pick colours
@@ -426,13 +429,13 @@ df %>%
   guides(linetype = "none") +
   theme_bw()
 
-# ggsave("figures/resultsDave2Covs/coveffects2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/coveffects.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate values ------------------------------------------------------------
 
 # indices
-D_idx  <- grep("^D_dens\\.true", colnames(out.mat))[1:17]
+D_idx  <- grep("^dens\\.true", colnames(out.mat))#[1:17]
 V_idx  <- grep("^veg\\.true", colnames(out.mat))
 
 # extract means and 95% credible intervals
@@ -454,7 +457,7 @@ dens_uci_scaled <- (dens_uci - center_val) / scale_val
 
 # build summary dataframes
 df_dens <- data.frame(
-  Year = 1:17, 
+  Year = 1:18, 
   value = dens_scaled[, 1], 
   lci = dens_lci_scaled, 
   uci = dens_uci_scaled, 
@@ -473,19 +476,19 @@ df <- rbind(df_dens, df_veg)
 
 # pick colours
 line_cols <- c(
-  "Population density"  = "#47404F",
+  "Population density"  = "#5B5365",
   "Forage availability" = "#7D9570"
 )
 
 fill_cols <- c(
-  "Population density"  = adjustcolor("#47404F", alpha.f = 0.15),
+  "Population density"  = adjustcolor("#5B5365", alpha.f = 0.10),
   "Forage availability" = adjustcolor("#7D9570", alpha.f = 0.20)
 )
 
 # plot
 covs <- df %>%
-  filter(Year > 1) %>% 
-  mutate(Year = Year + 2007) %>%
+  mutate(Year = Year + 2007,
+         covariate = factor(covariate, levels = c("Population density", "Forage availability"))) %>%
   ggplot(aes(x = Year, y = value, colour = covariate, fill = covariate)) +
   geom_hline(yintercept = 0, colour = "grey40") +
   geom_ribbon(aes(ymin = lci, ymax = uci), colour = NA) + 
@@ -497,33 +500,33 @@ covs <- df %>%
   labs(y = "Scaled covariate value", colour = "Covariate", fill = "Covariate") +
   theme_bw(); covs
 
-# ggsave("figures/resultsDave2Covs/covsVStime2.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/covsVStime.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & reproductive output
 (surv / rs / covs) +
   plot_layout(guides = "collect") +
   theme(legend.position = "right")
 
-# ggsave("figures/resultsDave2Covs/surv&rs&covs4.jpeg", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/surv&rs&covs.png", width = 20.0, height = 22.0, units = c("cm"), dpi = 600)
 
 # plot observed vs true density
-myData$D_densE[1] <- NA
+myData$densE[1] <- NA
 
-D_idx_all <- grep("^D_dens\\.true", colnames(out.mat))[1:18]
+D_idx_all <- grep("^dens\\.true", colnames(out.mat))[1:18]
 
 true_dens_mean <- apply(out.mat[, D_idx_all, drop = FALSE], 2, mean, na.rm = TRUE)
 true_dens_lci  <- apply(out.mat[, D_idx_all, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 true_dens_uci  <- apply(out.mat[, D_idx_all, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # combine & calculate 95% CrIs for observed density 
-# (D_densE is standard error: Mean +/- 1.96 * SE)
+# (densE is standard error: Mean +/- 1.96 * SE)
 df_obs <- data.frame(
   Year = (1:18) + 2007,
   True_Mean = true_dens_mean,
   True_LCI  = true_dens_lci,
   True_UCI  = true_dens_uci,
-  Obs_Mean  = myData$D_dens,
-  Obs_SE    = myData$D_densE
+  Obs_Mean  = myData$dens,
+  Obs_SE    = myData$densE
 ) %>%
   mutate(
     Obs_LCI = Obs_Mean - (1.96 * Obs_SE),
@@ -535,20 +538,20 @@ obs_vs_true <- df_obs %>%
   filter(Year > 2008) %>%
   ggplot(aes(x = Year)) +
   
-  geom_ribbon(aes(ymin = Obs_LCI, ymax = Obs_UCI, fill = "Observed"), alpha = 0.15) +
-  geom_line(aes(y = Obs_Mean, colour = "Observed"), linewidth = 0.8, alpha = 0.8) +
+  geom_ribbon(aes(ymin = Obs_LCI, ymax = Obs_UCI, fill = "Observed (Dave's)"), alpha = 0.15) +
+  geom_line(aes(y = Obs_Mean, colour = "Observed (Dave's)"), linewidth = 0.8, alpha = 0.8) +
   # geom_errorbar(aes(ymin = Obs_LCI, ymax = Obs_UCI, colour = "Observed"), width = 0.3) +
   # geom_point(aes(y = Obs_Mean, colour = "Observed"), size = 2) +
   
-  geom_ribbon(aes(ymin = True_LCI, ymax = True_UCI, fill = "Estimated (IPM)"), alpha = 0.2) +
-  geom_line(aes(y = True_Mean, colour = "Estimated (IPM)"), linewidth = 0.8) +
-  scale_colour_manual(values = c("Estimated (IPM)" = "#335B5B", "Observed" = "#D55E00")) +
-  scale_fill_manual(values = c("Estimated (IPM)" = "#335B5B", "Observed" = "#D55E00")) +
+  geom_ribbon(aes(ymin = True_LCI, ymax = True_UCI, fill = "Estimated (IPM's)"), alpha = 0.2) +
+  geom_line(aes(y = True_Mean, colour = "Estimated (IPM's)"), linewidth = 0.8) +
+  scale_colour_manual(values = c("Estimated (IPM's)" = "#335B5B", "Observed (Dave's)" = "#D55E00")) +
+  scale_fill_manual(values = c("Estimated (IPM's)" = "#335B5B", "Observed (Dave's)" = "#D55E00")) +
   scale_x_continuous(breaks = seq(2008, 2024, by = 2)) +
   labs(x = "Year", y = "Population density", colour = "Source", fill = "Source") +
   theme_bw(); obs_vs_true
 
-# ggsave("figures/resultsDave2Covs/obsVStrueDens.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/obsVStrueDens.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Lambda ----------------------------------------------------------------------
@@ -579,18 +582,18 @@ lambda <- df %>%
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   # scale_x_continuous(limits = c(2008, 2025),
   #                    breaks = c(2009, 2011, 2013, 2015, 2017, 2019, 2021, 2023, 2025)) +
-  scale_y_continuous(limits = c(NA, 1.25),
-                     breaks = c(0.6, 0.8, 1.0, 1.2)) +
+  scale_y_continuous(limits = c(NA, 1.31),
+                     breaks = c(0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3)) +
   labs(x = "Year", y = expression("Population growth rate" ~ (lambda))) +
   theme_bw(); lambda
 
-# ggsave("figures/resultsDave2Covs/lambda.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/lambda.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with pop size
 pop / lambda
 pAGE / lambda
 
-# ggsave("figures/resultsDave2Covs/pop&lambda.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/pop&lambda.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 
 
 ## Age structure ---------------------------------------------------------------
@@ -663,19 +666,19 @@ pAGE <- df %>%
   labs(x = "Year", y = "Population size", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/resultsDave2Covs/propsRibbons.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/propsRibbons.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # bar plot
 pAGE <- df %>%
   ggplot(aes(x = Year, y = N, fill = AgeGroup)) +
   geom_col(width = 0.8) +
   scale_fill_manual(values = cols) +
-  scale_x_continuous(limits = c(2009, 2024),
+  scale_x_continuous(limits = c(2008, 2025),
                      breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
   labs(x = "Year", y = "Proportion of the population", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/resultsDave2Covs/NsBars.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/NsBars.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 p0  <- paramSamples$t.mean$pYF.mean
@@ -755,7 +758,7 @@ densities %>%
   labs(x = "Year", y = "Density estimate", colour = "Data", fill = "Data") +
   theme_bw()
 
-# ggsave("figures/densData_shrunkCIs.jpeg", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/densData_shrunkCIs.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 tmp <- as.data.frame(cbind(dave$year, dave$dens, heloise$dens)) %>% 
   rename(year = 'V1', dave = 'V2', heloise = 'V3')

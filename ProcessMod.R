@@ -319,13 +319,13 @@ if(parallelRun){
 
 # combine & save
 out.mcmc <- mcmc.list(samples)
-saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE_centerAge.rds', compress = 'xz')
+saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaT.rds', compress = 'xz')
 
 
 ## Results ---------------------------------------------------------------------
 
 # # load results
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds')
 # summary(out.mcmc) # cannot handle NAs
 
 # # find parameters generating NAs
@@ -458,50 +458,50 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B2
 
 ## Compare model outputs -------------------------------------------------------
 
-nYear   <- myConst$nYear
-nAgeC.S <- myConst$nAgeC.S
-
-source('R/compareModels.R')
-compareModels(nYear = nYear,
-              nAgeC.S = nAgeC.S,
-              postPaths = c(
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R02_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R21_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S03_R22_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R02_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R21_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S21_R22_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R02_stochV_8chains.rds",
-                # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R21_stochV_8chains.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE.rds",
-                "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_B22_stochV_8chains_muFunE_centerAge.rds"
-              ),
-              modelNames = c(
-                # "IPM_S03R02",
-                # "IPM_S03R21",
-                # "IPM_S03R22",
-                # "IPM_S21R02",
-                # "IPM_S21R21",
-                # "IPM_S21R22",
-                # "IPM_S33R02",
-                # "IPM_S33R21",
-                "IPM_S33R22",
-                "IPM_muFun",
-                "IPM_muFunE",
-                "IPM_muFunE_B22",
-                "IPM_muFunE_B22_cAge"
-              ),
-              plotFolder = c("figures/densityChecks/centerAge"),
-              returnSumData = TRUE)
+# nYear   <- myConst$nYear
+# nAgeC.S <- myConst$nAgeC.S
+# 
+# source('R/compareModels.R')
+# compareModels(nYear = nYear,
+#               nAgeC.S = nAgeC.S,
+#               postPaths = c(
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R02.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R21.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R22.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R02.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R21.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R22.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R02.rds",
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R21.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_muFun.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_muFunE.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds"
+#               ),
+#               modelNames = c(
+#                 # "IPM_S03R02",
+#                 # "IPM_S03R21",
+#                 # "IPM_S03R22",
+#                 # "IPM_S21R02",
+#                 # "IPM_S21R21",
+#                 # "IPM_S21R22",
+#                 # "IPM_S33R02",
+#                 # "IPM_S33R21",
+#                 "IPM_S33R22",
+#                 "IPM_muFun",
+#                 "IPM_muFunE",
+#                 "IPM_muFunE_B22",
+#                 "IPM_muFunE_B22_cAge"
+#               ),
+#               plotFolder = c("figures/centAge"),
+#               returnSumData = TRUE)
 
 
 ## Extract parameter samples ---------------------------------------------------
 
 # source('R/extractParamSamples.R')
-# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_Dave2Covs_stochV_8chains.rds')
+# out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds')
 # paramSamples <- extractParamSamples(MCMCsamples = out.mcmc, saveList = TRUE)
 
 

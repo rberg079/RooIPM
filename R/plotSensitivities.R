@@ -16,7 +16,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
 
   # # for testing purposes
   # sensitivities <- readRDS('results/sensitivities.rds')
-  # plotFolder = c("figures/resultsDave2Covs")
+  # plotFolder = c("figures/results/final!")
   # nAge = 19
   # oneProp <- TRUE
   # returnSummary <- TRUE
@@ -36,7 +36,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
   }
   
   # function to pull age-specific columns & calculate sums
-  processMatrix <- function(mat, prefix) {
+  processMatrix <- function(mat, prefix){
     df <- as.data.frame(mat)
     colnames(df) <- paste0(prefix, "_", 1:ncol(df))
     
@@ -50,7 +50,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
   # initialize empty list for summaries
   summaries <- list()
   
-  for(i in 1:2) {
+  for(i in 1:2){
     
     # define names for dynamic labeling & saving
     metric <- ifelse(i == 1, "Sensitivity", "Elasticity")
@@ -185,7 +185,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
             axis.text.x = element_text(size = 10),
             axis.title = element_text(size = 10))
     
-    # ggsave("figures/resultsDave2Covs/SENSsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+    # ggsave("figures/resultsDave2Covs/SENSsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
     
     # survival panel
     S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))
@@ -263,6 +263,10 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
       labs(title = "d) Population proportions") +
       scale_x_discrete(labels = parse(text = c("italic(P)[0]", "italic(P)[1]", paste0("italic(P)[", 2:nAge, "]")))) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
+      # scale_y_continuous(expand = expansion(mult = c(0, 0.02)),
+      #                    limits = c(0.00, 1.50),
+      #                    breaks = c(0.00, 0.50, 1.00, 1.50),
+      #                    labels = scales::label_number(accuracy = 0.01)) +
       scale_fill_manual(values = P.colours) +
       theme_bw() +
       theme(legend.position = "none",
@@ -274,8 +278,9 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
     
     ## Save plots --------------------------------------------------------------
     
-    # p.S / p.B / p.R / p.P
-    # ggsave("figures/resultsDave2Covs/SENSage2.jpeg", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
+    p.S / p.B / p.R / p.P
+    if(i == 1){ggsave("figures/results/final!/SENSage.png", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)}
+    if(i == 2){ggsave("figures/results/final!/ELASage.png", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)}
     
     pdf(paste0(plotFolder, ifelse(i == 1, "/Sensitivities", "/Elasticities"), "_sum.pdf"), width = 8, height = 4)
     print(p.sum)

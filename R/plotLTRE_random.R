@@ -16,7 +16,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
   
   # # for testing purposes
   # LTREresults <- readRDS('results/LTREresults_random.rds')
-  # plotFolder = c("figures/resultsDave2Covs")
+  # plotFolder = c("figures/results/final!")
   # nAge = 19
   # oneProp <- TRUE
   # returnSummary <- TRUE
@@ -47,7 +47,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
                       each = length(unique(Variable))))
   
   # split & format summed data
-  if(oneProp) {
+  if(oneProp){
     
     tmp <- contData %>% 
       filter(Variable %in% c("pYF", "pSA", "pAD_all")) %>% 
@@ -151,7 +151,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
           axis.title = element_text(size = 10),
           plot.margin = margin(1, 3, 1, 3))
   
-  # ggsave("figures/resultsDave2Covs/LTREsum.jpeg", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+  # ggsave("figures/resultsDave2Covs/LTREsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
   
   # survival panel
   S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))
@@ -186,8 +186,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
     xlab("") +
     labs(title = "b) Birth rate") +
     scale_x_discrete(labels = parse(text = paste0("italic(B)[", 2:nAge, "]"))) +
-    scale_y_continuous(labels = scales::label_number(),
-                       expand = expansion(mult = c(0, 0.02))) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
     scale_fill_manual(values = B.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -208,7 +207,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
     xlab("") +
     labs(title = "c) Survival of pouch young") +
     scale_x_discrete(labels = parse(text = paste0("italic(SP)[", 2:nAge, "]"))) +
-    scale_y_continuous(limits = c(0, 0.001), expand = expansion(mult = c(0, 0.02))) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
     scale_fill_manual(values = R.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -229,7 +228,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
     xlab("") +
     labs(title = "d) Population proportions") +
     scale_x_discrete(labels = parse(text = c("italic(P)[0]", "italic(P)[1]", paste0("italic(P)[", 2:nAge, "]")))) +
-    scale_y_continuous(limits = c(-0.01, 0.01), expand = expansion(mult = c(0, 0.02))) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
     scale_fill_manual(values = P.colours) +
     theme_bw() +
     theme(legend.position = "none",
@@ -241,8 +240,11 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
   
   ## Save plots --------------------------------------------------------------
   
-  # e.sum / c.sum
-  # ggsave("figures/resultsDave2Covs/elas&ltre.jpeg", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+  # p.sum / c.sum
+  # ggsave("figures/results/final!/elas&ltre.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+  
+  p.S / p.B / p.R / p.P
+  ggsave("figures/results/final!/LTREage.png", width = 20.0, height = 24.0, units = c("cm"), dpi = 600)
   
   pdf(paste0(plotFolder, "/LTRE_sum.pdf"), width = 8, height = 4)
   print(c.sum)

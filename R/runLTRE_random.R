@@ -2,8 +2,8 @@
 #'
 #' @param paramSamples list. Contains lists of posterior samples for all vital rates & population-level quantities.
 #' @param sensitivities list. Contains lists containing posterior samples of transient sensitivities & elasticities for all vital rates & population structure (n).
-#' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
 #' @param nYear integer. Number of time steps in the model. nYear = 18 by default.
+#' @param nAge integer. Maximum age to consider in the analysis. nAge = 19 by default.
 #' @param splitAdults logical. If TRUE, summarises adult data for 2-9 year-olds & 10+ year-olds separately. splitAdults = TRUE by default.
 #'
 #' @returns a list of lists containing results of the LTRE analysis.
@@ -14,7 +14,7 @@
 #'
 #' @examples
 
-runLTRE_random <- function(paramSamples, sensitivities, nAge = 18, nYear = 18, splitAdults = TRUE){
+runLTRE_random <- function(paramSamples, sensitivities, nYear = 18, nAge = 19, splitAdults = TRUE){
   
   # # # for testing purposes
   # # source('extractParamSamples.R')

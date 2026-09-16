@@ -9,7 +9,7 @@
 #'
 #' @examples
 
-calculateSensitivities <- function(paramSamples, nAge = 18, t.period = NULL){
+calculateSensitivities <- function(paramSamples, nAge = 19, t.period = NULL){
   
   # # for testing purposes
   # # source('extractParamSamples.R')

@@ -21,13 +21,13 @@ plotIPM_DemographicCovariates <- function(MCMCsamples,
                                           plotFolder){
   
   # # for testing purposes
-  # MCMCsamples = readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds')
+  # MCMCsamples = readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds')
   # ages = c(1, 4, 7, 10)
   # densMIN = -2
   # densMAX = 2
   # vegMIN = -2
   # vegMAX = 2
-  # plotFolder = "figures/densityChecks/varyNvarsSR"
+  # plotFolder = "figures/results/final!"
   
   
   ## Set up --------------------------------------------------------------------
