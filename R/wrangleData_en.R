@@ -240,7 +240,30 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoVeg  <- length(noVeg)
   nNoProp <- length(noProp)
   
-  area = rep(76.2, 18)
+  # area = rep(76.2, 18)
+  
+  # to test shrinking:
+  tmp <- data.frame(time = 1:18,
+                    year = 2008:2025,
+                    area = c(NA, NA, 66.1, 64.4, 56.1, 52.0, 52.2, 49.3, 39.4, 47.3, 38.5, rep(NA, 7)))
+  
+  # fit asymptotic decay curve
+  # area(t) = asymptote + (start - asymptote) * exp(-exp(lrc) * t)
+  fit_asym <- nls(area ~ SSasymp(time, asym, R0, lrc), data = tmp[!is.na(tmp$area), ])
+  
+  # predict area across the full time-series
+  tmp$area_pred  <- predict(fit_asym, newdata = tmp)
+  tmp$area_final <- ifelse(is.na(tmp$area), tmp$area_pred, tmp$area)
+  
+  # library(scales)
+  # ggplot(tmp, aes(x = year)) +
+  #   geom_line(aes(y = area_pred), color = "#7D9570", linewidth = 1) +
+  #   geom_point(aes(y = area), color = "black", size = 2) +
+  #   scale_y_continuous(limits = c(30, 80), breaks = pretty_breaks()) +
+  #   labs(x = "Year", y = "Habitat area (km²)", title = "Asymptotic area decay model") +
+  #   theme_bw()
+  
+  area = as.numeric(tmp$area_pred)
   
   return(list(year = year,
               area = area,

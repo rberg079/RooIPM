@@ -580,7 +580,9 @@ simulateInits <- function(dens, veg, propF, knownStates,
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
-  area <- rep(76.2, nYear)
+  # area <- rep(76.2, nYear)
+  area <- c(79, 72, 67, 62, 58, 54, 50, 47, 45,
+            42, 40, 38, 37, 35, 34, 33, 32, 31)
   
   
   ## Assemble myinits list -----------------------------------------------------

@@ -465,36 +465,16 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muF
 # compareModels(nYear = nYear,
 #               nAgeC.S = nAgeC.S,
 #               postPaths = c(
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R02.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R21.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S03_R22.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R02.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R21.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S21_R22.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R02.rds",
-#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R21.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_muFun.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_muFunE.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds"
+#                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaT.rds"
 #               ),
 #               modelNames = c(
-#                 # "IPM_S03R02",
-#                 # "IPM_S03R21",
-#                 # "IPM_S03R22",
-#                 # "IPM_S21R02",
-#                 # "IPM_S21R21",
-#                 # "IPM_S21R22",
-#                 # "IPM_S33R02",
-#                 # "IPM_S33R21",
-#                 "IPM_S33R22",
-#                 "IPM_muFun",
-#                 "IPM_muFunE",
-#                 "IPM_muFunE_B22",
-#                 "IPM_muFunE_B22_cAge"
+#                 # "IPM_B22",
+#                 "IPM_cAge",
+#                 "IPM_cAge_areaT"
 #               ),
-#               plotFolder = c("figures/centAge"),
+#               plotFolder = c("figures/areaT"),
 #               returnSumData = TRUE)
 
 

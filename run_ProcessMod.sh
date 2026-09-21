@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=IPM_centAge             # Nom de la tâche
-#SBATCH --output=job_output_centAge.txt    # Fichier de sortie (unique par tâche)
-#SBATCH --error=job_error_centAge.txt      # Fichier d'erreur (unique par tâche)
+#SBATCH --job-name=IPM_areaT             # Nom de la tâche
+#SBATCH --output=job_output_areaT.txt    # Fichier de sortie (unique par tâche)
+#SBATCH --error=job_error_areaT.txt      # Fichier d'erreur (unique par tâche)
 #SBATCH --nodes=1                       # Nombre de nœuds à utiliser
 #SBATCH --cpus-per-task=4               # Nombre de cœurs par tâche
 #SBATCH --mem=64G                       # Mémoire allouée 
