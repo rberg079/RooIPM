@@ -12,7 +12,8 @@
 #'
 #' @examples
 
-wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, list.data){
+wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
+                           obs.data, list.data, area.data){
   
   # # for testing purposes
   # dens.data = "data/WPNP_Methods_Results_January2026.xlsx"
@@ -21,12 +22,14 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   # wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv"
   # obs.data  = "data/PromObs_2008-2024.xlsx"
   # list.data = "data/PromlistAllNov25.xlsx"
+  # area.data = "data/globalHR_to2024_hfix.csv"
   
   
   ## Set up --------------------------------------------------------------------
   
   # load libraries
   library(readxl)
+  library(scales)
   suppressPackageStartupMessages(library(lubridate))
   suppressPackageStartupMessages(library(tidyverse))
   
@@ -37,6 +40,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   wind <- read_csv(wind.data, skip = 13, show_col_types = F)
   obs <- suppressWarnings(read_excel(obs.data))
   list <- suppressMessages(read_excel(list.data))
+  area <- read_csv(area.data)
   
   
   ## Density data --------------------------------------------------------------
@@ -149,6 +153,97 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
     ungroup()
   
   
+  ## Area data -----------------------------------------------------------------
+  
+  # create full timeline
+  area <- data.frame(time = 1:18, year = 2008:2025) %>%
+    left_join(area %>% 
+                transmute(year = Year,
+                          areaEst = Area_mean * 100,
+                          areaSE = Area_se * 100),
+              by = "year")
+  
+  # subset for model fitting
+  areaHR <- area %>% filter(!is.na(areaEst))
+  
+  # fit candidate models
+  fitAsym <- nls(areaEst ~ SSasymp(time, asym, R0, lrc), data = areaHR)
+  fitExp  <- nls(areaEst ~ a * exp(-b * time), data = areaHR, start = list(a = max(areaHR$areaEst), b = 0.05))
+  fitLin  <- lm(areaEst ~ time, data = areaHR)
+  fitQuad <- lm(areaEst ~ time + I(time^2), data = areaHR)
+  
+  # # compare candidates
+  # aicTable <- AIC(fitAsym, fitLin, fitExp, fitQuad) %>%
+  #   rownames_to_column(var = "Model") %>%
+  #   mutate(Model = c("Asymptotic decay", "Exponential decay", "Linear", "Quadratic"),
+  #          deltaAIC = AIC - min(AIC)) %>%
+  #   arrange(deltaAIC); aicTable
+  
+  # generate predictions
+  preds <- area %>%
+    mutate(`Asymptotic decay` = predict(fitAsym, newdata = area),
+           `Exponential decay`= predict(fitExp, newdata = area),
+           `Linear`           = predict(fitLin, newdata = area),
+           `Quadratic`        = predict(fitQuad, newdata = area))
+  
+  # # pivot long for model comparison
+  # plotPreds <- preds %>%
+  #   pivot_longer(cols = c("Asymptotic decay", "Exponential decay", "Linear", "Quadratic"),
+  #                names_to = "Model",
+  #                values_to = "areaPred")
+  # 
+  # 
+  # # compare candidate model predictions vs HR estimates
+  # ggplot() +
+  #   geom_point(data = areaHR, aes(x = year, y = areaEst), color = "black", size = 1) +
+  #   geom_line(data = plotPreds, aes(x = year, y = areaPred, color = Model), linewidth = 1) +
+  #   scale_color_manual(values = c(
+  #     "Asymptotic decay"  = "#7D9570",
+  #     "Linear"            = "#D68D38",
+  #     "Exponential decay" = "#4A7BB0",
+  #     "Quadratic"   = "#C0504D"
+  #   )) +
+  #   scale_x_continuous(breaks = c(2008, 2012, 2016, 2020, 2024)) +
+  #   scale_y_continuous(breaks = pretty_breaks()) +
+  #   labs(x = "Year", y = "Habitat area (ha)", color = "Function") +
+  #   theme_bw()
+  # 
+  # # ggsave("figures/areaModels.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  
+  # bootstrap standard errors for uncertainty
+  set.seed(123)
+  n_boot <- 1000
+  
+  boot_matrix <- replicate(n_boot, {
+    boot_idx <- sample(seq_len(nrow(areaHR)), replace = TRUE)
+    boot_data <- areaHR[boot_idx, ]
+    
+    boot_fit <- try(update(fitQuad, data = boot_data), silent = TRUE)
+    if(inherits(boot_fit, "try-error")) return(rep(NA, nrow(tmp)))
+    
+    predict(boot_fit, newdata = area)
+  })
+  
+  areaE <- as.numeric(round(apply(boot_matrix, 1, sd, na.rm = TRUE), 3))
+  
+  # # plot asymptotic decay predictions vs HR estimates
+  # as.data.frame(cbind(year = 1:18,
+  #                     area = preds$Quadratic,
+  #                     areaE,
+  #                     obs = area$areaEst)) %>% 
+  # ggplot(aes(x = year)) +
+  #   geom_ribbon(aes(ymin = area - areaE, ymax = area + areaE), fill = "#7D9570", alpha = 0.4) +
+  #   geom_line(aes(y = area), color = "#7D9570", linewidth = 1) +
+  #   geom_point(aes(y = obs), color = "black", size = 2) +
+  #   scale_y_continuous(limits = c(44, 90), breaks = pretty_breaks()) +
+  #   labs(x = "Year", y = "Habitat area (km²)", title = "Asymptotic area decay model") +
+  #   theme_bw()
+  #
+  # # ggsave("figures/areaQuad.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  
+  area  <- as.numeric(round(preds$Quadratic, 3))
+  
+  
   ## Join it all ---------------------------------------------------------------
   
   # join & fill gaps
@@ -240,33 +335,9 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data, obs.data, l
   nNoVeg  <- length(noVeg)
   nNoProp <- length(noProp)
   
-  # area = rep(76.2, 18)
-  
-  # to test shrinking:
-  tmp <- data.frame(time = 1:18,
-                    year = 2008:2025,
-                    area = c(NA, NA, 66.1, 64.4, 56.1, 52.0, 52.2, 49.3, 39.4, 47.3, 38.5, rep(NA, 7)))
-  
-  # fit asymptotic decay curve
-  # area(t) = asymptote + (start - asymptote) * exp(-exp(lrc) * t)
-  fit_asym <- nls(area ~ SSasymp(time, asym, R0, lrc), data = tmp[!is.na(tmp$area), ])
-  
-  # predict area across the full time-series
-  tmp$area_pred  <- predict(fit_asym, newdata = tmp)
-  tmp$area_final <- ifelse(is.na(tmp$area), tmp$area_pred, tmp$area)
-  
-  # library(scales)
-  # ggplot(tmp, aes(x = year)) +
-  #   geom_line(aes(y = area_pred), color = "#7D9570", linewidth = 1) +
-  #   geom_point(aes(y = area), color = "black", size = 2) +
-  #   scale_y_continuous(limits = c(30, 80), breaks = pretty_breaks()) +
-  #   labs(x = "Year", y = "Habitat area (km²)", title = "Asymptotic area decay model") +
-  #   theme_bw()
-  
-  area = as.numeric(tmp$area_pred)
-  
   return(list(year = year,
               area = area,
+              areaE = areaE,
               dens = dens,
               densE = densE,
               densM = densM,

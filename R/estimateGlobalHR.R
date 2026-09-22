@@ -175,6 +175,6 @@ p_grid_boot <- ggplot() +
     plot.title = element_text(face = "bold", hjust = 0.5)
   ); p_grid_boot
 
-ggsave("figures/globalHR_boot.pdf", plot = p_grid_boot, width = 10, height = 10.2)
-ggsave("figures/globalHR_boot.png", width = 24.0, height = 24.5, units = "cm", dpi = 600)
+# ggsave("figures/globalHR_boot.pdf", plot = p_grid_boot, width = 10, height = 10)
+# ggsave("figures/globalHR_boot.png", width = 24.0, height = 24.4, units = "cm", dpi = 600)
 

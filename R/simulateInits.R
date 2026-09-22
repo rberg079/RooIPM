@@ -42,11 +42,11 @@ simulateInits <- function(dens, veg, propF, knownStates,
   # 
   # envEffects.S <- TRUE
   # envEffects.R <- TRUE
-  # splitCovs.S = 0
+  # splitCovs.S = 3
   # splitCovs.R = 2
   # splitREs.S = 3
   # splitREs.B = 2
-  # splitREs.R = 1
+  # splitREs.R = 2
   # 
   # ageClasses <- 12
   # source('R/wrangleData_en.R')
@@ -56,7 +56,8 @@ simulateInits <- function(dens, veg, propF, knownStates,
   #   wea.data  = "data/Prom_Weather_2008-2023_updated Jan2026 RB.xlsx",
   #   wind.data = "data/POWER_Point_Daily_20080101_20260331_10M.csv",
   #   obs.data  = "data/PromObs_2008-2024.xlsx",
-  #   list.data = "data/PromlistAllNov25.xlsx")
+  #   list.data = "data/PromlistAllNov25.xlsx",
+  #   area.data = "data/globalHR_to2024_hfix.csv")
   # 
   # source('R/wrangleData_sv.R')
   # svData <- wrangleData_sv(
@@ -71,6 +72,7 @@ simulateInits <- function(dens, veg, propF, knownStates,
   #   ageClasses = ageClasses, known.age = TRUE, cum.surv = FALSE,
   #   splitCovs.R = splitCovs.R, splitREs.R = splitREs.R)
   # 
+  # area <- enData$area
   # dens <- enData$dens
   # veg <- enData$veg
   # propF <- enData$propF
@@ -580,10 +582,6 @@ simulateInits <- function(dens, veg, propF, knownStates,
     nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
   }
   
-  # area <- rep(76.2, nYear)
-  area <- c(79, 72, 67, 62, 58, 54, 50, 47, 45,
-            42, 40, 38, 37, 35, 34, 33, 32, 31)
-  
   
   ## Assemble myinits list -----------------------------------------------------
   
@@ -646,7 +644,6 @@ simulateInits <- function(dens, veg, propF, knownStates,
     nSA = nSA,
     nAD = nAD,
     nTOT = nTOT,
-    area = area,
     
     initN.YF = initN.YF,
     initN.SA = initN.SA,
