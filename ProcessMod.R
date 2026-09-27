@@ -468,14 +468,16 @@ saveRDS(out.mcmc, 'results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muF
 #               postPaths = c(
 #                 # "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE.rds",
 #                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds",
-#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaT.rds"
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaT.rds",
+#                 "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaHR.rds"
 #               ),
 #               modelNames = c(
 #                 # "IPM_B22",
 #                 "IPM_cAge",
-#                 "IPM_cAge_areaT"
+#                 "IPM_cAge_areaT",
+#                 "IPM_cAge_areaHR"
 #               ),
-#               plotFolder = c("figures/areaT"),
+#               plotFolder = c("figures/areaHR"),
 #               returnSumData = TRUE)
 
 

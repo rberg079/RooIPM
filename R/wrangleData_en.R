@@ -155,13 +155,19 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   
   ## Area data -----------------------------------------------------------------
   
+  area <- read_csv(area.data)
+  
   # create full timeline
   area <- data.frame(time = 1:18, year = 2008:2025) %>%
     left_join(area %>% 
                 transmute(year = Year,
                           areaEst = Area_mean * 100,
                           areaSE = Area_se * 100),
-              by = "year")
+              by = "year") %>%
+    mutate(across(c(areaEst, areaSE), ~ replace(.x, time %in% c(1, 2, 15, 16, 17), NA)))
+  
+  # years 1, 2, 15, 16, & 17 are unreliable
+  # smaller sample sizes inflated estimates
   
   # subset for model fitting
   areaHR <- area %>% filter(!is.na(areaEst))
@@ -201,14 +207,14 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   #     "Asymptotic decay"  = "#7D9570",
   #     "Linear"            = "#D68D38",
   #     "Exponential decay" = "#4A7BB0",
-  #     "Quadratic"   = "#C0504D"
+  #     "Quadratic"         = "#C0504D"
   #   )) +
   #   scale_x_continuous(breaks = c(2008, 2012, 2016, 2020, 2024)) +
   #   scale_y_continuous(breaks = pretty_breaks()) +
   #   labs(x = "Year", y = "Habitat area (ha)", color = "Function") +
   #   theme_bw()
   # 
-  # # ggsave("figures/areaModels.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  # # ggsave("figures/areaHR/areaModels.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
   
   # bootstrap standard errors for uncertainty
   set.seed(123)
@@ -218,8 +224,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
     boot_idx <- sample(seq_len(nrow(areaHR)), replace = TRUE)
     boot_data <- areaHR[boot_idx, ]
     
-    boot_fit <- try(update(fitQuad, data = boot_data), silent = TRUE)
-    if(inherits(boot_fit, "try-error")) return(rep(NA, nrow(tmp)))
+    boot_fit <- try(update(fitAsym, data = boot_data), silent = TRUE)
+    if(inherits(boot_fit, "try-error")) return(rep(NA, nrow(area)))
     
     predict(boot_fit, newdata = area)
   })
@@ -228,20 +234,22 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   
   # # plot asymptotic decay predictions vs HR estimates
   # as.data.frame(cbind(year = 1:18,
-  #                     area = preds$Quadratic,
+  #                     area = preds$`Asymptotic decay`,
   #                     areaE,
-  #                     obs = area$areaEst)) %>% 
-  # ggplot(aes(x = year)) +
+  #                     obs = area$areaEst)) %>%
+  #   mutate(pt_color = ifelse(year %in% c(1, 2, 17), "grey60", "black")) %>%
+  #   ggplot(aes(x = year)) +
   #   geom_ribbon(aes(ymin = area - areaE, ymax = area + areaE), fill = "#7D9570", alpha = 0.4) +
   #   geom_line(aes(y = area), color = "#7D9570", linewidth = 1) +
-  #   geom_point(aes(y = obs), color = "black", size = 2) +
-  #   scale_y_continuous(limits = c(44, 90), breaks = pretty_breaks()) +
-  #   labs(x = "Year", y = "Habitat area (km²)", title = "Asymptotic area decay model") +
+  #   geom_point(aes(y = obs, color = pt_color), size = 2) +
+  #   scale_color_identity() +
+  #   scale_x_continuous(breaks = c(4, 8, 12, 16)) +
+  #   labs(x = "Year", y = "Habitat area (km²)", title = "Asymptotic decay model") +
   #   theme_bw()
-  #
-  # # ggsave("figures/areaQuad.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  # 
+  # # ggsave("figures/areaHR/areaAsym.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
   
-  area  <- as.numeric(round(preds$Quadratic, 3))
+  area  <- as.numeric(round(preds$`Asymptotic decay`, 3))
   
   
   ## Join it all ---------------------------------------------------------------
