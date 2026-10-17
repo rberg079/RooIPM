@@ -13,7 +13,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaHR.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -60,7 +60,7 @@ pop <- df %>%
   geom_line(color = "#62414B", linewidth = 0.8) +
   scale_x_continuous(limits = c(2008, 2025),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(100, 520),
+  scale_y_continuous(limits = c(100, 450),
                      breaks = c(100, 200, 300, 400, 500)) +
   labs(y = "Population size") +
   theme_bw() +
@@ -149,7 +149,7 @@ popA <- df %>%
   scale_fill_manual(values = cols) +
   scale_x_continuous(limits = c(2008, 2025),
                      breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
-  scale_y_continuous(limits = c(0, 520), breaks = scales::pretty_breaks()) +
+  scale_y_continuous(limits = c(0, 450), breaks = scales::pretty_breaks()) +
   labs(y = "Population size", colour = "Age group", fill = "Age group") +
   theme_bw(); popA
 
@@ -231,11 +231,11 @@ sPY <- out.mat[, sPY_idx, drop = FALSE]
 # compute reproductive output
 R <- 0.5 * BR * sPY
 
-# build summary dataframe
-df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+# # build summary dataframe
+# df <- expand.grid(Age = 1:19, Year = 1:17)
+# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # # build summary dataframe for BIRTH RATE
 # df <- expand.grid(Age = 1:19, Year = 1:17)
@@ -243,11 +243,11 @@ df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 # df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 # df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
  
-# # build summary dataframe for PY SURVIVAL
-# df <- expand.grid(Age = 1:19, Year = 1:17)
-# df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
-# df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
-# df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+# build summary dataframe for PY SURVIVAL
+df <- expand.grid(Age = 1:19, Year = 1:17)
+df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # pick colours
 cols <- c(
@@ -591,7 +591,7 @@ lambda <- df %>%
 
 # combine with pop size
 pop / lambda
-pAGE / lambda
+# pAGE / lambda
 
 # ggsave("figures/results/final!/pop&lambda.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
 

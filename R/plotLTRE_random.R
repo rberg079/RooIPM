@@ -240,6 +240,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
   
   ## Save plots --------------------------------------------------------------
   
+  # p.sum <- p.sum + theme(axis.text.x = element_blank())
   # p.sum / c.sum
   # ggsave("figures/results/final!/elas&ltre.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
   
