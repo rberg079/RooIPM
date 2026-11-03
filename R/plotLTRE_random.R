@@ -135,7 +135,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
   c.sum <- plotData %>% 
     ggplot(aes(x = type, y = Contribution, group = type)) +
     geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
-    geom_hline(yintercept = 0, colour = "grey70", linetype = "dashed") +
+    geom_hline(yintercept = c(0), colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
     xlab("") +
     scale_fill_manual(values = plot.colours) +
@@ -151,7 +151,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
           axis.title = element_text(size = 10),
           plot.margin = margin(1, 3, 1, 3))
   
-  # ggsave("figures/resultsDave2Covs/LTREsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+  # ggsave("figures/results/final!/LTREsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
   
   # survival panel
   S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))

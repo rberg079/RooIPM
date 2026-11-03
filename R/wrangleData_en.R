@@ -158,7 +158,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   area <- read_csv(area.data)
   
   # create full timeline
-  area <- data.frame(time = 1:18, year = 2008:2025) %>%
+  area <- data.frame(time = 1:40, year = 2008:2047) %>%
     left_join(area %>% 
                 transmute(year = Year,
                           areaEst = Area_mean * 100,
@@ -201,8 +201,8 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   # 
   # # compare candidate model predictions vs HR estimates
   # ggplot() +
-  #   geom_point(data = areaHR, aes(x = year, y = areaEst), color = "black", size = 1) +
   #   geom_line(data = plotPreds, aes(x = year, y = areaPred, color = Model), linewidth = 1) +
+  #   geom_point(data = areaHR, aes(x = year, y = areaEst), color = "black", size = 1) +
   #   scale_color_manual(values = c(
   #     "Asymptotic decay"  = "#7D9570",
   #     "Linear"            = "#D68D38",
@@ -214,7 +214,7 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   #   labs(x = "Year", y = "Habitat area (ha)", color = "Function") +
   #   theme_bw()
   # 
-  # # ggsave("figures/areaHR/areaModels.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  # # ggsave("figures/areaHR/areaModels.png", width = 20.0, height = 12.0, units = "cm", dpi = 600)
   
   # bootstrap standard errors for uncertainty
   set.seed(123)
@@ -248,6 +248,23 @@ wrangleData_en <- function(dens.data, veg.data, wea.data, wind.data,
   #   theme_bw()
   # 
   # # ggsave("figures/areaHR/areaAsym.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
+  # 
+  # # plot exponential decay predictions vs HR estimates
+  # as.data.frame(cbind(year = 1:18,
+  #                     area = preds$`Exponential decay`,
+  #                     areaE,
+  #                     obs = area$areaEst)) %>%
+  #   mutate(pt_color = ifelse(year %in% c(1, 2, 17), "grey60", "black")) %>%
+  #   ggplot(aes(x = year)) +
+  #   geom_ribbon(aes(ymin = area - areaE, ymax = area + areaE), fill = "#4A7BB0", alpha = 0.4) +
+  #   geom_line(aes(y = area), color = "#4A7BB0", linewidth = 1) +
+  #   geom_point(aes(y = obs, color = pt_color), size = 2) +
+  #   scale_color_identity() +
+  #   scale_x_continuous(breaks = c(4, 8, 12, 16)) +
+  #   labs(x = "Year", y = "Habitat area (km²)", title = "Exponential decay model") +
+  #   theme_bw()
+  # 
+  # # ggsave("figures/areaHR/areaExp.png", width = 18.0, height = 12.0, units = "cm", dpi = 600)
   
   area  <- as.numeric(round(preds$`Asymptotic decay`, 3))
   

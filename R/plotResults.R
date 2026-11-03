@@ -45,7 +45,7 @@ nTOT <- grep("^nTOT\\[", colnames(out.mcmc[[1]])); nTOT
 # select variable!
 var <- nTOT
 
-df <- data.frame(
+popDF <- data.frame(
   Year = 1:length(var),
   Mean = apply(out.mat[, var, drop = FALSE], 2, mean, na.rm = TRUE),
   Lower = apply(out.mat[, var, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
@@ -53,7 +53,7 @@ df <- data.frame(
 )
 
 # population plot
-pop <- df %>% 
+pop <- popDF %>% 
   mutate(Year = Year + 2007) %>% 
   ggplot(aes(x = Year, y = Mean)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), fill = "#62414B", alpha = 0.2) +
@@ -96,27 +96,27 @@ for(y in 1:nYear) {
 }
 
 # build summary dataframes
-df_YF   <- data.frame(Year = 1:nYear, Group = "Young-at-foot (0 years)",
+df_YF   <- data.frame(Year = 1:nYear, Group = "0 years",
                       Mean  = apply(out.mat[, nYF_idx, drop = FALSE], 2, mean, na.rm = TRUE),
                       Lower = apply(out.mat[, nYF_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
                       Upper = apply(out.mat[, nYF_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
 
-df_SA   <- data.frame(Year = 1:nYear, Group = "Subadults (1 year)",
+df_SA   <- data.frame(Year = 1:nYear, Group = "1 year",
                       Mean  = apply(out.mat[, nSA_idx, drop = FALSE], 2, mean, na.rm = TRUE),
                       Lower = apply(out.mat[, nSA_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
                       Upper = apply(out.mat[, nSA_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
 
-df_2to9 <- data.frame(Year = 1:nYear, Group = "Adults (2-9 years)",
+df_2to9 <- data.frame(Year = 1:nYear, Group = "2-9 years",
                       Mean  = apply(mat_2to9, 2, mean, na.rm = TRUE),
                       Lower = apply(mat_2to9, 2, quantile, probs = 0.025, na.rm = TRUE),
                       Upper = apply(mat_2to9, 2, quantile, probs = 0.975, na.rm = TRUE))
 
-df_10up <- data.frame(Year = 1:nYear, Group = "Adults (10+ years)",
+df_10up <- data.frame(Year = 1:nYear, Group = "10+ years",
                       Mean  = apply(mat_10up, 2, mean, na.rm = TRUE),
                       Lower = apply(mat_10up, 2, quantile, probs = 0.025, na.rm = TRUE),
                       Upper = apply(mat_10up, 2, quantile, probs = 0.975, na.rm = TRUE))
 
-df_TOT  <- data.frame(Year = 1:nYear, Group = "Total female population",
+df_TOT  <- data.frame(Year = 1:nYear, Group = "Total",
                       Mean  = apply(out.mat[, nTOT_idx, drop = FALSE], 2, mean, na.rm = TRUE),
                       Lower = apply(out.mat[, nTOT_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE),
                       Upper = apply(out.mat[, nTOT_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE))
@@ -124,24 +124,32 @@ df_TOT  <- data.frame(Year = 1:nYear, Group = "Total female population",
 # combine everything
 df <- rbind(df_YF, df_SA, df_2to9, df_10up, df_TOT)
 
-# pick colours
+# # pick colours
+# cols <- c(
+#   "Young-at-foot (0 years)" = "#8E5EA2",
+#   "Subadults (1 year)"      = "#277DA1",
+#   "Adults (2-9 years)"      = "#F9C74F",
+#   "Adults (10+ years)"      = "#D62828",
+#   "Total female population" = "#62414B"
+# )
+
 cols <- c(
-  "Young-at-foot (0 years)" = "#8E5EA2",
-  "Subadults (1 year)"      = "#277DA1",
-  "Adults (2-9 years)"      = "#F9C74F",
-  "Adults (10+ years)"      = "#D62828",
-  "Total female population" = "#62414B"
+  "0 years"   = "#AC2020",
+  "1 year"    = "#DD962C",
+  "2-9 years" = "#E3CA78",
+  "10+ years" = "#6F9A9B",
+  "Total"     = "black"
 )
 
 # population plot
 popA <- df %>% 
   mutate(Year = Year + 2007,
          Group = factor(Group,
-                        levels = c("Young-at-foot (0 years)",
-                                   "Subadults (1 year)",
-                                   "Adults (2-9 years)",
-                                   "Adults (10+ years)",
-                                   "Total female population"))) %>% 
+                        levels = c("0 years",
+                                   "1 year",
+                                   "2-9 years",
+                                   "10+ years",
+                                   "Total"))) %>% 
   ggplot(aes(x = Year, y = Mean, group = Group, colour = Group, fill = Group)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha = 0.2, colour = NA) + 
   geom_line(linewidth = 0.8) +
@@ -153,7 +161,7 @@ popA <- df %>%
   labs(y = "Population size", colour = "Age group", fill = "Age group") +
   theme_bw(); popA
 
-# ggsave("figures/results/final!/allNs.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/allNs3.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Survival --------------------------------------------------------------------
@@ -231,11 +239,11 @@ sPY <- out.mat[, sPY_idx, drop = FALSE]
 # compute reproductive output
 R <- 0.5 * BR * sPY
 
-# # build summary dataframe
-# df <- expand.grid(Age = 1:19, Year = 1:17)
-# df$Mean <- apply(R, 2, mean, na.rm = TRUE)
-# df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
-# df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
+# build summary dataframe
+df <- expand.grid(Age = 1:19, Year = 1:17)
+df$Mean <- apply(R, 2, mean, na.rm = TRUE)
+df$Lower <- apply(R, 2, quantile, probs = 0.025, na.rm = TRUE)
+df$Upper <- apply(R, 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # # build summary dataframe for BIRTH RATE
 # df <- expand.grid(Age = 1:19, Year = 1:17)
@@ -243,11 +251,11 @@ R <- 0.5 * BR * sPY
 # df$Lower <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
 # df$Upper <- apply(out.mat[, BR_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
  
-# build summary dataframe for PY SURVIVAL
-df <- expand.grid(Age = 1:19, Year = 1:17)
-df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
-df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
-df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
+# # build summary dataframe for PY SURVIVAL
+# df <- expand.grid(Age = 1:19, Year = 1:17)
+# df$Mean <- apply(out.mat[, sPY_idx, drop = FALSE], 2, mean, na.rm = TRUE)
+# df$Lower <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.025, na.rm = TRUE)
+# df$Upper <- apply(out.mat[, sPY_idx, drop = FALSE], 2, quantile, probs = 0.975, na.rm = TRUE)
 
 # pick colours
 cols <- c(
@@ -293,7 +301,7 @@ rs <- df %>%
     axis.text.x  = element_blank()
   ); rs
 
-# ggsave("figures/results/final!/PYsurv.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/RS.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # # combine birth rate & PY survival
 # (br / rs) +
@@ -567,12 +575,12 @@ mean <- apply(lambda_mat, 1, mean)
 quantile(mean, c(0.025, 0.5, 0.975))
 
 # build summary dataframe
-df <- data.frame(Year  = 1:17,
-                 Mean  = apply(lambda_mat, 2, mean),
-                 Lower = apply(lambda_mat, 2, quantile, 0.025),
-                 Upper = apply(lambda_mat, 2, quantile, 0.975))
+lamDF <- data.frame(Year  = 1:17,
+                    Mean  = apply(lambda_mat, 2, mean),
+                    Lower = apply(lambda_mat, 2, quantile, 0.025),
+                    Upper = apply(lambda_mat, 2, quantile, 0.975))
 
-lambda <- df %>%
+lambda <- lamDF %>%
   mutate(Year = Year + 2007) %>%
   ggplot(aes(x = Year, y = Mean)) +
   geom_hline(yintercept = 1, colour = "grey60") +
@@ -593,7 +601,45 @@ lambda <- df %>%
 pop / lambda
 # pAGE / lambda
 
-# ggsave("figures/results/final!/pop&lambda.png", width = 18.0, height = 18.0, units = c("cm"), dpi = 600)
+# overlay with pop size
+pop_min <- 100
+pop_max <- 450
+lam_min <- 0.6
+lam_max <- 1.4
+s_fac   <- (pop_max - pop_min) / (lam_max - lam_min)
+s_shift <- pop_min - (lam_min * s_fac)
+
+popDF <- popDF %>% mutate(Year = Year + 2007)
+lamDF <- data.frame(Year  = 1:17 + 2007,
+                    Mean  = apply(lambda_mat, 2, mean) * s_fac + s_shift,
+                    Lower = apply(lambda_mat, 2, quantile, 0.025) * s_fac + s_shift,
+                    Upper = apply(lambda_mat, 2, quantile, 0.975) * s_fac + s_shift)
+
+ggplot() +
+  geom_hline(yintercept = 1 * s_fac + s_shift, colour = "grey60", linetype = "dashed") +
+  # geom_hline(yintercept = 1.006 * s_fac + s_shift, colour = "#AC2020", linewidth = 0.6) +
+  # annotate("text", x = 2023, y = 1.006 * s_fac + s_shift, label = expression("Mean" ~ lambda ~ "(1.006)"),
+  #          hjust = 0, vjust = -0.6, size = 3.2, colour = "#AC2020") +
+  geom_ribbon(data = popDF, aes(x = Year, ymin = Lower, ymax = Upper), fill = "black", alpha = 0.2) +
+  geom_line(data = popDF, aes(x = Year, y = Mean), color = "black", linewidth = 0.8) +
+  geom_ribbon(data = lamDF, aes(x = Year, ymin = Lower, ymax = Upper), alpha = 0.2, fill = "#7A525D") +
+  geom_line(data = lamDF, aes(x = Year, y = Mean), colour = "#7A525D", linewidth = 0.8) +
+  scale_x_continuous(limits = c(2008, 2025),
+                     breaks = c(2008, 2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_y_continuous(limits = c(pop_min, pop_max), breaks = c(100, 200, 300, 400, 500),
+                     sec.axis = sec_axis(~ (. - s_shift) / s_fac,
+                                         name = expression("Population growth rate" ~ (lambda)),
+                                         breaks = c(0.6, 0.8,1.0, 1.2, 1.4))) +
+  labs(x = "Year", y = "Population size") +
+  theme_bw() +
+  theme(legend.position = "none",
+        # axis.title.y.right = element_text(color = "#7A525D"),
+        # axis.text.y.right  = element_text(color = "#7A525D"),
+        # axis.ticks.y.right = element_line(color = "#7A525D")
+        )
+
+
+# ggsave("figures/results/final!/pop&lambda_over.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Age structure ---------------------------------------------------------------
@@ -647,6 +693,14 @@ cols <- c("0"   = "#671313",
           setNames(colorRampPalette(c("#FFF3B0", "#798C69"))(5), as.character(5:9)),
           setNames(colorRampPalette(c("#426061", "#1C3236"))(3), as.character(c(10:11, "12+"))))
 
+# # pick colours
+# cols <- c("0"   = "#CC7AA5",
+#           "1"   = "#CB6723",
+#           "2"   = "#AE581E",
+#           setNames(colorRampPalette(c("#53A0DF", "#164C79"))(4), as.character(3:6)),
+#           setNames(colorRampPalette(c("#F8C54F", "#D79909"))(3), as.character(7:9)),
+#           setNames(colorRampPalette(c("#068866", "#046249"))(3), as.character(c(10:11, "12+"))))
+
 # ribbon plot
 pAGE <- df %>% 
   arrange(Year, AgeGroup) %>% # desc() to flip order
@@ -666,15 +720,15 @@ pAGE <- df %>%
   labs(x = "Year", y = "Population size", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/results/final!/propsRibbons.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/final!/propsRibbons2.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # bar plot
 pAGE <- df %>%
   ggplot(aes(x = Year, y = N, fill = AgeGroup)) +
   geom_col(width = 0.8) +
   scale_fill_manual(values = cols) +
-  scale_x_continuous(limits = c(2008, 2025),
-                     breaks = c(2010, 2012, 2014, 2016, 2018, 2020, 2022, 2024)) +
+  scale_x_continuous(limits = c(2007, 2025),
+                     breaks = c(2008, 2012, 2016, 2020, 2024)) +
   labs(x = "Year", y = "Proportion of the population", fill = "Age") +
   theme_bw(); pAGE
 
@@ -707,6 +761,208 @@ summary <- post %>%
                            age1    = "1",
                            age2_11 = "2–11",
                            age12p  = "12+"))
+
+
+## SIMULATED age structure -----------------------------------------------------
+
+# VERSION 1
+# Define parameters
+years <- 2010:2020
+ages <- c(as.character(0:11), "12+")
+Nages <- length(ages)
+
+# 1. Define baseline proportions
+baseProp <- c(
+  0.09, 0.07, 0.04,  # Juveniles (0, 1, 2; ~20%)
+  rep(0.50 / 7, 7),  # Prime-aged (3 through 9; ~50%)
+  0.10, 0.10, 0.10   # Senescent (10, 11, 12+; ~30%)
+)
+
+# 2. Population trajectory (harder crash in Year 2, smooth recovery)
+totalN <- c(500, 240, 270, 310, 350, 390, 430, 460, 482, 495, 500)
+
+# 3. Perturbation multipliers for Year 2 (heavy decimation of young and old)
+pertMult <- c(
+  0.10, 0.10, 0.15,  # Juveniles severely hit
+  rep(0.90, 7),      # Prime-aged mostly spared
+  0.15, 0.10, 0.05   # Senescent severely wiped out
+)
+
+# Build proportion matrix across the 10 years with smooth recovery
+propMatrix <- matrix(0, nrow = 11, ncol = Nages)
+colnames(propMatrix) <- ages
+
+# Year 1: baseline equilibrium
+propMatrix[1, ] <- baseProp
+
+# Year 2: post-disturbance proportions
+rawPert <- baseProp * pertMult
+propMatrix[2, ] <- rawPert / sum(rawPert)
+
+# Years 3 to 10: gradual linear recovery
+for (t in 3:11) {
+  w <- (t - 2) / 8  # progress weight from 0 to 1
+  interpolated <- (1 - w) * propMatrix[2, ] + w * baseProp
+  propMatrix[t, ] <- interpolated / sum(interpolated)
+}
+
+# 4. Construct the final data frame with all 13 age classes
+df <- map_dfr(1:11, function(i){
+  props <- propMatrix[i, ]
+  totN  <- totalN[i]
+  data.frame(
+    Year     = years[i],
+    AgeGroup = factor(ages, levels = ages),
+    Prop     = props,
+    N        = props * totN
+  )
+}) %>%
+  mutate(Stage = case_when(
+    AgeGroup %in% c("0", "1", "2") ~ "Juvenile",
+    AgeGroup %in% as.character(3:9) ~ "Prime-aged",
+    TRUE ~ "Senescent"),
+    Stage = factor(Stage, levels = c("Juvenile", "Prime-aged", "Senescent")))
+
+# 5. Group into 3 stages for plotting 
+df <- df %>%
+  group_by(Year, Stage) %>%
+  summarise(N = sum(N), .groups = "drop")
+
+# pick colours
+# cols <- c(
+#   "Juvenile"   = "#AC2020",
+#   "Prime-aged" = "#E3CA78",
+#   "Senescent"  = "#6F9A9B"
+# )
+
+cols <- c(
+  "Juvenile"   = "#671313",
+  "Prime-aged" = "#E7D18B",
+  "Senescent"  = "#1C3236"
+)
+
+ggplot(df, aes(x = as.factor(Year), y = N, fill = Stage)) +
+  geom_col(width = 0.8) +
+  scale_fill_manual(values = cols, name = "Stage") +
+  scale_x_discrete(breaks = c(2010, 2012, 2014, 2016, 2018)) +
+  labs(x = "Year", y = "Population size") +
+  theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    legend.position = "right"
+  )
+
+# ggsave("figures/results/final!/AgeStructEx2.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+
+# VERSION 2
+# Define parameters (2010 to 2026: 17 years)
+years <- 2010:2026
+Nyears <- length(years)
+ages <- c(as.character(0:11), "12+")
+Nages <- length(ages)
+
+# 1. Define baseline proportions
+baseProp <- c(
+  0.09, 0.07, 0.04,  # Juveniles (0, 1, 2; ~20%)
+  rep(0.50 / 7, 7),  # Prime-aged (3 through 9; ~50%)
+  0.10, 0.10, 0.10   # Senescent (10, 11, 12+; ~30%)
+)
+
+# 2. Population trajectory:
+# - 2010-2020: original crash & recovery (indices 1 to 11)
+# - 2021-2026: second crash & partialrecovery through 2026
+totalN <- c(
+  500, 240, 270, 310, 350, 390, 430, 460, 482, 495, 500, # 2010–2020
+  360, 390, 415, 435, 450, 460                           # 2021–2026
+)
+
+# 3. Perturbation multipliers
+# First perturbation (Year 2 / 2011): hits young & old hard
+pertMult1 <- c(
+  0.10, 0.10, 0.15,  
+  rep(0.90, 7),      
+  0.15, 0.10, 0.05   
+)
+
+# Second perturbation (Year 11 / 2020): hits prime-aged hardest
+pertMult2 <- c(
+  0.85, 0.85, 0.90,
+  0.30, 0.35, 0.35, 0.40, 0.40, 0.45, 0.50,
+  0.80, 0.75, 0.70
+)
+
+# Build proportion matrix across the 17 years
+propMatrix <- matrix(0, nrow = Nyears, ncol = Nages)
+colnames(propMatrix) <- ages
+
+# Year 1 (2010): baseline equilibrium
+propMatrix[1, ] <- baseProp
+
+# Year 2 (2011): first post-disturbance proportions
+rawPert1 <- baseProp * pertMult1
+propMatrix[2, ] <- rawPert1 / sum(rawPert1)
+
+# Years 3 to 11 (2012–2020): first recovery period
+for (t in 3:11) {
+  w <- (t - 2) / 9  
+  interpolated <- (1 - w) * propMatrix[2, ] + w * baseProp
+  propMatrix[t, ] <- interpolated / sum(interpolated)
+}
+
+# Year 12 (2021): second disturbance hits
+rawPert2 <- propMatrix[11, ] * pertMult2
+propMatrix[12, ] <- rawPert2 / sum(rawPert2)
+
+# Years 13 to 17 (2022–2026): second partial recovery period
+for (t in 13:17) {
+  w <- (t - 11) / 8  # slower recovery weight
+  interpolated <- (1 - w) * propMatrix[12, ] + w * baseProp
+  propMatrix[t, ] <- interpolated / sum(interpolated)
+}
+
+# 4. Construct the final data frame with all age classes
+df <- map_dfr(1:Nyears, function(i){
+  props <- propMatrix[i, ]
+  totN  <- totalN[i]
+  data.frame(
+    Year     = years[i],
+    AgeGroup = factor(ages, levels = ages),
+    Prop     = props,
+    N        = props * totN
+  )
+}) %>%
+  mutate(Stage = case_when(
+    AgeGroup %in% c("0", "1", "2") ~ "Juvenile",
+    AgeGroup %in% as.character(3:9) ~ "Prime-aged",
+    TRUE ~ "Senescent"),
+    Stage = factor(Stage, levels = c("Juvenile", "Prime-aged", "Senescent")))
+
+# 5. Group into 3 stages for plotting  
+df <- df %>%
+  group_by(Year, Stage) %>%
+  summarise(N = sum(N), .groups = "drop")
+
+# pick colours
+cols <- c(
+  "Juvenile"   = "#963E25",
+  "Prime-aged" = "#DCCC84",
+  "Senescent"  = "#4D6B6C"
+)
+
+ggplot(df, aes(x = as.factor(Year), y = N, fill = Stage)) +
+  geom_col(width = 0.8) +
+  scale_fill_manual(values = cols, name = "Stage") +
+  scale_x_discrete(breaks = c(2010, 2014, 2018, 2022, 2026)) +
+  labs(x = "Year", y = "Population size") +
+  theme_bw() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank(),
+    legend.position = "right"
+  )
+
+# ggsave("figures/results/final!/AgeStructEx3.png", width = 18.0, height = 8.0, units = c("cm"), dpi = 600)
 
 
 ## Dave vs Heloise's density data ----------------------------------------------

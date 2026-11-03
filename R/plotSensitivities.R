@@ -185,7 +185,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
             axis.text.x = element_text(size = 10),
             axis.title = element_text(size = 10))
     
-    # ggsave("figures/resultsDave2Covs/SENSsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+    # ggsave("figures/results/final!/SENSsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
     
     # survival panel
     S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))
