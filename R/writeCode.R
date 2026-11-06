@@ -143,7 +143,7 @@ writeCode <- function(){
       for(a in 3:nAge) nAD[a, t+1] ~ dbin(sAD[a-1, t], nAD[a-1, t])
       
       # then reproductive success
-      for(a in 3:nAge) nYFa[a, t+1] ~ dbin(0.5 * BR[a-1, t] * sPY[a-1, t], nAD[a-1, t])
+      for(a in 3:nAge) nYFa[a, t+1] ~ dbin(0.5 * BR[a-1, t] * sPY[a-1, t], nAD[a-1, t]) # vs nAD[a, t+1]
       nYF[t+1] <- sum(nYFa[3:nAge, t+1]) # total number of female YAFs every year
       nTOT[t+1] <- nYF[t+1] + nSA[t+1] + sum(nAD[2:nAge, t+1])
     }
@@ -234,7 +234,7 @@ writeCode <- function(){
     
     #### Likelihood ####
     for(t in 1:nYear){
-      dens.true[t] <- (nTOT[t] * propF[t]) / area[t]
+      dens.true[t] <- nTOT[t] / propF[t] / area[t]
       # center dens for its use as a covariate
       dens.cov[t] <- dens.true[t] - densM 
     }

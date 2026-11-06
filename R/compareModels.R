@@ -28,15 +28,19 @@ compareModels <- function(nYear = 18, minYear = 2008, maxYear, nAgeC.S = 12,
   # nAgeC.S = 12
   # plotAges = c(2, 6, 10, 14)
   # plotYears = c(2, 6, 10, 14)
-  # postPaths = c("results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFun.rds",
-  #               "results/IPM_CJSen_RSen_AB_DynDens_dCJS_12_noW_25BR_S33_R22_stochV_8chains_muFunE.rds"
-  #               )
-  # modelNames = c("IPM_S33R22",
-  #                "IPM_muFun",
-  #                "IPM_muFunE"
-  #                )
-  # plotFolder = c("figures/densityChecks/muFun")
+  # postPaths = c(
+  #   "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_areaHR.rds",
+  #   "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_femaleNt.rds",
+  #   "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_survMoms.rds",
+  #   "results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_femaleNt_survMoms.rds"
+  # )
+  # modelNames = c(
+  #   "IPM_areaHR",
+  #   "IPM_femaleNt",
+  #   "IPM_survMoms",
+  #   "IPM_both"
+  # )
+  # plotFolder = c("figures/paramPop")
   # returnSumData = TRUE
   # nModels <- length(modelNames)
   
