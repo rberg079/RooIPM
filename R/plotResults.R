@@ -13,7 +13,7 @@ nYear <- 18
 nAge  <- 19
 
 # load results
-out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_muFunE_centerAge_areaHR.rds')
+out.mcmc <- readRDS('results/IPM_CJSen_RSen_AB_DynDens_dCJS_Dave12_S33_R22_B22_femaleNt_survMoms.rds')
 out.mat <- do.call(rbind, lapply(out.mcmc, as.matrix))
 
 
@@ -71,7 +71,7 @@ pop <- popDF %>%
         legend.position = "none"
         ); pop
 
-# ggsave("figures/results/final!/nTOT.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/nTOT.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Population size (by group) --------------------------------------------------
@@ -161,7 +161,7 @@ popA <- df %>%
   labs(y = "Population size", colour = "Age group", fill = "Age group") +
   theme_bw(); popA
 
-# ggsave("figures/results/final!/allNs3.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/allNs.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Survival --------------------------------------------------------------------
@@ -218,12 +218,16 @@ surv <- df %>%
   labs(x = "Year", y = "Survival", colour = "Age", fill = "Age") +
   theme_bw() +
   theme(
-    axis.title.x = element_blank(),
-    axis.text.x  = element_blank(),
-    axis.ticks.x = element_blank()
+    # axis.title.x = element_blank(),
+    # axis.text.x  = element_blank(),
+    # axis.ticks.x = element_blank(),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 14)
     ); surv
 
-# ggsave("figures/results/final!/survival.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/survival.png", width = 20.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Reproductive success --------------------------------------------------------
@@ -285,8 +289,8 @@ rs <- df %>%
                        labels = c("2", "4", "6", "8", "10", "12+"))) %>%
   filter(!is.na(Age)) %>% 
   ggplot(aes(x = Year, y = Mean, group = Age, colour = Age, linetype = Age)) +
-  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = F) +
-  geom_line(linewidth = 0.8, show.legend = F) + # position = position_dodge(width = 0.2), 
+  geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA, show.legend = T) +
+  geom_line(linewidth = 0.8, show.legend = T) + # position = position_dodge(width = 0.2), 
   scale_colour_manual(values = cols) +
   scale_fill_manual(values = cols) +
   scale_linetype_manual(values = lts) +
@@ -297,11 +301,15 @@ rs <- df %>%
   # labs(x = "Year", y = "Survival of pouch young", colour = "Age", fill = "Age") +
   theme_bw() +
   theme(
-    axis.title.x = element_blank(),
-    axis.text.x  = element_blank()
+    # axis.title.x = element_blank(),
+    # axis.text.x  = element_blank(),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 14)
   ); rs
 
-# ggsave("figures/results/final!/RS.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/RS.png", width = 19.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # # combine birth rate & PY survival
 # (br / rs) +
@@ -419,11 +427,19 @@ cols <- c(
   "12+" = "#CC79A7"
 )
 
+cols <- c(
+  "PY" = "#450D0D",
+  "0"   = "#671313",
+  "10"  = "#426061",
+  "11"  = "#2F494B",
+  "12+" = "#1C3236"
+  )
+
 # plot
 df %>%
   mutate(Age = factor(Age, levels = c("PY", "0", "10", "11", "12+")),
          covariate = factor(covariate, levels = c("Population density", "Forage availability")),
-         line = ifelse(Age %in% c("PY", "0") & covariate == "Population density", "solid", "dotted")) %>%
+         line = ifelse(Age %in% c("0"), "solid", "dashed")) %>%
   ggplot(aes(x = x, y = Mean, colour = Age)) +
   geom_ribbon(aes(ymin = Lower, ymax = Upper, fill = Age), alpha = 0.2, colour = NA) +
   geom_line(aes(linetype = line), linewidth = 0.8) +
@@ -435,9 +451,13 @@ df %>%
   labs(x = "Scaled covariate value", y = "Survival",
        colour = "Age", fill = "Age") +
   guides(linetype = "none") +
-  theme_bw()
+  theme_bw() +
+  theme(axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 14))
 
-# ggsave("figures/results/final!/coveffects.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/coveffects2.png", width = 19.0, height = 10.0, units = c("cm"), dpi = 600)
 
 
 ## Covariate values ------------------------------------------------------------
@@ -508,7 +528,7 @@ covs <- df %>%
   labs(y = "Scaled covariate value", colour = "Covariate", fill = "Covariate") +
   theme_bw(); covs
 
-# ggsave("figures/results/final!/covsVStime.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/covsVStime.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # combine with survival & reproductive output
 (surv / rs / covs) +
@@ -602,10 +622,10 @@ pop / lambda
 # pAGE / lambda
 
 # overlay with pop size
-pop_min <- 100
-pop_max <- 450
+pop_min <- 50
+pop_max <- 350
 lam_min <- 0.6
-lam_max <- 1.4
+lam_max <- 1.3
 s_fac   <- (pop_max - pop_min) / (lam_max - lam_min)
 s_shift <- pop_min - (lam_min * s_fac)
 
@@ -720,7 +740,7 @@ pAGE <- df %>%
   labs(x = "Year", y = "Population size", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/results/final!/propsRibbons2.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/propsRibbons.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # bar plot
 pAGE <- df %>%
@@ -732,7 +752,7 @@ pAGE <- df %>%
   labs(x = "Year", y = "Proportion of the population", fill = "Age") +
   theme_bw(); pAGE
 
-# ggsave("figures/results/final!/NsBars.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
+# ggsave("figures/results/paramPop/NsBars.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
 
 # summaries to report
 p0  <- paramSamples$t.mean$pYF.mean

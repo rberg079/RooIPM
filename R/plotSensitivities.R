@@ -16,7 +16,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
 
   # # for testing purposes
   # sensitivities <- readRDS('results/sensitivities.rds')
-  # plotFolder = c("figures/results/final!")
+  # plotFolder = c("figures/results/paramPop")
   # nAge = 19
   # oneProp <- TRUE
   # returnSummary <- TRUE
@@ -168,6 +168,7 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
     ## Plot sensitivities ------------------------------------------------------
     
     plotData$type <- factor(plotData$type, levels = types)
+    # plotData <- plotData %>% filter(type != "Population structure")
     plot.colours <- paletteer::paletteer_c("grDevices::Temps", length(unique(plotData$type)))
     
     p.sum <- ggplot(plotData, aes(x = type, y = Value, group = type)) +
@@ -183,9 +184,9 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
       theme(legend.position = "none",
             panel.grid = element_blank(),
             axis.text.x = element_text(size = 10),
-            axis.title = element_text(size = 10))
+            axis.title = element_text(size = 10)); p.sum
     
-    # ggsave("figures/results/final!/SENSsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+    # ggsave("figures/results/paramPop/ELASsum.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
     
     # survival panel
     S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))
@@ -302,6 +303,17 @@ plotSensitivities <- function(sensitivities, nAge = 19, plotFolder,
     
     summaries[[metric]] <- sensSummary
   }
+  
+  # check whether survival & proportion parameter elasticities sum to 1
+  sensSummary %>%
+    filter(grepl("^[sp]", Variable),                     # only s and p parameters
+           !grepl("(_all|_2to9|_10up)$", Variable)) %>%  # exclude aggregated values
+    mutate(Group = substr(Variable, 1, 1)) %>%
+    group_by(Group) %>%
+    summarise(
+      Sum = sum(Mean, na.rm = TRUE),
+      .groups = "drop"
+    )
   
   
   ## Return --------------------------------------------------------------------

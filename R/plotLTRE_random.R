@@ -133,7 +133,7 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
   ## Plot contributions --------------------------------------------------------
   
   c.sum <- plotData %>% 
-    ggplot(aes(x = type, y = Contribution, group = type)) +
+    ggplot(aes(x = type, y = abs(Contribution), group = type)) +
     geom_violin(aes(fill = type, colour = type), alpha = 0.5, scale = "width", draw_quantiles = 0.5) +
     geom_hline(yintercept = c(0), colour = "grey70", linetype = "dashed") +
     ylab("Contribution") +
@@ -141,17 +141,17 @@ plotLTRE_random <- function(LTREresults, nAge = 19, plotFolder,
     scale_fill_manual(values = plot.colours) +
     scale_colour_manual(values = plot.colours) +
     scale_x_discrete(labels = names) +
-    scale_y_continuous(limits = c(-0.008, 0.008),
-                       expand = expansion(mult = c(0, 0.02)),
-                       breaks = c(-0.008, -0.006, -0.004, -0.002, 0.00, 0.002, 0.004, 0.006, 0.008)) +
+    # scale_y_continuous(limits = c(-0.008, 0.008),
+    #                    expand = expansion(mult = c(0, 0.02)),
+    #                    breaks = c(-0.008, -0.006, -0.004, -0.002, 0.00, 0.002, 0.004, 0.006, 0.008)) +
     theme_bw() +
     theme(legend.position = "none",
           panel.grid = element_blank(),
           axis.text.x = element_text(size = 10),
           axis.title = element_text(size = 10),
-          plot.margin = margin(1, 3, 1, 3))
+          plot.margin = margin(1, 3, 1, 3)); c.sum
   
-  # ggsave("figures/results/final!/LTREsum.png", width = 20.0, height = 12.0, units = c("cm"), dpi = 600)
+  # ggsave("figures/results/paramPop/LTREsum.png", width = 18.0, height = 10.0, units = c("cm"), dpi = 600)
   
   # survival panel
   S.colours <- c(plot.colours[3:4], rep(plot.colours[5], 8), rep(plot.colours[6], max(0, nAge - 9)))
